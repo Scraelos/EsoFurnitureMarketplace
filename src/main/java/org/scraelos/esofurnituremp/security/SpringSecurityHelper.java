@@ -5,10 +5,10 @@
  */
 package org.scraelos.esofurnituremp.security;
 
+import org.scraelos.esofurnituremp.model.SysAccount;
+import org.scraelos.esofurnituremp.model.SysAccountRole;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 
 /**
  * вспомогательный класс
@@ -16,6 +16,15 @@ import org.springframework.security.core.userdetails.User;
  * @author scraelos
  */
 public class SpringSecurityHelper {
+
+    public static SysAccount getUser() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof SysAccount) {
+            return (SysAccount) principal;
+        } else {
+            return null;
+        }
+    }
 
     /**
      * возвращает true, если пользователь в текущей сессии обладает указанной
@@ -25,12 +34,16 @@ public class SpringSecurityHelper {
      * @return
      */
     public static boolean hasRole(String role) {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return user.getAuthorities().contains(new SimpleGrantedAuthority(role));
+        if (SecurityContextHolder.getContext().getAuthentication().getPrincipal() instanceof SysAccount) {
+            return ((SysAccount) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getAuthorities().contains(new SysAccountRole(role));
+        } else {
+            return false;
+        }
+
     }
 
     public static boolean isUserAnonymous() {
-        boolean result=(SecurityContextHolder.getContext().getAuthentication() instanceof AnonymousAuthenticationToken);
+        boolean result = (SecurityContextHolder.getContext().getAuthentication() instanceof AnonymousAuthenticationToken);
         return result;
     }
 

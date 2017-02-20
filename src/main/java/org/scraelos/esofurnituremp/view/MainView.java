@@ -31,50 +31,17 @@ public class MainView extends CustomComponent implements View {
 
     public static final String NAME = "";
 
-    Label text = new Label();
-
-    Button login = new Button("Login", new Button.ClickListener() {
-
-        @Override
-        public void buttonClick(ClickEvent event) {
-            getUI().getNavigator().navigateTo("login");
-        }
-    });
-
-    Button users = new Button("users", new Button.ClickListener() {
-
-        @Override
-        public void buttonClick(ClickEvent event) {
-            getUI().getNavigator().navigateTo("users");
-        }
-    });
-
-    Button logout = new Button("Logout", new Button.ClickListener() {
-
-        @Override
-        public void buttonClick(ClickEvent event) {
-
-            // "Logout" the user
-            SecurityContextHolder.clearContext();
-            SecurityContextHolder.setContext(SecurityContextHolder.createEmptyContext());
-            VaadinSession.getCurrent().close();
-            ExternalResource resource = new ExternalResource("");
-            Page.getCurrent().open(resource.getURL(), null);
-            //getUI().getNavigator().navigateTo("/");
-        }
-    });
+    private Header header;
 
     public MainView() {
-        setCompositionRoot(new CssLayout(new Header(),text, users, login, logout));
+        header = new Header();
+        setCompositionRoot(new CssLayout(header));
     }
 
     @Override
     public void enter(ViewChangeEvent event) {
-        // Get the user name from the session
-        String username = String.valueOf(SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        header.build();
 
-        // And show the username
-        text.setValue("Hello " + username);
     }
 
 }

@@ -13,16 +13,20 @@ import com.vaadin.server.FontAwesome;
 import com.vaadin.shared.ui.MarginInfo;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.FormLayout;
+import com.vaadin.ui.Label;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.PasswordField;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.scraelos.esofurnituremp.model.ESO_SERVER;
 import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -62,13 +66,16 @@ public class LoginView extends CustomComponent implements View,
     private final FormLayout loginFields;
     private final FormLayout registerFields;
 
+    private ComboBox activeServer;
+    private Label activeServerlabel;
 
     private String forwardTo;
 
     @Autowired
     private AuthenticationManager authenticationManager;
-    
-    @Autowired DBService dBService;
+
+    @Autowired
+    DBService dBService;
 
     private static final Logger LOG = Logger.getLogger(LoginView.class.getName());
 
@@ -91,12 +98,15 @@ public class LoginView extends CustomComponent implements View,
 
         loginButton = new Button("Login", this);
 
-        
         // Add both to a panel
         loginFields = new FormLayout(user, password, loginButton);
+        loginFields.addStyleName(ValoTheme.FORMLAYOUT_LIGHT);
         loginFields.setCaption("Please login to access the application. (test@test.com/passw0rd)");
         loginFields.setSpacing(true);
         loginFields.setMargin(new MarginInfo(true, true, true, false));
+        loginFields.setComponentAlignment(user, Alignment.TOP_CENTER);
+        loginFields.setComponentAlignment(password, Alignment.TOP_CENTER);
+        loginFields.setComponentAlignment(loginButton, Alignment.TOP_CENTER);
         loginFields.setSizeUndefined();
 
         newUser = new TextField("E-mail:");
@@ -113,6 +123,11 @@ public class LoginView extends CustomComponent implements View,
         newUserRepeat.setImmediate(true);
         newUserRepeat.setInputPrompt("Repeat your E-mail");
         newUserRepeat.setInvalidAllowed(false);
+
+        activeServer = new ComboBox("Active Server*", Arrays.asList(ESO_SERVER.values()));
+        activeServer.setNullSelectionAllowed(false);
+        activeServer.setValue(ESO_SERVER.EU);
+        activeServerlabel = new Label("*You will be able to change it in profile settings");
 
         newUserId = new TextField("Ingame id without @:");
         newUserId.setWidth("300px");
@@ -133,8 +148,9 @@ public class LoginView extends CustomComponent implements View,
         newPasswordRepeat.setImmediate(true);
         newPasswordRepeat.setNullRepresentation("");
 
-        registerButton = new Button("Register", this);
-        registerFields = new FormLayout(newUser, newUserRepeat, newUserId, newPassword, newPasswordRepeat, registerButton);
+        registerButton = new Button("Register & Login", this);
+        registerFields = new FormLayout(newUser, newUserRepeat, newUserId, activeServer, activeServerlabel, newPassword, newPasswordRepeat, registerButton);
+        registerFields.addStyleName(ValoTheme.FORMLAYOUT_LIGHT);
         registerFields.setCaption("Please login to access the application. (test@test.com/passw0rd)");
         registerFields.setSpacing(true);
         registerFields.setMargin(new MarginInfo(true, true, true, false));
@@ -162,7 +178,7 @@ public class LoginView extends CustomComponent implements View,
 
     @Override
     public void buttonClick(Button.ClickEvent event) {
-        if (event.getButton() == loginButton && user.isValid()&&password.isValid()) {
+        if (event.getButton() == loginButton && user.isValid() && password.isValid()) {
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user.getValue(), password.getValue());
             try {
                 Authentication authenticate = authenticationManager.authenticate(authentication);
@@ -175,9 +191,9 @@ public class LoginView extends CustomComponent implements View,
 
             }
 
-        } else if(event.getButton()==registerButton&&newUser.isValid()&&newUserRepeat.isValid()&&newPassword.isValid()&&newPasswordRepeat.isValid()&&newUserId.isValid()) {
+        } else if (event.getButton() == registerButton && newUser.isValid() && newUserRepeat.isValid() && newPassword.isValid() && newPasswordRepeat.isValid() && newUserId.isValid()) {
             try {
-                dBService.registerUser(newUser.getValue(), newPassword.getValue(), newUserId.getValue());
+                dBService.registerUser(newUser.getValue(), newPassword.getValue(), newUserId.getValue(), (ESO_SERVER) activeServer.getValue());
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(newUser.getValue(), newPassword.getValue());
                 Authentication authenticate = authenticationManager.authenticate(authentication);
                 SecurityContextHolder.getContext().setAuthentication(authenticate);

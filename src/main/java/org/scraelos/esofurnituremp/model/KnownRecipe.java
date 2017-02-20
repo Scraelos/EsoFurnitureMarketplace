@@ -6,7 +6,10 @@
 package org.scraelos.esofurnituremp.model;
 
 import javax.persistence.Basic;
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -18,17 +21,20 @@ import org.scraelos.esofurnituremp.model.lib.DAO;
  * @author scraelos
  */
 @Entity
-public class RecipeIngredient extends DAO {
+public class KnownRecipe extends DAO {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Basic(optional = false)
     private Long id;
     @ManyToOne
-    private Recipe recipe;
+    private SysAccount account;
     @ManyToOne
-    private Ingredient ingredient;
-    private Integer count;
+    private Recipe recipe;
+    private String characterName;
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(255)")
+    private ESO_SERVER esoServer;
 
     @Override
     public Long getId() {
@@ -48,27 +54,28 @@ public class RecipeIngredient extends DAO {
         this.recipe = recipe;
     }
 
-    public Ingredient getIngredient() {
-        return ingredient;
+    public String getCharacterName() {
+        return characterName;
     }
 
-    public void setIngredient(Ingredient ingredient) {
-        this.ingredient = ingredient;
+    public void setCharacterName(String characterName) {
+        this.characterName = characterName;
     }
 
-    public Integer getCount() {
-        return count;
+    public SysAccount getAccount() {
+        return account;
     }
 
-    public void setCount(Integer count) {
-        this.count = count;
+    public void setAccount(SysAccount account) {
+        this.account = account;
     }
 
-    @Override
-    public String toString() {
-        return  ingredient.toString() + "(" + count.toString() + ')';
+    public ESO_SERVER getEsoServer() {
+        return esoServer;
     }
-    
-    
+
+    public void setEsoServer(ESO_SERVER esoServer) {
+        this.esoServer = esoServer;
+    }
 
 }

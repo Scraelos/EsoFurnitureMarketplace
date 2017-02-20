@@ -43,4 +43,11 @@ public class Ingredient extends DAO {
         this.nameEn = nameEn;
     }
 
+    @Override
+    public String toString() {
+        return nameEn;
+    }
+    
+    
+
 }

@@ -8,11 +8,17 @@ package org.scraelos.esofurnituremp.model;
 import java.util.Collection;
 import java.util.Set;
 import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
+import javax.persistence.Transient;
 import org.scraelos.esofurnituremp.model.lib.DAO;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,9 +37,16 @@ public class SysAccount extends DAO implements UserDetails {
     private String username;
     private String password;
     private String esoId;
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(255)")
+    private ESO_SERVER esoServer;
     private Boolean enabled;
     @ManyToMany
     private Set<SysAccountRole> roles;
+    @OneToMany(mappedBy = "account")
+    private Set<KnownRecipe> knownRecipes;
+    @Transient
+    private Set<Recipe> knownRecipesRaw;
 
     @Override
     public Long getId() {
@@ -110,6 +123,30 @@ public class SysAccount extends DAO implements UserDetails {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Set<KnownRecipe> getKnownRecipes() {
+        return knownRecipes;
+    }
+
+    public void setKnownRecipes(Set<KnownRecipe> knownRecipes) {
+        this.knownRecipes = knownRecipes;
+    }
+
+    public Set<Recipe> getKnownRecipesRaw() {
+        return knownRecipesRaw;
+    }
+
+    public void setKnownRecipesRaw(Set<Recipe> knownRecipesRaw) {
+        this.knownRecipesRaw = knownRecipesRaw;
+    }
+
+    public ESO_SERVER getEsoServer() {
+        return esoServer;
+    }
+
+    public void setEsoServer(ESO_SERVER esoServer) {
+        this.esoServer = esoServer;
     }
 
 }

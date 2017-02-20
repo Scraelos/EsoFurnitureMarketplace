@@ -6,6 +6,7 @@
 package org.scraelos.esofurnituremp.model;
 
 import java.util.List;
+import java.util.Objects;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -31,6 +32,10 @@ public class SysAccountRole extends DAO implements GrantedAuthority {
     private List<SysAccount> sysAccounts;
 
     public SysAccountRole() {
+    }
+
+    public SysAccountRole(String nic) {
+        this.nic = nic;
     }
 
     public SysAccountRole(Long id, String nic, String name) {
@@ -85,6 +90,28 @@ public class SysAccountRole extends DAO implements GrantedAuthority {
 
     public void setSysAccounts(List<SysAccount> sysAccounts) {
         this.sysAccounts = sysAccounts;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 31 * hash + Objects.hashCode(this.nic);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final SysAccountRole other = (SysAccountRole) obj;
+        if (!Objects.equals(this.nic, other.nic)) {
+            return false;
+        }
+        return true;
     }
 
 }

@@ -8,6 +8,7 @@ package org.scraelos.esofurnituremp.view;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.ui.CustomComponent;
+import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.Upload;
 import com.vaadin.ui.VerticalLayout;
 import java.io.ByteArrayInputStream;
@@ -45,19 +46,22 @@ import ru.xpoft.vaadin.VaadinView;
 public class ImportView extends CustomComponent implements View {
 
     public static final String NAME = "import";
+    private Header header;
 
     @Autowired
     private DBService dBService;
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
+        header=new Header();
+        header.build();
         DatamineUploadHandler datamineUploadHandler = new DatamineUploadHandler();
         Upload dataminexlsxUpload = new Upload("Upload datamine xlsx", datamineUploadHandler);
         dataminexlsxUpload.addSucceededListener(datamineUploadHandler);
         EsoRawStringRecipeUploadHandler esoRawStringRecipeUploadHandler = new EsoRawStringRecipeUploadHandler();
         Upload esoRawStringRecipeUpload = new Upload("Upload eso raw recipe data", esoRawStringRecipeUploadHandler);
         esoRawStringRecipeUpload.addSucceededListener(esoRawStringRecipeUploadHandler);
-        VerticalLayout vl = new VerticalLayout(new Header(), dataminexlsxUpload, esoRawStringRecipeUpload);
+        VerticalLayout vl = new VerticalLayout(header, dataminexlsxUpload, esoRawStringRecipeUpload);
         setCompositionRoot(vl);
 
     }

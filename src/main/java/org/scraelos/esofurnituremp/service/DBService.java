@@ -20,11 +20,13 @@ import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import org.scraelos.esofurnituremp.model.ESO_SERVER;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
 import org.scraelos.esofurnituremp.model.Ingredient;
 import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
+import org.scraelos.esofurnituremp.model.KnownRecipe;
 import org.scraelos.esofurnituremp.model.RECIPE_TYPE;
 import org.scraelos.esofurnituremp.model.Recipe;
 import org.scraelos.esofurnituremp.model.RecipeIngredient;
@@ -55,6 +57,10 @@ public class DBService {
         List<SysAccount> resultList = em.createQuery(criteria).getResultList();
         if (resultList != null && !resultList.isEmpty()) {
             result = resultList.get(0);
+            result.setKnownRecipesRaw(new HashSet<Recipe>());
+            for (KnownRecipe k : result.getKnownRecipes()) {
+                result.getKnownRecipesRaw().add(k.getRecipe());
+            }
         } else {
             throw new UsernameNotFoundException("username" + login + " not found");
         }
@@ -62,7 +68,7 @@ public class DBService {
     }
 
     @Transactional
-    public SysAccount registerUser(String username, String password, String esoId) throws Exception {
+    public SysAccount registerUser(String username, String password, String esoId, ESO_SERVER server) throws Exception {
         SysAccount account = null;
         try {
             getAccount(username);
@@ -148,6 +154,18 @@ public class DBService {
         recipeQuery.distinct(true);
         Recipe recipe = null;
         List<Recipe> recipeList = em.createQuery(recipeQuery).getResultList();
+        if (recipeList == null || recipeList.isEmpty()) {
+            CriteriaQuery<Recipe> recipeQuery2 = builder.createQuery(Recipe.class);
+            Root<Recipe> recipeRoot2 = recipeQuery2.from(Recipe.class);
+            recipeQuery2.select(recipeRoot2);
+            recipeQuery2.where(builder.and(
+                    builder.isNull(recipeRoot2.get("itemQuality")),
+                    builder.equal(recipeRoot2.get("nameEn"), name)
+            )
+            );
+            recipeQuery2.distinct(true);
+            recipeList = em.createQuery(recipeQuery2).getResultList();
+        }
         if (recipeList != null && !recipeList.isEmpty()) {
             recipe = recipeList.get(0);
             FurnitureItem furnitureItem = em.find(FurnitureItem.class, id);
@@ -278,7 +296,7 @@ public class DBService {
 
         }
     }
-    
+
     @Transactional
     public JPAContainer getJPAContainerContainerForClass(Class c) {
         return JPAContainerFactory.makeBatchable(c, em);

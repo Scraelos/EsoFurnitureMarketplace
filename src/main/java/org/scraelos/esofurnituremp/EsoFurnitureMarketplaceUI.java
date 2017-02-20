@@ -34,13 +34,25 @@ public class EsoFurnitureMarketplaceUI extends UI {
     @Autowired
     private transient ApplicationContext applicationContext;
 
-
     @Override
     protected void init(VaadinRequest request) {
         setSizeFull();
         DiscoveryNavigator navigator = new DiscoveryNavigator(this, this);
         ErrorHandler defaultErrorHandler = VaadinSession.getCurrent().getErrorHandler();
-        VaadinSession.getCurrent().setErrorHandler(new SecurityErrorHandler(navigator,defaultErrorHandler));
+        VaadinSession.getCurrent().setErrorHandler(new SecurityErrorHandler(navigator, defaultErrorHandler));
+        Page.Styles styles = Page.getCurrent().getStyles();
+        styles.add(".v-table-cell-content-legendary {"
+                + "    color: #CCAA1A;"
+                + "}"
+                + ".v-table-cell-content-epic {"
+                + "    color: #A02EF7;"
+                + "}"
+                + ".v-table-cell-content-superior {"
+                + "    color: #3A92FF;"
+                + "}"
+                + ".v-table-cell-content-fine {"
+                + "    color: #2DC50E;"
+                + "}");
 
     }
 
