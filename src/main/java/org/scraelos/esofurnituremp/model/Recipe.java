@@ -107,4 +107,12 @@ public class Recipe extends DAO {
         this.nameDe = nameDe;
     }
 
+    @Override
+    public String toString() {
+        if (recipeType != null) {
+            return recipeType.name() + ": " + nameEn;
+        }
+        return nameEn;
+    }
+
 }

@@ -298,7 +298,85 @@ public class DBService {
     }
 
     @Transactional
+    public Recipe getRecipe(Long id) {
+        return em.find(Recipe.class, id);
+    }
+
+    @Transactional
     public JPAContainer getJPAContainerContainerForClass(Class c) {
         return JPAContainerFactory.makeBatchable(c, em);
+    }
+
+    @Transactional
+    public boolean isRecipeKnown(Recipe recipe, String characterName, ESO_SERVER server, SysAccount account) {
+        boolean result = false;
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<KnownRecipe> q = builder.createQuery(KnownRecipe.class);
+        Root<KnownRecipe> root = q.from(KnownRecipe.class);
+        q.select(root);
+
+        q.where(builder.and(
+                builder.equal(root.get("account"), account),
+                builder.equal(root.get("recipe"), recipe),
+                builder.equal(root.get("esoServer"), server),
+                builder.equal(root.get("characterName"), characterName)
+        )
+        );
+        q.distinct(true);
+
+        List<KnownRecipe> resultList = em.createQuery(q).getResultList();
+        if (resultList != null && !resultList.isEmpty()) {
+            result = true;
+        }
+        return result;
+    }
+
+    @Transactional
+    public HierarchicalContainer getCrafters(HierarchicalContainer hc, Recipe recipe, ESO_SERVER server) {
+        hc.removeAllItems();
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<KnownRecipe> q = builder.createQuery(KnownRecipe.class);
+        Root<KnownRecipe> root = q.from(KnownRecipe.class);
+        q.select(root);
+
+        q.where(builder.and(
+                builder.equal(root.get("recipe"), recipe),
+                builder.equal(root.get("esoServer"), server)
+        )
+        );
+        q.distinct(true);
+
+        List<KnownRecipe> resultList = em.createQuery(q).getResultList();
+        if (resultList != null) {
+            for (KnownRecipe r : resultList) {
+                Item item = hc.addItem(r.getAccount().getEsoId());
+                if (item != null) {
+                    item.getItemProperty("id").setValue("@" + r.getAccount().getEsoId());
+                }
+
+            }
+        }
+        if (hc.size() == 0) {
+            Item item = hc.addItem("no crafters");
+            if (item != null) {
+                item.getItemProperty("id").setValue("no crafters found");
+            }
+        }
+        return hc;
+    }
+
+    @Transactional
+    public void addKnownRecipes(HierarchicalContainer hc, ESO_SERVER server, SysAccount account) {
+        for (Object itemId : hc.getItemIds()) {
+            Item item = hc.getItem(itemId);
+            String characterName = (String) item.getItemProperty("characterName").getValue();
+            Recipe recipe = (Recipe) item.getItemProperty("recipe").getValue();
+            KnownRecipe knownRecipe = new KnownRecipe();
+            knownRecipe.setAccount(account);
+            knownRecipe.setCharacterName(characterName);
+            knownRecipe.setEsoServer(server);
+            knownRecipe.setRecipe(recipe);
+            em.persist(knownRecipe);
+        }
     }
 }

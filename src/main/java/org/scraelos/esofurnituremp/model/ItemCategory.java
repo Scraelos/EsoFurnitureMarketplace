@@ -7,6 +7,7 @@ package org.scraelos.esofurnituremp.model;
 
 import java.util.List;
 import javax.persistence.Basic;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -28,6 +29,7 @@ public class ItemCategory extends DAO {
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Basic(optional = false)
     private Long id;
+    @Column(unique = true)
     private String nameEn;
 
     @Override

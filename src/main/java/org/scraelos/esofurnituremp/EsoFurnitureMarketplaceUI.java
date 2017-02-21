@@ -52,6 +52,9 @@ public class EsoFurnitureMarketplaceUI extends UI {
                 + "}"
                 + ".v-table-cell-content-fine {"
                 + "    color: #2DC50E;"
+                + "}"
+                + ".v-caption-horizontal {"
+                + "  display: inline-block;"
                 + "}");
 
     }

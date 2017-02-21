@@ -34,8 +34,10 @@ public class SysAccount extends DAO implements UserDetails {
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Basic(optional = false)
     private Long id;
+    @Column(unique = true)
     private String username;
     private String password;
+    @Column(unique = true)
     private String esoId;
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(255)")

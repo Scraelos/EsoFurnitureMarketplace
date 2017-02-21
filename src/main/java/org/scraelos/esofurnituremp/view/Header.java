@@ -46,6 +46,15 @@ public class Header extends VerticalLayout {
                 getUI().getNavigator().navigateTo(FurnitureItemsView.NAME);
             }
         });
+        if (user!=null&&SpringSecurityHelper.hasRole("ROLE_USER")) {
+        menuBar.addItem("Known Recipes", new MenuBar.Command() {
+
+            @Override
+            public void menuSelected(MenuBar.MenuItem selectedItem) {
+                getUI().getNavigator().navigateTo(KnownRecipesView.NAME);
+            }
+        });
+        }
         if (user!=null) {
             menuBar.addItem("Logout(" + user.getUsername() + ")", new MenuBar.Command() {
 
