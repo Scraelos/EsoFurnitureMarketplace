@@ -379,4 +379,13 @@ public class DBService {
             em.persist(knownRecipe);
         }
     }
+
+    @Transactional
+    public void updateUserPassword(SysAccount account, String newPassword) {
+        SysAccount a = em.find(SysAccount.class, account.getId());
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        String hashedPassword = passwordEncoder.encode(newPassword);
+        a.setPassword(hashedPassword);
+        em.merge(a);
+    }
 }
