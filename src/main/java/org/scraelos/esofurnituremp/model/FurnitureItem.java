@@ -26,6 +26,9 @@ public class FurnitureItem extends DAO {
     @Basic(optional = false)
     private Long id;
     private String nameEn;
+    private String nameDe;
+    private String nameFr;
+    private String nameRu;
     @ManyToOne
     private ItemSubCategory subCategory;
     @Enumerated(EnumType.STRING)
@@ -74,6 +77,30 @@ public class FurnitureItem extends DAO {
 
     public void setRecipe(Recipe recipe) {
         this.recipe = recipe;
+    }
+
+    public String getNameDe() {
+        return nameDe;
+    }
+
+    public void setNameDe(String nameDe) {
+        this.nameDe = nameDe;
+    }
+
+    public String getNameFr() {
+        return nameFr;
+    }
+
+    public void setNameFr(String nameFr) {
+        this.nameFr = nameFr;
+    }
+
+    public String getNameRu() {
+        return nameRu;
+    }
+
+    public void setNameRu(String nameRu) {
+        this.nameRu = nameRu;
     }
 
 }

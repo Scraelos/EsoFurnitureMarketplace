@@ -21,6 +21,7 @@ import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
 import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import ru.xpoft.vaadin.VaadinView;
@@ -32,6 +33,7 @@ import ru.xpoft.vaadin.VaadinView;
 @Component
 @Scope("prototype")
 @VaadinView(UserProfileView.NAME)
+@Secured({"ROLE_USER"})
 public class UserProfileView extends CustomComponent implements View {
 
     public static final String NAME = "profile";

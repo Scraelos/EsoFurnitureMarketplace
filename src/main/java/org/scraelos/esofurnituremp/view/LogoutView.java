@@ -6,6 +6,7 @@ import com.vaadin.server.ExternalResource;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinSession;
 import org.springframework.context.annotation.Scope;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import ru.xpoft.vaadin.VaadinView;
@@ -13,6 +14,7 @@ import ru.xpoft.vaadin.VaadinView;
 @Component
 @Scope("prototype")
 @VaadinView(LogoutView.NAME)
+@Secured({"ROLE_USER"})
 public class LogoutView extends Navigator.EmptyView {
 
     public static final String NAME = "logout";

@@ -32,6 +32,7 @@ public class Recipe extends DAO {
     private String nameEn;
     private String nameFr;
     private String nameDe;
+    private String nameRu;
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(255)")
     private RECIPE_TYPE recipeType;
@@ -105,6 +106,14 @@ public class Recipe extends DAO {
 
     public void setNameDe(String nameDe) {
         this.nameDe = nameDe;
+    }
+
+    public String getNameRu() {
+        return nameRu;
+    }
+
+    public void setNameRu(String nameRu) {
+        this.nameRu = nameRu;
     }
 
     @Override

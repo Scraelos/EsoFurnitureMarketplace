@@ -5,6 +5,7 @@ import com.vaadin.server.ErrorEvent;
 import com.vaadin.server.ErrorHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.scraelos.esofurnituremp.view.AccessDeniedView;
 import org.scraelos.esofurnituremp.view.security.LoginView;
 
 import org.springframework.security.access.AccessDeniedException;
@@ -28,7 +29,7 @@ public class SecurityErrorHandler implements ErrorHandler {
     public void error(ErrorEvent event) {
         
         Throwable rootCause=event.getThrowable();
-        while(rootCause.getCause()!=null) {
+        while(rootCause.getCause()!=null||!(rootCause instanceof AccessDeniedException)) {
             rootCause=rootCause.getCause();
         }
         if (rootCause instanceof AccessDeniedException) {
@@ -36,7 +37,7 @@ public class SecurityErrorHandler implements ErrorHandler {
             if (SpringSecurityHelper.isUserAnonymous() && !navigator.getState().startsWith(LoginView.NAME)) {
                 navigator.navigateTo(LoginView.loginPathForRequestedView(navigator.getState()));
             } else if (!SpringSecurityHelper.isUserAnonymous()) {
-                navigator.navigateTo("login");
+                navigator.navigateTo("");
             }
         } else {
             defaultErrorHandler.error(event);

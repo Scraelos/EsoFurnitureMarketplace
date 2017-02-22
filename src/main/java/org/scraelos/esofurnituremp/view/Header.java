@@ -30,11 +30,19 @@ public class Header extends VerticalLayout {
     public void build() {
         SysAccount user = SpringSecurityHelper.getUser();
         if (SpringSecurityHelper.hasRole("ROLE_ADMIN")) {
-            menuBar.addItem("Import", new MenuBar.Command() {
+            MenuBar.MenuItem adminMenu = menuBar.addItem("Admin", null);
+            adminMenu.addItem("Import", new MenuBar.Command() {
 
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
                     getUI().getNavigator().navigateTo(ImportView.NAME);
+                }
+            });
+            adminMenu.addItem("Users", new MenuBar.Command() {
+
+                @Override
+                public void menuSelected(MenuBar.MenuItem selectedItem) {
+                    getUI().getNavigator().navigateTo(UsersView.NAME);
                 }
             });
         }

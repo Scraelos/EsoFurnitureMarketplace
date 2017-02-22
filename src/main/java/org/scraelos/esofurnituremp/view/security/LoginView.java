@@ -33,6 +33,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import ru.xpoft.vaadin.VaadinView;
@@ -185,7 +186,7 @@ public class LoginView extends CustomComponent implements View,
                 SecurityContextHolder.getContext().setAuthentication(authenticate);
                 LOG.log(Level.INFO, "{0} {1}", new Object[]{authenticate.getPrincipal(), authenticate.isAuthenticated()});
                 getUI().getNavigator().navigateTo(forwardTo);
-            } catch (Exception ex) {
+            } catch (AuthenticationException ex) {
                 password.setValue("");
                 Notification.show("Authentication error", "Could not authenticate", Notification.Type.ERROR_MESSAGE);
 

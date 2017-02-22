@@ -8,6 +8,7 @@ package org.scraelos.esofurnituremp.service;
 import com.vaadin.addon.jpacontainer.JPAContainer;
 import com.vaadin.addon.jpacontainer.JPAContainerFactory;
 import com.vaadin.data.Item;
+import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.data.util.HierarchicalContainer;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -32,6 +33,7 @@ import org.scraelos.esofurnituremp.model.Recipe;
 import org.scraelos.esofurnituremp.model.RecipeIngredient;
 import org.scraelos.esofurnituremp.model.SysAccount;
 import org.scraelos.esofurnituremp.model.SysAccountRole;
+import org.scraelos.esofurnituremp.model.lib.DAO;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
@@ -387,5 +389,26 @@ public class DBService {
         String hashedPassword = passwordEncoder.encode(newPassword);
         a.setPassword(hashedPassword);
         em.merge(a);
+    }
+
+    @Transactional
+    public BeanItemContainer loadBeanItems(BeanItemContainer container) {
+        container.removeAllItems();
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery q = builder.createQuery(container.getBeanType());
+        Root root = q.from(container.getBeanType());
+        q.select(root);
+        q.distinct(true);
+        container.addAll(em.createQuery(q).getResultList());
+        return container;
+    }
+    
+    @Transactional
+    public void saveEntity(DAO entity) {
+        if (entity.getId() != null) {
+            em.merge(entity);
+        } else {
+            em.persist(entity);
+        }
     }
 }
