@@ -5,6 +5,11 @@
  */
 package org.scraelos.esofurnituremp;
 
+import com.github.peholmst.i18n4vaadin.I18N;
+import com.github.peholmst.i18n4vaadin.simple.I18NProvidingUIStrategy;
+import com.github.peholmst.i18n4vaadin.simple.SimpleI18N;
+import com.github.peholmst.i18n4vaadin.util.I18NHolder;
+import com.github.peholmst.i18n4vaadin.util.I18NProvider;
 import com.vaadin.annotations.Theme;
 import com.vaadin.server.ErrorHandler;
 import com.vaadin.server.Page;
@@ -13,6 +18,8 @@ import com.vaadin.server.VaadinService;
 import com.vaadin.server.VaadinServletRequest;
 import com.vaadin.server.VaadinSession;
 import com.vaadin.ui.UI;
+import java.util.Arrays;
+import java.util.Locale;
 import javax.servlet.ServletException;
 import org.scraelos.esofurnituremp.security.SecurityErrorHandler;
 import org.scraelos.esofurnituremp.service.DBService;
@@ -29,10 +36,16 @@ import ru.xpoft.vaadin.DiscoveryNavigator;
 @Component
 @Theme("valo")
 @Scope("prototype")
-public class EsoFurnitureMarketplaceUI extends UI {
+public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
 
     @Autowired
     private transient ApplicationContext applicationContext;
+
+    private I18N i18n = new SimpleI18N(Arrays.asList(new Locale("en")));
+
+    static {
+        I18NHolder.setStrategy(new I18NProvidingUIStrategy());
+    }
 
     @Override
     protected void init(VaadinRequest request) {
@@ -57,6 +70,11 @@ public class EsoFurnitureMarketplaceUI extends UI {
                 + "  display: inline-block;"
                 + "}");
 
+    }
+
+    @Override
+    public I18N getI18N() {
+        return i18n;
     }
 
 }

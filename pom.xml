@@ -28,6 +28,10 @@
             <id>ari-java</id>
             <url>http://jcenter.bintray.com</url>
         </repository>
+        <repository>
+            <id>peholmst-github-releases</id>
+            <url>https://github.com/peholmst/maven-repo/raw/master/releases</url>
+        </repository>
     </repositories>
     <dependencies>
         <!-- Spring -->
@@ -262,6 +266,31 @@
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>3.15</version>
+        </dependency>
+        
+        <!-- Implementation without CDI -->
+        <dependency>
+            <groupId>com.github.peholmst.i18n4vaadin</groupId>
+            <artifactId>i18n4vaadin-simple</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+        <!-- Annotation processor -->
+        <dependency>
+            <groupId>com.github.peholmst.i18n4vaadin</groupId>
+            <artifactId>i18n4vaadin-simple-ap</artifactId>
+            <version>2.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- L18N API -->
+        <dependency>
+            <groupId>com.github.peholmst.i18n4vaadin</groupId>
+            <artifactId>i18n4vaadin-api</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.vaadin.liveimageeditor</groupId>
+            <artifactId>live-image-editor</artifactId>
+            <version>2.0</version>
         </dependency>
     </dependencies>
 

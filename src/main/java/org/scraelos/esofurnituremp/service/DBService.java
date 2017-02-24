@@ -94,8 +94,9 @@ public class DBService {
     @Transactional
     public void createRoles() {
         List<SysAccountRole> roles = new ArrayList<>();
-        roles.add(new SysAccountRole(1L, "ROLE_USER", "Вход в систему"));
-        roles.add(new SysAccountRole(2L, "ROLE_ADMIN", "Администрирование"));
+        roles.add(new SysAccountRole(1L, "ROLE_USER", "Login"));
+        roles.add(new SysAccountRole(2L, "ROLE_ADMIN", "Admin"));
+        roles.add(new SysAccountRole(3L, "ROLE_UPLOAD_SCREENSHOTS", "Upload Screenshots"));
         for (SysAccountRole role : roles) {
             SysAccountRole foundRole = em.find(SysAccountRole.class, role.getId());
             if (foundRole == null) {
@@ -402,7 +403,22 @@ public class DBService {
         container.addAll(em.createQuery(q).getResultList());
         return container;
     }
-    
+
+    @Transactional
+    public BeanItemContainer<FurnitureItem> getFurnitureItems(BeanItemContainer<FurnitureItem> container, ItemSubCategory category) {
+        container.removeAllItems();
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<FurnitureItem> q = builder.createQuery(FurnitureItem.class);
+        Root<FurnitureItem> root = q.from(FurnitureItem.class);
+        q.select(root);
+        q.where(
+                builder.equal(root.get("subCategory"), category)
+        );
+        q.distinct(true);
+        container.addAll(em.createQuery(q).getResultList());
+        return container;
+    }
+
     @Transactional
     public void saveEntity(DAO entity) {
         if (entity.getId() != null) {

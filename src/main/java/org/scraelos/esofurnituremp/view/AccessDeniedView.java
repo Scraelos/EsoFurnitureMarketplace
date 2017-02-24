@@ -1,5 +1,7 @@
 package org.scraelos.esofurnituremp.view;
 
+import com.github.peholmst.i18n4vaadin.annotations.Message;
+import com.github.peholmst.i18n4vaadin.annotations.Messages;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.ExternalResource;
@@ -20,12 +22,19 @@ public class AccessDeniedView extends CustomComponent implements View {
 
     public static final String NAME = "accessDenied";
 
+    private Bundle bundle = new Bundle();
+
+    @Messages({
+        @Message(key = "accessDenied", value = "<h1>Access Denied!</h1>"),
+        @Message(key = "dontHavePermission", value = "You don't have required permission to access this resource."),
+        @Message(key = "homePage", value = "Home")
+    })
     public AccessDeniedView() {
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
-        vl.addComponent(new Label("<h1>Access Denied!</h1>", ContentMode.HTML));
-        vl.addComponent(new Label("You don't have required permission to access this resource."));
-        Link homeLink = new Link("Home", new ExternalResource("#"));
+        vl.addComponent(new Label(bundle.accessDenied(), ContentMode.HTML));
+        vl.addComponent(new Label(bundle.dontHavePermission()));
+        Link homeLink = new Link(bundle.homePage(), new ExternalResource("#"));
         homeLink.setIcon(FontAwesome.HOME);
         vl.addComponent(homeLink);
         setCompositionRoot(vl);

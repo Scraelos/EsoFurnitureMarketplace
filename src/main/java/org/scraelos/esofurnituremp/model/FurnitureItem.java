@@ -5,6 +5,7 @@
  */
 package org.scraelos.esofurnituremp.model;
 
+import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -12,6 +13,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import org.scraelos.esofurnituremp.model.lib.DAO;
 
@@ -21,6 +23,9 @@ import org.scraelos.esofurnituremp.model.lib.DAO;
  */
 @Entity
 public class FurnitureItem extends DAO {
+
+    @OneToMany(mappedBy = "furnitureItem")
+    private List<ItemScreenshot> itemScreenshots;
 
     @Id
     @Basic(optional = false)
@@ -101,6 +106,10 @@ public class FurnitureItem extends DAO {
 
     public void setNameRu(String nameRu) {
         this.nameRu = nameRu;
+    }
+
+    public List<ItemScreenshot> getItemScreenshots() {
+        return itemScreenshots;
     }
 
 }

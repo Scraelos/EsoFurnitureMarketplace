@@ -29,7 +29,7 @@ public class SecurityErrorHandler implements ErrorHandler {
     public void error(ErrorEvent event) {
         
         Throwable rootCause=event.getThrowable();
-        while(rootCause.getCause()!=null||!(rootCause instanceof AccessDeniedException)) {
+        while(rootCause!=null&&!(rootCause instanceof AccessDeniedException)) {
             rootCause=rootCause.getCause();
         }
         if (rootCause instanceof AccessDeniedException) {
