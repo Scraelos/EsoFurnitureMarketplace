@@ -73,7 +73,7 @@ public class ImportKnownRecipesView extends CustomComponent implements View {
         @Message(key = "recipe", value = "Recipe"),
         @Message(key = "characterName", value = "Character Name"),
         @Message(key = "uploadErrorTitle", value = "UploadError"),
-        @Message(key = "uploadErrorIDNotFound", value = "ID {1} not found in file!"),
+        @Message(key = "uploadErrorIDNotFound", value = "ID {0} not found in file!"),
         
     })
     public ImportKnownRecipesView() {

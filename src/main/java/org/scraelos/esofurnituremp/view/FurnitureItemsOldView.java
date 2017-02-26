@@ -7,8 +7,14 @@ package org.scraelos.esofurnituremp.view;
 
 import com.github.peholmst.i18n4vaadin.annotations.Message;
 import com.github.peholmst.i18n4vaadin.annotations.Messages;
+import com.vaadin.addon.jpacontainer.EntityItem;
+import com.vaadin.addon.jpacontainer.JPAContainer;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
+import com.vaadin.data.util.filter.Compare;
+import com.vaadin.data.util.filter.IsNull;
+import com.vaadin.data.util.filter.Like;
+import com.vaadin.data.util.filter.Not;
 import com.vaadin.event.FieldEvents;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.event.MouseEvents;
@@ -24,6 +30,7 @@ import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Image;
+import com.vaadin.ui.Label;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.Table;
 import com.vaadin.ui.TextField;
@@ -43,24 +50,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import org.apache.poi.util.IOUtils;
-import org.scraelos.esofurnituremp.data.FurnitureItemRepository;
-import org.scraelos.esofurnituremp.data.FurnitureItemSpecification;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemScreenshot;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
+import org.scraelos.esofurnituremp.model.RecipeIngredient;
 import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
 import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.vaadin.liveimageeditor.LiveImageEditor;
-import org.vaadin.viritin.ListContainer.DynaBeanItem;
-import org.vaadin.viritin.SortableLazyList;
-import org.vaadin.viritin.fields.MTable;
 import ru.xpoft.vaadin.VaadinView;
 
 /**
@@ -69,44 +70,34 @@ import ru.xpoft.vaadin.VaadinView;
  */
 @Component
 @Scope("prototype")
-@VaadinView(FurnitureItemsView.NAME)
-public class FurnitureItemsView extends CustomComponent implements View {
+@VaadinView(FurnitureItemsOldView.NAME)
+public class FurnitureItemsOldView extends CustomComponent implements View {
 
-    public static final String NAME = "furniture";
+    public static final String NAME = "furnitureOld";
 
     private Header header;
     @Autowired
     private DBService dBService;
     private Bundle i18n = new Bundle();
 
-    @Autowired
-    FurnitureItemRepository repo;
-
     private Tree tree;
-    private MTable<FurnitureItem> table;
+    private Table table;
     private Table craftersTable;
-
-    private SortableLazyList<FurnitureItem> furnitureList;
+    private JPAContainer<FurnitureItem> container;
 
     private HierarchicalContainer craftersContainer;
 
     private CheckBox onlyCraftable;
     private ComboBox server;
     private TextField searchField;
-    private CheckBox searchFieldIgnoresOtherFilters;
     private ItemSubCategory currentCategory;
     private String searchValue;
     private ScreenshotClickListener screenshotClickListener;
-
-    private FurnitureItemSpecification specification;
-
-    static final int PAGESIZE = 45;
 
     @Messages({
         @Message(key = "filters", value = "Filters"),
         @Message(key = "serverForCraftersSearch", value = "Search for crafters on this server"),
         @Message(key = "searchField", value = "Search string"),
-        @Message(key = "searchFieldIgnoreFilters", value = "Ignore other filters"),
         @Message(key = "displayOnlyCraftable", value = "Display only craftable items"),
         @Message(key = "categories", value = "Catergories"),
         @Message(key = "furnitureListItemTableCaption", value = "Items - click on item name to display crafters"),
@@ -119,7 +110,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
         @Message(key = "uploadScreenshotUploadCaption", value = "Upload your screenshot"),
         @Message(key = "uploadScreenshotSaveCaption", value = "Save Screenshot")
     })
-    public FurnitureItemsView() {
+    public FurnitureItemsOldView() {
         this.setSizeFull();
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
@@ -132,20 +123,6 @@ public class FurnitureItemsView extends CustomComponent implements View {
 
         filters.addComponent(server);
 
-        onlyCraftable = new CheckBox(i18n.displayOnlyCraftable(), false);
-        onlyCraftable.addValueChangeListener(new Property.ValueChangeListener() {
-
-            @Override
-            public void valueChange(Property.ValueChangeEvent event) {
-                loadItems();
-            }
-        });
-        filters.addComponent(onlyCraftable);
-        filters.setComponentAlignment(onlyCraftable, Alignment.BOTTOM_LEFT);
-        filters.setSpacing(true);
-        vl.addComponent(filters);
-        HorizontalLayout textfilter = new HorizontalLayout();
-        textfilter.setSpacing(true);
         searchField = new TextField(i18n.searchField());
         searchField.setWidth(300f, Unit.PIXELS);
         searchField.addTextChangeListener(new FieldEvents.TextChangeListener() {
@@ -153,24 +130,25 @@ public class FurnitureItemsView extends CustomComponent implements View {
             @Override
             public void textChange(FieldEvents.TextChangeEvent event) {
                 searchValue = event.getText();
-                loadItems();
+                applyFilters();
             }
         });
         searchField.setTextChangeEventMode(AbstractTextField.TextChangeEventMode.TIMEOUT);
         searchField.setTextChangeTimeout(2000);
-        searchFieldIgnoresOtherFilters = new CheckBox(i18n.searchFieldIgnoreFilters(), true);
-        searchFieldIgnoresOtherFilters.addValueChangeListener(new Property.ValueChangeListener() {
+        filters.addComponent(searchField);
+        onlyCraftable = new CheckBox(i18n.displayOnlyCraftable(), false);
+        onlyCraftable.addValueChangeListener(new Property.ValueChangeListener() {
 
             @Override
             public void valueChange(Property.ValueChangeEvent event) {
-                loadItems();
+                applyFilters();
             }
         });
-        textfilter.addComponent(searchField);
-        textfilter.addComponent(searchFieldIgnoresOtherFilters);
-        textfilter.setComponentAlignment(searchFieldIgnoresOtherFilters, Alignment.BOTTOM_LEFT);
+        filters.addComponent(onlyCraftable);
+        filters.setComponentAlignment(onlyCraftable, Alignment.BOTTOM_LEFT);
+        filters.setSpacing(true);
+        vl.addComponent(filters);
 
-        vl.addComponent(textfilter);
         HorizontalLayout hl = new HorizontalLayout();
         hl.setSizeFull();
         tree = new Tree(i18n.categories());
@@ -190,16 +168,15 @@ public class FurnitureItemsView extends CustomComponent implements View {
             }
         });
         hl.addComponent(tree);
-        table = new MTable<>(FurnitureItem.class);
-        table.setCaption(i18n.furnitureListItemTableCaption());
+        table = new Table(i18n.furnitureListItemTableCaption());
         table.setSizeFull();
         table.setSelectable(true);
         table.addItemClickListener(new ItemClickEvent.ItemClickListener() {
 
             @Override
             public void itemClick(ItemClickEvent event) {
-                DynaBeanItem item = (DynaBeanItem) event.getItem();
-                FurnitureItem furnitureItem = (FurnitureItem) item.getBean();
+                EntityItem item = (EntityItem) event.getItem();
+                FurnitureItem furnitureItem = (FurnitureItem) item.getEntity();
 
                 if (furnitureItem.getRecipe() != null) {
                     craftersContainer = dBService.getCrafters(craftersContainer, furnitureItem.getRecipe(), (ESO_SERVER) server.getValue());
@@ -224,41 +201,57 @@ public class FurnitureItemsView extends CustomComponent implements View {
         setCompositionRoot(vl);
     }
 
-    private void loadItems() {
-        specification.setCategory(currentCategory);
-        specification.setOnlyCraftable(onlyCraftable.getValue());
-        specification.setSearchString(searchValue);
-        specification.setSearchStringIgnoresAll(searchFieldIgnoresOtherFilters.getValue());
-        furnitureList = new SortableLazyList<>((int firstRow, boolean sortAscending, String property) -> repo.findAll(specification, new PageRequest(
-                firstRow / PAGESIZE,
-                PAGESIZE,
-                sortAscending ? Sort.Direction.ASC : Sort.Direction.DESC,
-                property == null ? "id" : property
-        )).getContent(),
-                () -> (int) repo.count(specification),
-                PAGESIZE);
-        table.setBeans(furnitureList);
+    private void applyFilters() {
+        container.removeAllContainerFilters();
+        if (searchValue != null && searchValue.length() > 2) {
+            container.addContainerFilter(new Like("nameEn", "%" + searchValue + "%", false));
+        } else {
+            if (currentCategory != null) {
+                container.addContainerFilter(new Compare.Equal("subCategory", currentCategory));
+            }
+            if (onlyCraftable.getValue()) {
+                container.addContainerFilter(new Not(new IsNull("recipe")));
+            }
+        }
 
     }
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         header.build();
-        specification = new FurnitureItemSpecification();
         screenshotClickListener = new ScreenshotClickListener();
         tree.setContainerDataSource(dBService.getItemCategories());
-        loadItems();
-        table.setColumnWidth("nameEn", 250);
+        container = dBService.getJPAContainerContainerForClass(FurnitureItem.class);
+        table.setContainerDataSource(container);
         table.addGeneratedColumn("category", new Table.ColumnGenerator() {
 
             @Override
             public Object generateCell(Table source, Object itemId, Object columnId) {
-                DynaBeanItem item = (DynaBeanItem) source.getItem(itemId);
-                FurnitureItem furnitureItem = (FurnitureItem) item.getBean();
+                EntityItem item = (EntityItem) source.getItem(itemId);
+                FurnitureItem furnitureItem = (FurnitureItem) item.getEntity();
                 String result = furnitureItem.getSubCategory().getCategory().toString() + ", " + furnitureItem.getSubCategory().toString();
                 return result;
             }
         });
+        /*table.addGeneratedColumn("ingredients", new Table.ColumnGenerator() {
+
+         @Override
+         public Object generateCell(Table source, Object itemId, Object columnId) {
+         EntityItem item = (EntityItem) source.getItem(itemId);
+         FurnitureItem furnitureItem = (FurnitureItem) item.getEntity();
+         if (furnitureItem.getRecipe() != null) {
+         StringBuilder sb = new StringBuilder();
+         for (RecipeIngredient i : furnitureItem.getRecipe().getRecipeIngredients()) {
+         if (!sb.toString().isEmpty()) {
+         sb.append(", ");
+         }
+         sb.append(i.toString());
+         }
+         return sb.toString();
+         }
+         return null;
+         }
+         });*/
         table.addGeneratedColumn("screenshots", new ScreenShotsColumnGenerator(this));
         table.setCellStyleGenerator(new CustomCellStyleGenerator());
         table.setVisibleColumns(new Object[]{"nameEn", "screenshots", "category"});
@@ -281,7 +274,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
                 tree.expandItem(itemId);
             } else if (itemId instanceof ItemSubCategory) {
                 currentCategory = (ItemSubCategory) itemId;
-                loadItems();
+                applyFilters();
             }
         }
 
@@ -293,8 +286,8 @@ public class FurnitureItemsView extends CustomComponent implements View {
         public String getStyle(Table source, Object itemId, Object propertyId) {
 
             if (propertyId != null && (propertyId.equals("nameEn") || propertyId.equals("nameDe") || propertyId.equals("nameFr") || propertyId.equals("nameRu"))) {
-                DynaBeanItem item = (DynaBeanItem) source.getItem(itemId);
-                FurnitureItem furnitureItem = (FurnitureItem) item.getBean();
+                EntityItem item = (EntityItem) source.getItem(itemId);
+                FurnitureItem furnitureItem = (FurnitureItem) item.getEntity();
                 return furnitureItem.getItemQuality().name().toLowerCase();
             }
 
@@ -305,9 +298,9 @@ public class FurnitureItemsView extends CustomComponent implements View {
 
     private class ScreenShotsColumnGenerator implements Table.ColumnGenerator {
 
-        private final FurnitureItemsView furnitureItemsView;
+        private final FurnitureItemsOldView furnitureItemsView;
 
-        public ScreenShotsColumnGenerator(FurnitureItemsView furnitureItemsView_) {
+        public ScreenShotsColumnGenerator(FurnitureItemsOldView furnitureItemsView_) {
             this.furnitureItemsView = furnitureItemsView_;
         }
 
@@ -316,8 +309,8 @@ public class FurnitureItemsView extends CustomComponent implements View {
             HorizontalLayout hl = new HorizontalLayout();
             hl.setSizeFull();
             hl.setSpacing(true);
-            DynaBeanItem item = (DynaBeanItem) source.getItem(itemId);
-            final FurnitureItem furnitureItem = (FurnitureItem) item.getBean();
+            EntityItem item = (EntityItem) source.getItem(itemId);
+            final FurnitureItem furnitureItem = (FurnitureItem) item.getEntity();
             int counter = 0;
             for (final ItemScreenshot s : furnitureItem.getItemScreenshots()) {
                 StreamResource.StreamSource streamSource = new StreamResource.StreamSource() {
@@ -366,7 +359,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
 
     public void refreshFurnitureItem(FurnitureItem item) {
         try {
-            table.resetLazyList();
+            container.refreshItem(item.getId());
         } catch (Exception ex) {
 
         }
@@ -467,7 +460,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
             };
             Image screenshotImage = new Image(null, new StreamResource(screenshotStreamSource, s.getFileName()));
             screenshotImage.setWidth(1048f, Unit.PIXELS);
-            screenshotImage.setAlternateText(i18n.screenshotAlternativeText(s.getFileName(), s.getAuthor().getEsoId()));
+            screenshotImage.setAlternateText(i18n.screenshotAlternativeText(s.getFileName(),s.getAuthor().getEsoId()));
             panel.setContent(screenshotImage);
         }
 
@@ -478,13 +471,13 @@ public class FurnitureItemsView extends CustomComponent implements View {
         private final Upload upload;
         private final FurnitureItem item;
         private Panel editorPanel;
-        private final FurnitureItemsView furnitureItemsView;
+        private final FurnitureItemsOldView furnitureItemsView;
         private LiveImageEditor liveImageEditor;
         private Button saveImage;
         private ByteArrayOutputStream baos;
         private String filename;
 
-        public UploadScreenshotWindow(FurnitureItem item_, FurnitureItemsView furnitureItemsView_) {
+        public UploadScreenshotWindow(FurnitureItem item_, FurnitureItemsOldView furnitureItemsView_) {
 
             VerticalLayout vl = new VerticalLayout();
             this.item = item_;
@@ -533,6 +526,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
 
             liveImageEditor.setImage(baos.toByteArray());
             saveImage.setEnabled(true);
+            
 
         }
 
@@ -570,7 +564,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
                 furnitureItemsView.refreshFurnitureItem(item);
                 this.close();
             } catch (IOException ex) {
-                Logger.getLogger(FurnitureItemsView.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(FurnitureItemsOldView.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 

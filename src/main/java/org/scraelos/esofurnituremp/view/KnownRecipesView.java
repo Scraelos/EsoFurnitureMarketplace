@@ -5,6 +5,8 @@
  */
 package org.scraelos.esofurnituremp.view;
 
+import com.github.peholmst.i18n4vaadin.annotations.Message;
+import com.github.peholmst.i18n4vaadin.annotations.Messages;
 import com.vaadin.addon.jpacontainer.EntityItem;
 import com.vaadin.addon.jpacontainer.JPAContainer;
 import com.vaadin.data.util.filter.Compare;
@@ -18,11 +20,9 @@ import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Table;
 import com.vaadin.ui.Tree;
 import com.vaadin.ui.VerticalLayout;
-import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.scraelos.esofurnituremp.model.KnownRecipe;
-import org.scraelos.esofurnituremp.model.RecipeIngredient;
 import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
 import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +45,7 @@ public class KnownRecipesView extends CustomComponent implements View {
     private Header header;
     @Autowired
     private DBService dBService;
+    private Bundle i18n=new Bundle();
 
     private Tree tree;
     private Table table;
@@ -52,6 +53,10 @@ public class KnownRecipesView extends CustomComponent implements View {
     private HorizontalLayout actions;
     private Button importButton;
 
+    @Messages({
+        @Message(key = "importDataFromCraftStoreButtonCaption",value = "Import data from CraftStore"),
+        @Message(key = "knownRecipesTableCaption",value = "Known Recipes")
+    })
     public KnownRecipesView() {
         header = new Header();
         this.setSizeFull();
@@ -71,7 +76,7 @@ public class KnownRecipesView extends CustomComponent implements View {
         vl.addComponent(actions);
         HorizontalLayout hl = new HorizontalLayout();
         hl.setSizeFull();
-        tree = new Tree("Catergories");
+        tree = new Tree(i18n.categories());
         tree.setSizeFull();
         tree.setWidth(200f, Sizeable.Unit.PIXELS);
         tree.addItemClickListener(new TreeItemClickListener());
@@ -88,7 +93,7 @@ public class KnownRecipesView extends CustomComponent implements View {
             }
         });
         hl.addComponent(tree);
-        table = new Table("Items");
+        table = new Table(i18n.knownRecipesTableCaption());
         table.setSizeFull();
         table.setCellStyleGenerator(new CustomCellStyleGenerator());
         hl.addComponent(table);

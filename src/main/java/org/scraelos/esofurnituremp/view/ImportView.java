@@ -5,10 +5,11 @@
  */
 package org.scraelos.esofurnituremp.view;
 
+import com.github.peholmst.i18n4vaadin.annotations.Message;
+import com.github.peholmst.i18n4vaadin.annotations.Messages;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.ui.CustomComponent;
-import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.Upload;
 import com.vaadin.ui.VerticalLayout;
 import java.io.ByteArrayInputStream;
@@ -50,16 +51,21 @@ public class ImportView extends CustomComponent implements View {
 
     @Autowired
     private DBService dBService;
+    private Bundle i18n=new Bundle();
 
+    @Messages({
+        @Message(key ="uploadDatamineXlsx",value = "Upload datamine xlsx"),
+        @Message(key ="uploadEsoRawRecipeData",value = "Upload eso raw recipe data")
+    })
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         header=new Header();
         header.build();
         DatamineUploadHandler datamineUploadHandler = new DatamineUploadHandler();
-        Upload dataminexlsxUpload = new Upload("Upload datamine xlsx", datamineUploadHandler);
+        Upload dataminexlsxUpload = new Upload(i18n.uploadDatamineXlsx(), datamineUploadHandler);
         dataminexlsxUpload.addSucceededListener(datamineUploadHandler);
         EsoRawStringRecipeUploadHandler esoRawStringRecipeUploadHandler = new EsoRawStringRecipeUploadHandler();
-        Upload esoRawStringRecipeUpload = new Upload("Upload eso raw recipe data", esoRawStringRecipeUploadHandler);
+        Upload esoRawStringRecipeUpload = new Upload(i18n.uploadEsoRawRecipeData(), esoRawStringRecipeUploadHandler);
         esoRawStringRecipeUpload.addSucceededListener(esoRawStringRecipeUploadHandler);
         VerticalLayout vl = new VerticalLayout(header, dataminexlsxUpload, esoRawStringRecipeUpload);
         setCompositionRoot(vl);
