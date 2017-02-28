@@ -7,6 +7,7 @@ package org.scraelos.esofurnituremp.model;
 
 import java.util.List;
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -24,9 +25,6 @@ import org.scraelos.esofurnituremp.model.lib.DAO;
 @Entity
 public class FurnitureItem extends DAO {
 
-    @OneToMany(mappedBy = "furnitureItem")
-    private List<ItemScreenshot> itemScreenshots;
-
     @Id
     @Basic(optional = false)
     private Long id;
@@ -41,6 +39,8 @@ public class FurnitureItem extends DAO {
     private ITEM_QUALITY itemQuality;
     @OneToOne
     private Recipe recipe;
+    @OneToMany(mappedBy = "furnitureItem", cascade = CascadeType.ALL)
+    private List<ItemScreenshot> itemScreenshots;
 
     @Override
     public Long getId() {
@@ -110,6 +110,10 @@ public class FurnitureItem extends DAO {
 
     public List<ItemScreenshot> getItemScreenshots() {
         return itemScreenshots;
+    }
+
+    public void setItemScreenshots(List<ItemScreenshot> itemScreenshots) {
+        this.itemScreenshots = itemScreenshots;
     }
 
 }

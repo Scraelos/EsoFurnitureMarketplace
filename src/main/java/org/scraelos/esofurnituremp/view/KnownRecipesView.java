@@ -5,21 +5,19 @@
  */
 package org.scraelos.esofurnituremp.view;
 
-import com.github.peholmst.i18n4vaadin.annotations.Message;
-import com.github.peholmst.i18n4vaadin.annotations.Messages;
-import com.vaadin.addon.jpacontainer.EntityItem;
-import com.vaadin.addon.jpacontainer.JPAContainer;
-import com.vaadin.data.util.filter.Compare;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.Sizeable;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.CustomComponent;
+import com.vaadin.ui.Grid;
 import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Table;
 import com.vaadin.ui.Tree;
 import com.vaadin.ui.VerticalLayout;
+import org.scraelos.esofurnituremp.Bundle;
+import org.scraelos.esofurnituremp.data.KnownRecipeRepository;
+import org.scraelos.esofurnituremp.data.KnownRecipeSpecification;
 import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.scraelos.esofurnituremp.model.KnownRecipe;
@@ -27,8 +25,12 @@ import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
 import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
+import org.vaadin.viritin.SortableLazyList;
+import org.vaadin.viritin.grid.GeneratedPropertyListContainer;
 import ru.xpoft.vaadin.VaadinView;
 
 /**
@@ -45,18 +47,20 @@ public class KnownRecipesView extends CustomComponent implements View {
     private Header header;
     @Autowired
     private DBService dBService;
-    private Bundle i18n=new Bundle();
+    @Autowired
+    private KnownRecipeRepository repo;
+    private Bundle i18n = new Bundle();
 
     private Tree tree;
-    private Table table;
-    private JPAContainer<KnownRecipe> container;
+    private Grid grid;
     private HorizontalLayout actions;
     private Button importButton;
 
-    @Messages({
-        @Message(key = "importDataFromCraftStoreButtonCaption",value = "Import data from CraftStore"),
-        @Message(key = "knownRecipesTableCaption",value = "Known Recipes")
-    })
+    private SortableLazyList<KnownRecipe> itemList;
+    private GeneratedPropertyListContainer<KnownRecipe> listContainer=new GeneratedPropertyListContainer(KnownRecipe.class);
+    private KnownRecipeSpecification specification;
+    static final int PAGESIZE = 45;
+
     public KnownRecipesView() {
         header = new Header();
         this.setSizeFull();
@@ -93,11 +97,11 @@ public class KnownRecipesView extends CustomComponent implements View {
             }
         });
         hl.addComponent(tree);
-        table = new Table(i18n.knownRecipesTableCaption());
-        table.setSizeFull();
-        table.setCellStyleGenerator(new CustomCellStyleGenerator());
-        hl.addComponent(table);
-        hl.setExpandRatio(table, 1f);
+        grid = new Grid(i18n.knownRecipesTableCaption());
+        grid.setSizeFull();
+        grid.setCellStyleGenerator(new CustomCellStyleGenerator());
+        hl.addComponent(grid);
+        hl.setExpandRatio(grid, 1f);
 
         vl.addComponent(hl);
         vl.setExpandRatio(hl, 1f);
@@ -107,18 +111,27 @@ public class KnownRecipesView extends CustomComponent implements View {
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         header.build();
+        specification = new KnownRecipeSpecification(SpringSecurityHelper.getUser());
         tree.setContainerDataSource(dBService.getItemCategories());
-        container = dBService.getJPAContainerContainerForClass(KnownRecipe.class);
-        applyFilters();
-        table.setContainerDataSource(container);
-        table.setVisibleColumns(new Object[]{"recipe", "characterName", "esoServer"});
-        table.setColumnHeaders(new String[]{"Recipe", "Character", "Server"});
+        grid.setContainerDataSource(listContainer);
+        grid.setColumns(new Object[]{"recipe", "characterName", "esoServer"});
+        grid.getColumn("recipe").setHeaderCaption(i18n.recipe());
+        grid.getColumn("characterName").setHeaderCaption(i18n.characterName());
+        grid.getColumn("esoServer").setHeaderCaption(i18n.server());
+        loadItems();
 
     }
 
-    private void applyFilters() {
-        container.removeAllContainerFilters();
-        container.addContainerFilter(new Compare.Equal("account", SpringSecurityHelper.getUser()));
+    private void loadItems() {
+        itemList = new SortableLazyList<>((int firstRow, boolean sortAscending, String property) -> repo.findAll(specification, new PageRequest(
+                firstRow / PAGESIZE,
+                PAGESIZE,
+                sortAscending ? Sort.Direction.ASC : Sort.Direction.DESC,
+                property == null ? "id" : property
+        )).getContent(),
+                () -> (int) repo.count(specification),
+                PAGESIZE);
+        listContainer.setCollection(itemList);
     }
 
     private class TreeItemClickListener implements ItemClickEvent.ItemClickListener {
@@ -129,27 +142,26 @@ public class KnownRecipesView extends CustomComponent implements View {
             if (itemId instanceof ItemCategory) {
                 tree.expandItem(itemId);
             } else if (itemId instanceof ItemSubCategory) {
-                container.removeAllContainerFilters();
-                container.addContainerFilter(new Compare.Equal("recipe.furnitureItem.subCategory", itemId));
+                specification.setCategory((ItemSubCategory) itemId);
+                loadItems();
             }
         }
 
     }
 
-    private class CustomCellStyleGenerator implements Table.CellStyleGenerator {
+    private class CustomCellStyleGenerator implements Grid.CellStyleGenerator {
 
         @Override
-        public String getStyle(Table source, Object itemId, Object propertyId) {
-            String result = null;
+        public String getStyle(Grid.CellReference cell) {
+            Object propertyId = cell.getPropertyId();
             if (propertyId != null && propertyId.equals("recipe")) {
-                EntityItem item = (EntityItem) source.getItem(itemId);
-                KnownRecipe recipe = (KnownRecipe) item.getEntity();
+                KnownRecipe recipe = (KnownRecipe) cell.getItemId();
                 if (recipe.getRecipe().getItemQuality() != null) {
                     return recipe.getRecipe().getItemQuality().name().toLowerCase();
                 }
             }
 
-            return result;
+            return null;
         }
 
     }

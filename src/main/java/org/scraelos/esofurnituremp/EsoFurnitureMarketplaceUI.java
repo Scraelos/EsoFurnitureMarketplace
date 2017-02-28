@@ -6,6 +6,8 @@
 package org.scraelos.esofurnituremp;
 
 import com.github.peholmst.i18n4vaadin.I18N;
+import com.github.peholmst.i18n4vaadin.annotations.Message;
+import com.github.peholmst.i18n4vaadin.annotations.Messages;
 import com.github.peholmst.i18n4vaadin.simple.I18NProvidingUIStrategy;
 import com.github.peholmst.i18n4vaadin.simple.SimpleI18N;
 import com.github.peholmst.i18n4vaadin.util.I18NHolder;
@@ -47,6 +49,47 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         I18NHolder.setStrategy(new I18NProvidingUIStrategy());
     }
 
+    @Messages({
+        @Message(key = "importDataFromCraftStoreButtonCaption", value = "Import data from CraftStore"),
+        @Message(key = "knownRecipesTableCaption", value = "Known Recipes"),
+        @Message(key = "accessDenied", value = "<h1>Access Denied!</h1>"),
+        @Message(key = "dontHavePermission", value = "You don't have required permission to access this resource."),
+        @Message(key = "homePage", value = "Home"),
+        @Message(key = "filters", value = "Filters"),
+        @Message(key = "serverForCraftersSearch", value = "Search for crafters on this server"),
+        @Message(key = "searchField", value = "Search string"),
+        @Message(key = "searchFieldIgnoreFilters", value = "Ignore other filters"),
+        @Message(key = "displayOnlyCraftable", value = "Display only craftable items"),
+        @Message(key = "categories", value = "Catergories"),
+        @Message(key = "furnitureListItemTableCaption", value = "Items - click on item name to display crafters"),
+        @Message(key = "craftersTableCaption", value = "Crafters"),
+        @Message(key = "item", value = "Item"),
+        @Message(key = "category", value = "Category"),
+        @Message(key = "screenshotAlternativeText", value = "{0} by @{1}"),
+        @Message(key = "screenshots", value = "Screenshots"),
+        @Message(key = "uploadScreenshotWindowCaption", value = "New Screenshot"),
+        @Message(key = "uploadScreenshotUploadCaption", value = "Upload your screenshot"),
+        @Message(key = "uploadScreenshotSaveCaption", value = "Save Screenshot"),
+        @Message(key = "refreshTableCaption", value = "Refresh Table"),
+        @Message(key = "adminSubmenuCaption", value = "Admin"),
+        @Message(key = "importMenuItemCaption", value = "Import"),
+        @Message(key = "usersMenuItemCaption", value = "Users"),
+        @Message(key = "furnitureCatalogMenuItemCaption", value = "Furniture Catalog"),
+        @Message(key = "knownRecipesMenuItemCaption", value = "Known Recipes"),
+        @Message(key = "userProfileMenuItemCaption", value = "User Profile"),
+        @Message(key = "logoutMenuItemCaption", value = "Logout({0})"),
+        @Message(key = "loginMenuItemCaption", value = "Login"),
+        @Message(key = "server", value = "Server"),
+        @Message(key = "uploadCraftStoreFile", value = "Upload CraftStoreFixedAndImproved.lua"),
+        @Message(key = "importNewRecipes", value = "Import new recipes"),
+        @Message(key = "newKnownRecipes", value = "New known recipes"),
+        @Message(key = "recipe", value = "Recipe"),
+        @Message(key = "characterName", value = "Character Name"),
+        @Message(key = "uploadErrorTitle", value = "UploadError"),
+        @Message(key = "uploadErrorIDNotFound", value = "ID {0} not found in file!"),
+        @Message(key ="uploadDatamineXlsx",value = "Upload datamine xlsx"),
+        @Message(key ="uploadEsoRawRecipeData",value = "Upload eso raw recipe data")
+    })
     @Override
     protected void init(VaadinRequest request) {
         setSizeFull();
@@ -54,20 +97,23 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         ErrorHandler defaultErrorHandler = VaadinSession.getCurrent().getErrorHandler();
         VaadinSession.getCurrent().setErrorHandler(new SecurityErrorHandler(navigator, defaultErrorHandler));
         Page.Styles styles = Page.getCurrent().getStyles();
-        styles.add(".v-table-cell-content-legendary {"
+        styles.add(".legendary {"
                 + "    color: #CCAA1A;"
                 + "}"
-                + ".v-table-cell-content-epic {"
+                + ".epic {"
                 + "    color: #A02EF7;"
                 + "}"
-                + ".v-table-cell-content-superior {"
+                + ".superior {"
                 + "    color: #3A92FF;"
                 + "}"
-                + ".v-table-cell-content-fine {"
+                + ".fine {"
                 + "    color: #2DC50E;"
                 + "}"
                 + ".v-caption-horizontal {"
                 + "  display: inline-block;"
+                + "}"
+                + ".v-grid-cell {  "
+                + "    line-height: 100px;"
                 + "}");
 
     }

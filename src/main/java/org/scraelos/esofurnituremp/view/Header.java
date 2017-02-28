@@ -5,10 +5,9 @@
  */
 package org.scraelos.esofurnituremp.view;
 
-import com.github.peholmst.i18n4vaadin.annotations.Message;
-import com.github.peholmst.i18n4vaadin.annotations.Messages;
 import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.VerticalLayout;
+import org.scraelos.esofurnituremp.Bundle;
 import org.scraelos.esofurnituremp.model.SysAccount;
 import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
 import org.scraelos.esofurnituremp.view.security.LoginView;
@@ -30,16 +29,6 @@ public class Header extends VerticalLayout {
 
     }
 
-    @Messages({
-        @Message(key = "adminSubmenuCaption",value = "Admin"),
-        @Message(key = "importMenuItemCaption",value = "Import"),
-        @Message(key = "usersMenuItemCaption",value = "Users"),
-        @Message(key = "furnitureCatalogMenuItemCaption",value = "Furniture Catalog"),
-        @Message(key = "knownRecipesMenuItemCaption",value = "Known Recipes"),
-        @Message(key = "userProfileMenuItemCaption",value = "User Profile"),
-        @Message(key = "logoutMenuItemCaption",value = "Logout({0})"),
-        @Message(key = "loginMenuItemCaption",value = "Login"),
-    })
     public void build() {
         SysAccount user = SpringSecurityHelper.getUser();
         if (SpringSecurityHelper.hasRole("ROLE_ADMIN")) {

@@ -5,8 +5,6 @@
  */
 package org.scraelos.esofurnituremp.service;
 
-import com.vaadin.addon.jpacontainer.JPAContainer;
-import com.vaadin.addon.jpacontainer.JPAContainerFactory;
 import com.vaadin.data.Item;
 import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.data.util.HierarchicalContainer;
@@ -303,11 +301,6 @@ public class DBService {
     @Transactional
     public Recipe getRecipe(Long id) {
         return em.find(Recipe.class, id);
-    }
-
-    @Transactional
-    public JPAContainer getJPAContainerContainerForClass(Class c) {
-        return JPAContainerFactory.makeBatchable(c, em);
     }
 
     @Transactional

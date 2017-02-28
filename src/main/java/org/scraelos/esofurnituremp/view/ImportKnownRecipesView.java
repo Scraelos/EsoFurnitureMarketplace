@@ -5,9 +5,6 @@
  */
 package org.scraelos.esofurnituremp.view;
 
-import com.github.peholmst.i18n4vaadin.annotations.Message;
-import com.github.peholmst.i18n4vaadin.annotations.Messages;
-import com.vaadin.addon.jpacontainer.EntityItem;
 import com.vaadin.data.Item;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.navigator.View;
@@ -27,8 +24,8 @@ import java.util.Arrays;
 import java.util.logging.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.scraelos.esofurnituremp.Bundle;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
-import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
 import org.scraelos.esofurnituremp.model.Recipe;
 import org.scraelos.esofurnituremp.model.tools.LuaDecoder;
@@ -65,17 +62,6 @@ public class ImportKnownRecipesView extends CustomComponent implements View {
     private Bundle l18n=new Bundle();
     private static final Logger LOG = Logger.getLogger(ImportKnownRecipesView.class.getName());
 
-    @Messages({
-        @Message(key = "server", value = "Server"),
-        @Message(key = "uploadCraftStoreFile", value = "Upload CraftStoreFixedAndImproved.lua"),
-        @Message(key = "importNewRecipes", value = "Import new recipes"),
-        @Message(key = "newKnownRecipes", value = "New known recipes"),
-        @Message(key = "recipe", value = "Recipe"),
-        @Message(key = "characterName", value = "Character Name"),
-        @Message(key = "uploadErrorTitle", value = "UploadError"),
-        @Message(key = "uploadErrorIDNotFound", value = "ID {0} not found in file!"),
-        
-    })
     public ImportKnownRecipesView() {
         header = new Header();
         this.setSizeFull();

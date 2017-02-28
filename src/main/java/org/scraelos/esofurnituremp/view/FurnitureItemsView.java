@@ -5,10 +5,10 @@
  */
 package org.scraelos.esofurnituremp.view;
 
-import com.github.peholmst.i18n4vaadin.annotations.Message;
-import com.github.peholmst.i18n4vaadin.annotations.Messages;
+import com.vaadin.data.Item;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
+import com.vaadin.data.util.PropertyValueGenerator;
 import com.vaadin.event.FieldEvents;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.event.MouseEvents;
@@ -22,6 +22,7 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.CustomComponent;
+import com.vaadin.ui.Grid;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Image;
 import com.vaadin.ui.Panel;
@@ -31,6 +32,7 @@ import com.vaadin.ui.Tree;
 import com.vaadin.ui.Upload;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
+import de.datenhahn.vaadin.componentrenderer.ComponentRenderer;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -38,11 +40,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import org.apache.poi.util.IOUtils;
+import org.scraelos.esofurnituremp.Bundle;
 import org.scraelos.esofurnituremp.data.FurnitureItemRepository;
 import org.scraelos.esofurnituremp.data.FurnitureItemSpecification;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
@@ -58,9 +62,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.vaadin.liveimageeditor.LiveImageEditor;
-import org.vaadin.viritin.ListContainer.DynaBeanItem;
 import org.vaadin.viritin.SortableLazyList;
-import org.vaadin.viritin.fields.MTable;
+import org.vaadin.viritin.grid.GeneratedPropertyListContainer;
 import ru.xpoft.vaadin.VaadinView;
 
 /**
@@ -83,7 +86,8 @@ public class FurnitureItemsView extends CustomComponent implements View {
     FurnitureItemRepository repo;
 
     private Tree tree;
-    private MTable<FurnitureItem> table;
+    private Grid grid;
+    private GeneratedPropertyListContainer<FurnitureItem> listContainer;
     private Table craftersTable;
 
     private SortableLazyList<FurnitureItem> furnitureList;
@@ -102,23 +106,6 @@ public class FurnitureItemsView extends CustomComponent implements View {
 
     static final int PAGESIZE = 45;
 
-    @Messages({
-        @Message(key = "filters", value = "Filters"),
-        @Message(key = "serverForCraftersSearch", value = "Search for crafters on this server"),
-        @Message(key = "searchField", value = "Search string"),
-        @Message(key = "searchFieldIgnoreFilters", value = "Ignore other filters"),
-        @Message(key = "displayOnlyCraftable", value = "Display only craftable items"),
-        @Message(key = "categories", value = "Catergories"),
-        @Message(key = "furnitureListItemTableCaption", value = "Items - click on item name to display crafters"),
-        @Message(key = "craftersTableCaption", value = "Crafters"),
-        @Message(key = "item", value = "Item"),
-        @Message(key = "category", value = "Category"),
-        @Message(key = "screenshotAlternativeText", value = "{0} by @{1}"),
-        @Message(key = "screenshots", value = "Screenshots"),
-        @Message(key = "uploadScreenshotWindowCaption", value = "New Screenshot"),
-        @Message(key = "uploadScreenshotUploadCaption", value = "Upload your screenshot"),
-        @Message(key = "uploadScreenshotSaveCaption", value = "Save Screenshot")
-    })
     public FurnitureItemsView() {
         this.setSizeFull();
         VerticalLayout vl = new VerticalLayout();
@@ -190,16 +177,14 @@ public class FurnitureItemsView extends CustomComponent implements View {
             }
         });
         hl.addComponent(tree);
-        table = new MTable<>(FurnitureItem.class);
-        table.setCaption(i18n.furnitureListItemTableCaption());
-        table.setSizeFull();
-        table.setSelectable(true);
-        table.addItemClickListener(new ItemClickEvent.ItemClickListener() {
+        grid = new Grid();
+        grid.setCaption(i18n.furnitureListItemTableCaption());
+        grid.setSizeFull();
+        grid.addItemClickListener(new ItemClickEvent.ItemClickListener() {
 
             @Override
             public void itemClick(ItemClickEvent event) {
-                DynaBeanItem item = (DynaBeanItem) event.getItem();
-                FurnitureItem furnitureItem = (FurnitureItem) item.getBean();
+                FurnitureItem furnitureItem = (FurnitureItem) event.getItemId();
 
                 if (furnitureItem.getRecipe() != null) {
                     craftersContainer = dBService.getCrafters(craftersContainer, furnitureItem.getRecipe(), (ESO_SERVER) server.getValue());
@@ -209,8 +194,9 @@ public class FurnitureItemsView extends CustomComponent implements View {
                 }
             }
         });
-        hl.addComponent(table);
-        hl.setExpandRatio(table, 1f);
+        listContainer = new GeneratedPropertyListContainer<>(FurnitureItem.class);
+        hl.addComponent(grid);
+        hl.setExpandRatio(grid, 1f);
         craftersTable = new Table(i18n.craftersTableCaption());
         craftersTable.setSizeFull();
         craftersContainer = new HierarchicalContainer();
@@ -237,8 +223,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
         )).getContent(),
                 () -> (int) repo.count(specification),
                 PAGESIZE);
-        table.setBeans(furnitureList);
-
+        listContainer.setCollection(furnitureList);
     }
 
     @Override
@@ -247,23 +232,30 @@ public class FurnitureItemsView extends CustomComponent implements View {
         specification = new FurnitureItemSpecification();
         screenshotClickListener = new ScreenshotClickListener();
         tree.setContainerDataSource(dBService.getItemCategories());
-        loadItems();
-        table.setColumnWidth("nameEn", 250);
-        table.addGeneratedColumn("category", new Table.ColumnGenerator() {
+        grid.setCellStyleGenerator(new CustomCellStyleGenerator());
+
+        listContainer.addGeneratedProperty("category", new PropertyValueGenerator<String>() {
 
             @Override
-            public Object generateCell(Table source, Object itemId, Object columnId) {
-                DynaBeanItem item = (DynaBeanItem) source.getItem(itemId);
-                FurnitureItem furnitureItem = (FurnitureItem) item.getBean();
+            public String getValue(Item item, Object itemId, Object propertyId) {
+                FurnitureItem furnitureItem = (FurnitureItem) itemId;
                 String result = furnitureItem.getSubCategory().getCategory().toString() + ", " + furnitureItem.getSubCategory().toString();
                 return result;
             }
+
+            @Override
+            public Class<String> getType() {
+                return String.class;
+            }
+
         });
-        table.addGeneratedColumn("screenshots", new ScreenShotsColumnGenerator(this));
-        table.setCellStyleGenerator(new CustomCellStyleGenerator());
-        table.setVisibleColumns(new Object[]{"nameEn", "screenshots", "category"});
-        table.setColumnHeaders(new String[]{i18n.item(), i18n.screenshots(), i18n.category()});
-        table.setColumnExpandRatio("screenshots", 1f);
+        listContainer.addGeneratedProperty("screenshots", new ScreenShotsColumnGenerator());
+        grid.setContainerDataSource(listContainer);
+        grid.getColumn("nameEn").setWidth(250).setHeaderCaption(i18n.item());
+        grid.getColumn("category").setHeaderCaption(i18n.category());
+        grid.getColumn("screenshots").setHeaderCaption(i18n.screenshots()).setRenderer(new ComponentRenderer()).setExpandRatio(1);
+        grid.setColumns(new Object[]{"nameEn", "screenshots", "category"});
+        loadItems();
         if (SpringSecurityHelper.getUser() != null) {
             server.setValue(SpringSecurityHelper.getUser().getEsoServer());
         } else {
@@ -287,14 +279,13 @@ public class FurnitureItemsView extends CustomComponent implements View {
 
     }
 
-    private class CustomCellStyleGenerator implements Table.CellStyleGenerator {
+    private class CustomCellStyleGenerator implements Grid.CellStyleGenerator {
 
         @Override
-        public String getStyle(Table source, Object itemId, Object propertyId) {
-
+        public String getStyle(Grid.CellReference cell) {
+            Object propertyId = cell.getPropertyId();
             if (propertyId != null && (propertyId.equals("nameEn") || propertyId.equals("nameDe") || propertyId.equals("nameFr") || propertyId.equals("nameRu"))) {
-                DynaBeanItem item = (DynaBeanItem) source.getItem(itemId);
-                FurnitureItem furnitureItem = (FurnitureItem) item.getBean();
+                FurnitureItem furnitureItem = (FurnitureItem) cell.getItemId();
                 return furnitureItem.getItemQuality().name().toLowerCase();
             }
 
@@ -303,21 +294,14 @@ public class FurnitureItemsView extends CustomComponent implements View {
 
     }
 
-    private class ScreenShotsColumnGenerator implements Table.ColumnGenerator {
-
-        private final FurnitureItemsView furnitureItemsView;
-
-        public ScreenShotsColumnGenerator(FurnitureItemsView furnitureItemsView_) {
-            this.furnitureItemsView = furnitureItemsView_;
-        }
+    private class ScreenShotsColumnGenerator extends PropertyValueGenerator<HorizontalLayout> {
 
         @Override
-        public Object generateCell(Table source, Object itemId, Object columnId) {
+        public HorizontalLayout getValue(Item item, Object itemId, Object propertyId) {
             HorizontalLayout hl = new HorizontalLayout();
             hl.setSizeFull();
             hl.setSpacing(true);
-            DynaBeanItem item = (DynaBeanItem) source.getItem(itemId);
-            final FurnitureItem furnitureItem = (FurnitureItem) item.getBean();
+            final FurnitureItem furnitureItem = (FurnitureItem) itemId;
             int counter = 0;
             for (final ItemScreenshot s : furnitureItem.getItemScreenshots()) {
                 StreamResource.StreamSource streamSource = new StreamResource.StreamSource() {
@@ -351,7 +335,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
 
                     @Override
                     public void buttonClick(Button.ClickEvent event) {
-                        UploadScreenshotWindow window = new UploadScreenshotWindow(furnitureItem, furnitureItemsView);
+                        UploadScreenshotWindow window = new UploadScreenshotWindow(furnitureItem);
                         getUI().addWindow(window);
 
                     }
@@ -362,11 +346,16 @@ public class FurnitureItemsView extends CustomComponent implements View {
             return hl;
         }
 
+        @Override
+        public Class<HorizontalLayout> getType() {
+            return HorizontalLayout.class;
+        }
+
     }
 
     public void refreshFurnitureItem(FurnitureItem item) {
         try {
-            table.resetLazyList();
+            grid.refreshRows(item);
         } catch (Exception ex) {
 
         }
@@ -478,17 +467,15 @@ public class FurnitureItemsView extends CustomComponent implements View {
         private final Upload upload;
         private final FurnitureItem item;
         private Panel editorPanel;
-        private final FurnitureItemsView furnitureItemsView;
         private LiveImageEditor liveImageEditor;
         private Button saveImage;
         private ByteArrayOutputStream baos;
         private String filename;
 
-        public UploadScreenshotWindow(FurnitureItem item_, FurnitureItemsView furnitureItemsView_) {
+        public UploadScreenshotWindow(FurnitureItem item_) {
 
             VerticalLayout vl = new VerticalLayout();
             this.item = item_;
-            this.furnitureItemsView = furnitureItemsView_;
             this.setModal(true);
             this.setResizable(false);
             this.setWidth(1300f, Unit.PIXELS);
@@ -566,8 +553,12 @@ public class FurnitureItemsView extends CustomComponent implements View {
                 screenshot.setFileName(filename);
                 screenshot.setScreenshot(image);
                 screenshot.setThumbnail(resize(image, 100));
-                dBService.saveEntity(screenshot);
-                furnitureItemsView.refreshFurnitureItem(item);
+                if (item.getItemScreenshots() == null) {
+                    item.setItemScreenshots(new ArrayList<>());
+                }
+                item.getItemScreenshots().add(screenshot);
+                dBService.saveEntity(item);
+                refreshFurnitureItem(item);
                 this.close();
             } catch (IOException ex) {
                 Logger.getLogger(FurnitureItemsView.class.getName()).log(Level.SEVERE, null, ex);

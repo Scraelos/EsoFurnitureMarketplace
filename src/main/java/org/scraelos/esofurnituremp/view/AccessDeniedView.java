@@ -1,7 +1,5 @@
 package org.scraelos.esofurnituremp.view;
 
-import com.github.peholmst.i18n4vaadin.annotations.Message;
-import com.github.peholmst.i18n4vaadin.annotations.Messages;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.ExternalResource;
@@ -11,6 +9,7 @@ import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Link;
 import com.vaadin.ui.VerticalLayout;
+import org.scraelos.esofurnituremp.Bundle;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import ru.xpoft.vaadin.VaadinView;
@@ -24,11 +23,7 @@ public class AccessDeniedView extends CustomComponent implements View {
 
     private Bundle bundle = new Bundle();
 
-    @Messages({
-        @Message(key = "accessDenied", value = "<h1>Access Denied!</h1>"),
-        @Message(key = "dontHavePermission", value = "You don't have required permission to access this resource."),
-        @Message(key = "homePage", value = "Home")
-    })
+    
     public AccessDeniedView() {
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();

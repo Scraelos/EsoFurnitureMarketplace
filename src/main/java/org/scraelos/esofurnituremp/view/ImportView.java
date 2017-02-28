@@ -5,8 +5,6 @@
  */
 package org.scraelos.esofurnituremp.view;
 
-import com.github.peholmst.i18n4vaadin.annotations.Message;
-import com.github.peholmst.i18n4vaadin.annotations.Messages;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.ui.CustomComponent;
@@ -27,6 +25,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.scraelos.esofurnituremp.Bundle;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
 import org.scraelos.esofurnituremp.model.RECIPE_TYPE;
 import org.scraelos.esofurnituremp.service.DBService;
@@ -53,10 +52,6 @@ public class ImportView extends CustomComponent implements View {
     private DBService dBService;
     private Bundle i18n=new Bundle();
 
-    @Messages({
-        @Message(key ="uploadDatamineXlsx",value = "Upload datamine xlsx"),
-        @Message(key ="uploadEsoRawRecipeData",value = "Upload eso raw recipe data")
-    })
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         header=new Header();
