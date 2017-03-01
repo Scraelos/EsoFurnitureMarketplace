@@ -31,6 +31,9 @@ public class ItemCategory extends DAO {
     private Long id;
     @Column(unique = true)
     private String nameEn;
+    private String nameFr;
+    private String nameDe;
+    private String nameRu;
 
     @Override
     public Long getId() {
@@ -62,7 +65,29 @@ public class ItemCategory extends DAO {
     public String toString() {
         return nameEn;
     }
-    
-    
+
+    public String getNameFr() {
+        return nameFr;
+    }
+
+    public void setNameFr(String nameFr) {
+        this.nameFr = nameFr;
+    }
+
+    public String getNameDe() {
+        return nameDe;
+    }
+
+    public void setNameDe(String nameDe) {
+        this.nameDe = nameDe;
+    }
+
+    public String getNameRu() {
+        return nameRu;
+    }
+
+    public void setNameRu(String nameRu) {
+        this.nameRu = nameRu;
+    }
 
 }

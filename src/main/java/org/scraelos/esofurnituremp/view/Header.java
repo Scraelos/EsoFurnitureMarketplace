@@ -5,10 +5,19 @@
  */
 package org.scraelos.esofurnituremp.view;
 
+import com.vaadin.data.Property;
+import com.vaadin.server.FontAwesome;
+import com.vaadin.ui.Alignment;
+import com.vaadin.ui.ComboBox;
+import com.vaadin.ui.FormLayout;
+import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.themes.ValoTheme;
+import java.util.Arrays;
 import org.scraelos.esofurnituremp.Bundle;
 import org.scraelos.esofurnituremp.model.SysAccount;
+import org.scraelos.esofurnituremp.model.USER_LANGUAGE;
 import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
 import org.scraelos.esofurnituremp.view.security.LoginView;
 
@@ -18,18 +27,23 @@ import org.scraelos.esofurnituremp.view.security.LoginView;
  */
 public class Header extends VerticalLayout {
 
-    private MenuBar menuBar;
-    private final Bundle i18n=new Bundle();
+    private final MenuBar menuBar;
+    private final Bundle i18n = new Bundle();
+    private final ComboBox languageBox;
 
     public Header() {
         setWidth(100f, Unit.PERCENTAGE);
         setHeight(40f, Unit.PIXELS);
-
         menuBar = new MenuBar();
+        languageBox = new ComboBox(null, Arrays.asList(USER_LANGUAGE.values()));
+        languageBox.setHeight(40f, Unit.PIXELS);
+        languageBox.setIcon(FontAwesome.LANGUAGE);
 
     }
 
     public void build() {
+        HorizontalLayout hl = new HorizontalLayout();
+        hl.setSizeFull();
         SysAccount user = SpringSecurityHelper.getUser();
         if (SpringSecurityHelper.hasRole("ROLE_ADMIN")) {
             MenuBar.MenuItem adminMenu = menuBar.addItem(i18n.adminSubmenuCaption(), null);
@@ -40,7 +54,7 @@ public class Header extends VerticalLayout {
                     getUI().getNavigator().navigateTo(ImportView.NAME);
                 }
             });
-            adminMenu.addItem(i18n.usersMenuItemCaption(), new MenuBar.Command() {
+            adminMenu.addItem(i18n.usersMenuItemCaption(),FontAwesome.USERS, new MenuBar.Command() {
 
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
@@ -49,7 +63,7 @@ public class Header extends VerticalLayout {
             });
         }
 
-        menuBar.addItem(i18n.furnitureCatalogMenuItemCaption(), new MenuBar.Command() {
+        menuBar.addItem(i18n.furnitureCatalogMenuItemCaption(),FontAwesome.TABLE, new MenuBar.Command() {
 
             @Override
             public void menuSelected(MenuBar.MenuItem selectedItem) {
@@ -57,14 +71,14 @@ public class Header extends VerticalLayout {
             }
         });
         if (user != null && SpringSecurityHelper.hasRole("ROLE_USER")) {
-            menuBar.addItem(i18n.knownRecipesMenuItemCaption(), new MenuBar.Command() {
+            menuBar.addItem(i18n.knownRecipesMenuItemCaption(),FontAwesome.BOOKMARK, new MenuBar.Command() {
 
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
                     getUI().getNavigator().navigateTo(KnownRecipesView.NAME);
                 }
             });
-            menuBar.addItem(i18n.userProfileMenuItemCaption(), new MenuBar.Command() {
+            menuBar.addItem(i18n.userProfileMenuItemCaption(),FontAwesome.USER, new MenuBar.Command() {
 
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
@@ -73,7 +87,7 @@ public class Header extends VerticalLayout {
             });
         }
         if (user != null) {
-            menuBar.addItem(i18n.logoutMenuItemCaption(user.getUsername()), new MenuBar.Command() {
+            menuBar.addItem(i18n.logoutMenuItemCaption(user.getUsername()),FontAwesome.SIGN_OUT, new MenuBar.Command() {
 
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
@@ -81,7 +95,7 @@ public class Header extends VerticalLayout {
                 }
             });
         } else {
-            menuBar.addItem(i18n.loginMenuItemCaption(), new MenuBar.Command() {
+            menuBar.addItem(i18n.loginMenuItemCaption(),FontAwesome.SIGN_IN, new MenuBar.Command() {
 
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
@@ -89,7 +103,27 @@ public class Header extends VerticalLayout {
                 }
             });
         }
-        addComponent(menuBar);
+        menuBar.setSizeFull();
+        hl.addComponent(menuBar);
+
+        if (getUI().getLocale() != null) {
+            languageBox.setValue(USER_LANGUAGE.getLanguageByLocale(getUI().getLocale()));
+        }
+        languageBox.setNullSelectionAllowed(false);
+        languageBox.addValueChangeListener((Property.ValueChangeEvent event) -> {
+            if (languageBox.getValue() != null) {
+                getUI().setLocale(((USER_LANGUAGE) languageBox.getValue()).getLocale());
+                getUI().getNavigator().navigateTo(getUI().getNavigator().getState());
+            }
+        });
+        FormLayout languageLayout=new FormLayout(languageBox);
+        languageLayout.addStyleName(ValoTheme.FORMLAYOUT_LIGHT);
+        languageLayout.setHeight(40f, Unit.PIXELS);
+        languageLayout.setWidth(200f, Unit.PIXELS);
+        hl.addComponent(languageLayout);
+        hl.setComponentAlignment(languageLayout, Alignment.TOP_RIGHT);
+        hl.setExpandRatio(menuBar, 1f);
+        addComponent(hl);
     }
 
 }

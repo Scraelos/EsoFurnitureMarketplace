@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
@@ -124,12 +125,13 @@ public class DBService {
     }
 
     @Transactional
-    public void addItemRecipe(Long id, String textEn, String textDe, String textFr) {
+    public void addItemRecipe(Long id, String textEn, String textDe, String textFr, String textRu) {
         Recipe r = em.find(Recipe.class, id);
         if (r != null) {
             r.setNameEn(textEn);
             r.setNameDe(textDe);
             r.setNameFr(textFr);
+            r.setNameRu(textRu);
             em.merge(r);
         } else {
             r = new Recipe();
@@ -137,7 +139,28 @@ public class DBService {
             r.setNameEn(textEn);
             r.setNameDe(textDe);
             r.setNameFr(textFr);
+            r.setNameRu(textRu);
             em.persist(r);
+        }
+    }
+
+    @Transactional
+    public void setItemTranslation(Long id, String textEn, String textDe, String textFr, String textRu) {
+        Recipe r = em.find(Recipe.class, id);
+        if (r != null) {
+            r.setNameEn(textEn);
+            r.setNameDe(textDe);
+            r.setNameFr(textFr);
+            r.setNameRu(textRu);
+            em.merge(r);
+        }
+        FurnitureItem f = em.find(FurnitureItem.class, id);
+        if (f != null) {
+            f.setNameEn(textEn);
+            f.setNameDe(textDe);
+            f.setNameFr(textFr);
+            f.setNameRu(textRu);
+            em.merge(f);
         }
     }
 
@@ -174,8 +197,12 @@ public class DBService {
             recipe.setItemQuality(itemQuality);
             recipe.setRecipeType(recipeType);
             em.merge(recipe);
-            furnitureItem.setRecipe(recipe);
-            em.merge(furnitureItem);
+            if (furnitureItem != null) {
+                furnitureItem.setRecipe(recipe);
+                em.merge(furnitureItem);
+            } else {
+                Logger.getLogger(DBService.class.getName()).info("Can't find " + id);
+            }
 
             for (String key : ingredients.keySet()) {
                 Ingredient ingredient = null;
@@ -419,5 +446,14 @@ public class DBService {
         } else {
             em.persist(entity);
         }
+    }
+    
+    @Transactional
+    public void saveUserProfile(SysAccount user) {
+        SysAccount account = em.find(SysAccount.class, user.getId());
+        account.setEsoServer(user.getEsoServer());
+        account.setUseEnItemNames(user.getUseEnItemNames());
+        account.setUserLanguage(user.getUserLanguage());
+        em.merge(account);
     }
 }

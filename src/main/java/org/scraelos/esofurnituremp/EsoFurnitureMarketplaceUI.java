@@ -16,15 +16,12 @@ import com.vaadin.annotations.Theme;
 import com.vaadin.server.ErrorHandler;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
-import com.vaadin.server.VaadinService;
-import com.vaadin.server.VaadinServletRequest;
 import com.vaadin.server.VaadinSession;
 import com.vaadin.ui.UI;
 import java.util.Arrays;
 import java.util.Locale;
-import javax.servlet.ServletException;
 import org.scraelos.esofurnituremp.security.SecurityErrorHandler;
-import org.scraelos.esofurnituremp.service.DBService;
+import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
@@ -43,7 +40,7 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
     @Autowired
     private transient ApplicationContext applicationContext;
 
-    private I18N i18n = new SimpleI18N(Arrays.asList(new Locale("en")));
+    private I18N i18n = new SimpleI18N(Arrays.asList(new Locale("en"), new Locale("ru"), new Locale("fr"), new Locale("de")));
 
     static {
         I18NHolder.setStrategy(new I18NProvidingUIStrategy());
@@ -87,9 +84,35 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         @Message(key = "characterName", value = "Character Name"),
         @Message(key = "uploadErrorTitle", value = "UploadError"),
         @Message(key = "uploadErrorIDNotFound", value = "ID {0} not found in file!"),
-        @Message(key ="uploadDatamineXlsx",value = "Upload datamine xlsx"),
-        @Message(key ="uploadEsoRawRecipeData",value = "Upload eso raw recipe data")
-    })
+        @Message(key = "uploadDatamineXlsx", value = "Upload datamine xlsx"),
+        @Message(key = "uploadEsoRawRecipeData", value = "Upload eso raw recipe data"),
+        @Message(key = "localizedItemNameColumn", value = "nameEn"),
+        @Message(key = "languageCaption", value = "Language"),
+        @Message(key = "saveProfileCaption", value = "Save User Profile"),
+        @Message(key = "oldPassword", value = "Current Password"),
+        @Message(key = "newPassword", value = "New Password"),
+        @Message(key = "newPasswordConfirm", value = "Repeat New Password"),
+        @Message(key = "changePassword", value = "Change Password"),
+        @Message(key = "useEnglishItemNames", value = "English item names"),
+        @Message(key = "passwordsDoNotMatch", value = "Passwords do not match"),
+        @Message(key = "wrongCurrentPassword", value = "Wrong current password"),
+        @Message(key = "email", value = "E-mail"),
+        @Message(key = "emailRepeat", value = "Repeat E-mail"),
+        @Message(key = "emailPromt", value = "Your username (eg. joe@email.com)"),
+        @Message(key = "emailRepeatPromt", value = "Repeat your E-mail"),
+        @Message(key = "invalidUsername", value = "Username must be an email address"),
+        @Message(key = "password", value = "Password"),
+        @Message(key = "activeServer", value = "Active Server*"),
+        @Message(key = "activeServerNotice", value = "*You will be able to change it in profile settings"),
+        @Message(key = "ingameId", value = "Ingame id without @"),
+        @Message(key = "ingameIdPromt", value = "Your ingame id without @"),
+        @Message(key = "registerAndLogin", value = "Register & Login"),
+        @Message(key = "loginTab", value = "Login"),
+        @Message(key = "registerTab", value = "Register"),
+        @Message(key = "authErrorCaption", value = "Authentication error"),
+        @Message(key = "authErrorDescription", value = "Could not authenticate"),
+        @Message(key = "passwordRepeat", value = "Repeat Password"),
+        @Message(key = "registrationErrorCaption", value = "Registration error"),})
     @Override
     protected void init(VaadinRequest request) {
         setSizeFull();
@@ -114,13 +137,26 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
                 + "}"
                 + ".v-grid-cell {  "
                 + "    line-height: 100px;"
-                + "}");
-
+                + "}"
+                + ".my-grid .v-grid-body .v-grid-cell { height: 100px; }");
+        Locale lc = new Locale(getLocale().getLanguage());
+        if (SpringSecurityHelper.getUser() != null && SpringSecurityHelper.getUser().getUserLanguage() != null) {
+            lc = SpringSecurityHelper.getUser().getUserLanguage().getLocale();
+            setLocale(lc);
+        }
+        setLocale(lc);
     }
 
     @Override
     public I18N getI18N() {
         return i18n;
+    }
+
+    @Override
+    public void setLocale(Locale locale) {
+        Locale lc = new Locale(locale.getLanguage());
+        i18n.setLocale(lc);
+        super.setLocale(lc);
     }
 
 }

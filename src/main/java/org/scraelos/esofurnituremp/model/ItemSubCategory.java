@@ -21,6 +21,7 @@ import org.scraelos.esofurnituremp.model.lib.DAO;
  */
 @Entity
 public class ItemSubCategory extends DAO {
+
     @OneToMany(mappedBy = "subCategory")
     private List<FurnitureItem> furnitureItems;
 
@@ -29,6 +30,9 @@ public class ItemSubCategory extends DAO {
     @Basic(optional = false)
     private Long id;
     private String nameEn;
+    private String nameFr;
+    private String nameDe;
+    private String nameRu;
     @ManyToOne
     private ItemCategory category;
 
@@ -58,11 +62,33 @@ public class ItemSubCategory extends DAO {
         this.category = category;
     }
 
+    public String getNameFr() {
+        return nameFr;
+    }
+
+    public void setNameFr(String nameFr) {
+        this.nameFr = nameFr;
+    }
+
+    public String getNameDe() {
+        return nameDe;
+    }
+
+    public void setNameDe(String nameDe) {
+        this.nameDe = nameDe;
+    }
+
+    public String getNameRu() {
+        return nameRu;
+    }
+
+    public void setNameRu(String nameRu) {
+        this.nameRu = nameRu;
+    }
+
     @Override
     public String toString() {
         return nameEn;
     }
-    
-    
 
 }

@@ -24,9 +24,12 @@ import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.scraelos.esofurnituremp.Bundle;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
+import org.scraelos.esofurnituremp.model.SysAccount;
 import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -67,8 +70,10 @@ public class LoginView extends CustomComponent implements View,
     private final FormLayout loginFields;
     private final FormLayout registerFields;
 
-    private ComboBox activeServer;
-    private Label activeServerlabel;
+    private final ComboBox activeServer;
+    private final Label activeServerlabel;
+
+    private Bundle i18n;
 
     private String forwardTo;
 
@@ -82,88 +87,86 @@ public class LoginView extends CustomComponent implements View,
 
     public LoginView() {
         setSizeFull();
-
-        user = new TextField("E-mail:");
-        user.setWidth("300px");
+        i18n = new Bundle();
+        user = new TextField(i18n.email());
+        user.setWidth(100f,Unit.PERCENTAGE);
         user.setRequired(true);
         user.setImmediate(true);
-        user.setInputPrompt("Your username (eg. joe@email.com)");
-        user.addValidator(new EmailValidator("Username must be an email address"));
+        user.setInputPrompt(i18n.emailPromt());
+        user.addValidator(new EmailValidator(i18n.invalidUsername()));
         user.setInvalidAllowed(false);
 
-        password = new PasswordField("Password:");
-        password.setWidth("300px");
+        password = new PasswordField(i18n.password());
+        password.setWidth(100f,Unit.PERCENTAGE);
         password.setRequired(true);
         password.setImmediate(true);
         password.setNullRepresentation("");
 
-        loginButton = new Button("Login", this);
+        loginButton = new Button(i18n.loginMenuItemCaption(), this);
 
         // Add both to a panel
         loginFields = new FormLayout(user, password, loginButton);
         loginFields.addStyleName(ValoTheme.FORMLAYOUT_LIGHT);
-        loginFields.setCaption("Please login to access the application. (test@test.com/passw0rd)");
         loginFields.setSpacing(true);
         loginFields.setMargin(new MarginInfo(true, true, true, false));
         loginFields.setComponentAlignment(user, Alignment.TOP_CENTER);
         loginFields.setComponentAlignment(password, Alignment.TOP_CENTER);
         loginFields.setComponentAlignment(loginButton, Alignment.TOP_CENTER);
-        loginFields.setSizeUndefined();
+        loginFields.setSizeFull();
 
-        newUser = new TextField("E-mail:");
-        newUser.setWidth("300px");
+        newUser = new TextField(i18n.email());
+        newUser.setWidth(100f,Unit.PERCENTAGE);
         newUser.setRequired(true);
         newUser.setImmediate(true);
-        newUser.setInputPrompt("Your E-mail (eg. joe@email.com)");
-        newUser.addValidator(new EmailValidator("Username must be an email address"));
+        newUser.setInputPrompt(i18n.emailPromt());
+        newUser.addValidator(new EmailValidator(i18n.invalidUsername()));
         newUser.setInvalidAllowed(false);
 
-        newUserRepeat = new TextField("Repeat E-mail:");
-        newUserRepeat.setWidth("300px");
+        newUserRepeat = new TextField(i18n.emailRepeat());
+        newUserRepeat.setWidth(100f,Unit.PERCENTAGE);
         newUserRepeat.setRequired(true);
         newUserRepeat.setImmediate(true);
-        newUserRepeat.setInputPrompt("Repeat your E-mail");
+        newUserRepeat.setInputPrompt(i18n.emailRepeatPromt());
         newUserRepeat.setInvalidAllowed(false);
 
-        activeServer = new ComboBox("Active Server*", Arrays.asList(ESO_SERVER.values()));
+        activeServer = new ComboBox(i18n.activeServer(), Arrays.asList(ESO_SERVER.values()));
         activeServer.setNullSelectionAllowed(false);
         activeServer.setValue(ESO_SERVER.EU);
-        activeServerlabel = new Label("*You will be able to change it in profile settings");
+        activeServerlabel = new Label(i18n.activeServerNotice());
 
-        newUserId = new TextField("Ingame id without @:");
-        newUserId.setWidth("300px");
+        newUserId = new TextField(i18n.ingameId());
+        newUserId.setWidth(100f,Unit.PERCENTAGE);
         newUserId.setRequired(true);
         newUserId.setImmediate(true);
-        newUserId.setInputPrompt("Your ingame id without @");
+        newUserId.setInputPrompt(i18n.ingameIdPromt());
         newUserId.setInvalidAllowed(false);
 
-        newPassword = new PasswordField("Password:");
-        newPassword.setWidth("300px");
+        newPassword = new PasswordField(i18n.password());
+        newPassword.setWidth(100f,Unit.PERCENTAGE);
         newPassword.setRequired(true);
         newPassword.setImmediate(true);
         newPassword.setNullRepresentation("");
 
-        newPasswordRepeat = new PasswordField("Repeat Password:");
-        newPasswordRepeat.setWidth("300px");
+        newPasswordRepeat = new PasswordField(i18n.passwordRepeat());
+        newPasswordRepeat.setWidth(100f,Unit.PERCENTAGE);
         newPasswordRepeat.setRequired(true);
         newPasswordRepeat.setImmediate(true);
         newPasswordRepeat.setNullRepresentation("");
 
-        registerButton = new Button("Register & Login", this);
+        registerButton = new Button(i18n.registerAndLogin(), this);
         registerFields = new FormLayout(newUser, newUserRepeat, newUserId, activeServer, activeServerlabel, newPassword, newPasswordRepeat, registerButton);
         registerFields.addStyleName(ValoTheme.FORMLAYOUT_LIGHT);
-        registerFields.setCaption("Please login to access the application. (test@test.com/passw0rd)");
         registerFields.setSpacing(true);
         registerFields.setMargin(new MarginInfo(true, true, true, false));
-        registerFields.setSizeUndefined();
+        registerFields.setSizeFull();
 
         TabSheet sheet = new TabSheet();
-        sheet.setWidth(550f, Unit.PIXELS);
+        sheet.setWidth(750f, Unit.PIXELS);
         sheet.setHeight(500f, Unit.PIXELS);
         sheet.addStyleName(ValoTheme.TABSHEET_CENTERED_TABS);
         sheet.addStyleName(ValoTheme.TABSHEET_PADDED_TABBAR);
-        sheet.addTab(loginFields, "Login", FontAwesome.SIGN_IN, 0);
-        sheet.addTab(registerFields, "Register", FontAwesome.USER_PLUS, 1);
+        sheet.addTab(loginFields, i18n.loginTab(), FontAwesome.SIGN_IN, 0);
+        sheet.addTab(registerFields, i18n.registerTab(), FontAwesome.USER_PLUS, 1);
 
         // The view root layout
         VerticalLayout viewLayout = new VerticalLayout(sheet);
@@ -185,11 +188,16 @@ public class LoginView extends CustomComponent implements View,
                 Authentication authenticate = authenticationManager.authenticate(authentication);
                 SecurityContextHolder.getContext().setAuthentication(authenticate);
                 LOG.log(Level.INFO, "{0} {1}", new Object[]{authenticate.getPrincipal(), authenticate.isAuthenticated()});
+                if (authenticate.getPrincipal() instanceof SysAccount && ((SysAccount) authenticate.getPrincipal()).getUserLanguage() != null) {
+                    Locale lc = ((SysAccount) authenticate.getPrincipal()).getUserLanguage().getLocale();
+                    getUI().setLocale(lc);
+                    getUI().getSession().setAttribute("useEnglishNames", ((SysAccount) authenticate.getPrincipal()).getUseEnItemNames());
+                }
                 getUI().getNavigator().navigateTo(forwardTo);
             } catch (AuthenticationException ex) {
                 password.setValue("");
-                Notification.show("Authentication error", "Could not authenticate", Notification.Type.ERROR_MESSAGE);
-
+                Notification.show(i18n.authErrorCaption(), i18n.authErrorDescription(), Notification.Type.ERROR_MESSAGE);
+                Logger.getLogger(LoginView.class.getName()).log(Level.INFO, null, ex);
             }
 
         } else if (event.getButton() == registerButton && newUser.isValid() && newUserRepeat.isValid() && newPassword.isValid() && newPasswordRepeat.isValid() && newUserId.isValid()) {
@@ -199,10 +207,13 @@ public class LoginView extends CustomComponent implements View,
                 Authentication authenticate = authenticationManager.authenticate(authentication);
                 SecurityContextHolder.getContext().setAuthentication(authenticate);
                 LOG.log(Level.INFO, "{0} {1}", new Object[]{authenticate.getPrincipal(), authenticate.isAuthenticated()});
+                if (authentication.getPrincipal() instanceof SysAccount && ((SysAccount) authentication.getPrincipal()).getUserLanguage() != null) {
+                    getUI().setLocale(((SysAccount) authentication.getPrincipal()).getUserLanguage().getLocale());
+                }
                 getUI().getNavigator().navigateTo(forwardTo);
             } catch (Exception ex) {
                 Logger.getLogger(LoginView.class.getName()).log(Level.SEVERE, null, ex);
-                Notification.show("Registration error", ex.getMessage(), Notification.Type.ERROR_MESSAGE);
+                Notification.show(i18n.registrationErrorCaption(), ex.getMessage(), Notification.Type.ERROR_MESSAGE);
             }
         }
     }

@@ -9,6 +9,7 @@ import com.vaadin.data.Item;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.data.util.PropertyValueGenerator;
+import com.vaadin.data.util.converter.Converter;
 import com.vaadin.event.FieldEvents;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.event.MouseEvents;
@@ -42,6 +43,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -105,6 +107,8 @@ public class FurnitureItemsView extends CustomComponent implements View {
     private FurnitureItemSpecification specification;
 
     static final int PAGESIZE = 45;
+
+    private String itemNameColumn;
 
     public FurnitureItemsView() {
         this.setSizeFull();
@@ -178,6 +182,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
         });
         hl.addComponent(tree);
         grid = new Grid();
+        grid.setStyleName("my-grid");
         grid.setCaption(i18n.furnitureListItemTableCaption());
         grid.setSizeFull();
         grid.addItemClickListener(new ItemClickEvent.ItemClickListener() {
@@ -229,6 +234,12 @@ public class FurnitureItemsView extends CustomComponent implements View {
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         header.build();
+        Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+        if (useEnglishNames == null || !useEnglishNames) {
+            itemNameColumn = i18n.localizedItemNameColumn();
+        } else {
+            itemNameColumn = "nameEn";
+        }
         specification = new FurnitureItemSpecification();
         screenshotClickListener = new ScreenshotClickListener();
         tree.setContainerDataSource(dBService.getItemCategories());
@@ -251,10 +262,10 @@ public class FurnitureItemsView extends CustomComponent implements View {
         });
         listContainer.addGeneratedProperty("screenshots", new ScreenShotsColumnGenerator());
         grid.setContainerDataSource(listContainer);
-        grid.getColumn("nameEn").setWidth(250).setHeaderCaption(i18n.item());
+        grid.getColumn(itemNameColumn).setWidth(400).setHeaderCaption(i18n.item());
         grid.getColumn("category").setHeaderCaption(i18n.category());
         grid.getColumn("screenshots").setHeaderCaption(i18n.screenshots()).setRenderer(new ComponentRenderer()).setExpandRatio(1);
-        grid.setColumns(new Object[]{"nameEn", "screenshots", "category"});
+        grid.setColumns(new Object[]{itemNameColumn, "screenshots", "category"});
         loadItems();
         if (SpringSecurityHelper.getUser() != null) {
             server.setValue(SpringSecurityHelper.getUser().getEsoServer());
@@ -284,7 +295,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
         @Override
         public String getStyle(Grid.CellReference cell) {
             Object propertyId = cell.getPropertyId();
-            if (propertyId != null && (propertyId.equals("nameEn") || propertyId.equals("nameDe") || propertyId.equals("nameFr") || propertyId.equals("nameRu"))) {
+            if (propertyId != null && propertyId.equals(itemNameColumn)) {
                 FurnitureItem furnitureItem = (FurnitureItem) cell.getItemId();
                 return furnitureItem.getItemQuality().name().toLowerCase();
             }
@@ -323,13 +334,14 @@ public class FurnitureItemsView extends CustomComponent implements View {
                 screenshotThumbPanel.setHeight(102f, Unit.PIXELS);
                 screenshotThumbPanel.setWidth(176f, Unit.PIXELS);
                 hl.setComponentAlignment(screenshotThumbPanel, Alignment.TOP_LEFT);
+                hl.setExpandRatio(screenshotThumbPanel, 1f);
                 counter++;
                 if (counter > 2) {
                     break;
                 }
             }
             if (SpringSecurityHelper.hasRole("ROLE_UPLOAD_SCREENSHOTS")) {
-                Button uploadScreenShot = new Button(FontAwesome.PLUS);
+                Button uploadScreenShot = new Button(FontAwesome.UPLOAD);
                 uploadScreenShot.setData(furnitureItem);
                 uploadScreenShot.addClickListener(new Button.ClickListener() {
 
@@ -341,6 +353,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
                     }
                 });
                 hl.addComponent(uploadScreenShot);
+
             }
 
             return hl;
@@ -367,7 +380,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
         public void click(MouseEvents.ClickEvent event) {
             Image i = (Image) event.getComponent();
             final ItemScreenshot sc = (ItemScreenshot) i.getData();
-            ScreenShotViewWindwow window = new ScreenShotViewWindwow(sc.getFurnitureItem(), sc);
+            ScreenShotViewWindwow window = new ScreenShotViewWindwow(sc);
             getUI().addWindow(window);
         }
 
@@ -375,7 +388,6 @@ public class FurnitureItemsView extends CustomComponent implements View {
 
     private class ScreenShotViewWindwow extends Window {
 
-        private final FurnitureItem item;
         private final ItemScreenshot screenshot;
 
         private VerticalLayout vl;
@@ -383,7 +395,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
         private HorizontalLayout thumbs;
         private Panel thumbsPanel;
 
-        public ScreenShotViewWindwow(FurnitureItem item_, ItemScreenshot screenshot_) {
+        public ScreenShotViewWindwow(ItemScreenshot screenshot_) {
             setWidth(1050f, Unit.PIXELS);
             setHeight(800f, Unit.PIXELS);
             setClosable(true);
@@ -391,7 +403,6 @@ public class FurnitureItemsView extends CustomComponent implements View {
             setDraggable(false);
             setResizable(false);
             center();
-            this.item = item_;
             this.screenshot = screenshot_;
             vl = new VerticalLayout();
             vl.setSizeFull();
@@ -406,7 +417,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
             thumbs.addStyleName("v-scrollable");
 
             this.setContent(vl);
-            for (final ItemScreenshot s : item_.getItemScreenshots()) {
+            for (final ItemScreenshot s : screenshot.getFurnitureItem().getItemScreenshots()) {
                 StreamResource.StreamSource streamSource = new StreamResource.StreamSource() {
 
                     @Override

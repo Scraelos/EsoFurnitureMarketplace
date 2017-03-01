@@ -61,8 +61,17 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
     @Override
     public Predicate toPredicate(Root<FurnitureItem> root, CriteriaQuery<?> cq, CriteriaBuilder cb) {
         Predicate result = null;
-        if (searchStringIgnoresAll != null && searchStringIgnoresAll && searchString != null && searchString.length()>2) {
-            result = cb.like(cb.lower(root.get("nameEn")), "%" + searchString.toLowerCase() + "%");
+        Predicate textSearch = null;
+        if (searchString != null && searchString.length() > 2) {
+            textSearch = cb.or(
+                    cb.like(cb.lower(root.get("nameEn")), "%" + searchString.toLowerCase() + "%"),
+                    cb.like(cb.lower(root.get("nameDe")), "%" + searchString.toLowerCase() + "%"),
+                    cb.like(cb.lower(root.get("nameFr")), "%" + searchString.toLowerCase() + "%"),
+                    cb.like(cb.lower(root.get("nameRu")), "%" + searchString.toLowerCase() + "%")
+            );
+        }
+        if (searchStringIgnoresAll != null && searchStringIgnoresAll && textSearch != null) {
+            result = textSearch;
         } else {
             List<Predicate> predicates = new ArrayList<>();
             if (category != null) {
@@ -71,8 +80,8 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
             if (onlyCraftable != null && onlyCraftable) {
                 predicates.add(cb.isNotNull(root.get("recipe")));
             }
-            if (searchString != null && searchString.length()>2) {
-                predicates.add(cb.like(cb.lower(root.get("nameEn")), "%" + searchString.toLowerCase() + "%"));
+            if (textSearch != null) {
+                predicates.add(textSearch);
             }
             if (!predicates.isEmpty() && predicates.size() > 1) {
                 result = cb.and(predicates.toArray(new Predicate[predicates.size()]));

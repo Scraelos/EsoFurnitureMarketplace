@@ -5,6 +5,7 @@
  */
 package org.scraelos.esofurnituremp.view;
 
+import com.vaadin.data.util.converter.Converter;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
@@ -15,12 +16,14 @@ import com.vaadin.ui.Grid;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Tree;
 import com.vaadin.ui.VerticalLayout;
+import java.util.Locale;
 import org.scraelos.esofurnituremp.Bundle;
 import org.scraelos.esofurnituremp.data.KnownRecipeRepository;
 import org.scraelos.esofurnituremp.data.KnownRecipeSpecification;
 import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.scraelos.esofurnituremp.model.KnownRecipe;
+import org.scraelos.esofurnituremp.model.Recipe;
 import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
 import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +60,7 @@ public class KnownRecipesView extends CustomComponent implements View {
     private Button importButton;
 
     private SortableLazyList<KnownRecipe> itemList;
-    private GeneratedPropertyListContainer<KnownRecipe> listContainer=new GeneratedPropertyListContainer(KnownRecipe.class);
+    private GeneratedPropertyListContainer<KnownRecipe> listContainer = new GeneratedPropertyListContainer(KnownRecipe.class);
     private KnownRecipeSpecification specification;
     static final int PAGESIZE = 45;
 
@@ -69,7 +72,7 @@ public class KnownRecipesView extends CustomComponent implements View {
         header = new Header();
         vl.addComponent(header);
         actions = new HorizontalLayout();
-        importButton = new Button("Import data from CraftStore", new Button.ClickListener() {
+        importButton = new Button(i18n.importDataFromCraftStoreButtonCaption(), new Button.ClickListener() {
 
             @Override
             public void buttonClick(Button.ClickEvent event) {
@@ -115,7 +118,65 @@ public class KnownRecipesView extends CustomComponent implements View {
         tree.setContainerDataSource(dBService.getItemCategories());
         grid.setContainerDataSource(listContainer);
         grid.setColumns(new Object[]{"recipe", "characterName", "esoServer"});
-        grid.getColumn("recipe").setHeaderCaption(i18n.recipe());
+        grid.getColumn("recipe").setHeaderCaption(i18n.recipe()).setConverter(new Converter<String, Recipe>() {
+
+            @Override
+            public Recipe convertToModel(String value, Class<? extends Recipe> targetType, Locale locale) throws Converter.ConversionException {
+                return null;
+            }
+
+            @Override
+            public String convertToPresentation(Recipe value, Class<? extends String> targetType, Locale locale) throws Converter.ConversionException {
+                String result = null;
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (locale.getLanguage()) {
+                        case "en":
+                            result = value.getNameEn();
+                            if (value.getRecipeType() != null) {
+                                result = value.getRecipeType().getNameEn() + ": " + result;
+                            }
+                            break;
+                        case "de":
+                            result = value.getNameDe();
+                            if (value.getRecipeType() != null) {
+                                result = value.getRecipeType().getNameDe() + ": " + result;
+                            }
+                            break;
+                        case "fr":
+                            result = value.getNameFr();
+                            if (value.getRecipeType() != null) {
+                                result = value.getRecipeType().getNameFr() + " : " + result;
+                            }
+                            break;
+                        case "ru":
+                            result = value.getNameRu();
+                            if (value.getRecipeType() != null) {
+                                result = value.getRecipeType().getNameRu() + ": " + result;
+                            }
+                            break;
+                    }
+                } else {
+                    result = value.getNameEn();
+                    if (value.getRecipeType() != null) {
+                        result = value.getRecipeType().getNameEn() + ": " + result;
+                    }
+                }
+
+                return result;
+            }
+
+            @Override
+            public Class<Recipe> getModelType() {
+                return Recipe.class;
+            }
+
+            @Override
+            public Class<String> getPresentationType() {
+                return String.class;
+            }
+
+        });
         grid.getColumn("characterName").setHeaderCaption(i18n.characterName());
         grid.getColumn("esoServer").setHeaderCaption(i18n.server());
         loadItems();

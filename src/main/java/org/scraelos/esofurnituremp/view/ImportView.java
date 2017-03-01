@@ -50,19 +50,22 @@ public class ImportView extends CustomComponent implements View {
 
     @Autowired
     private DBService dBService;
-    private Bundle i18n=new Bundle();
+    private Bundle i18n = new Bundle();
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
-        header=new Header();
-        header.build();
+        header = new Header();
         DatamineUploadHandler datamineUploadHandler = new DatamineUploadHandler();
         Upload dataminexlsxUpload = new Upload(i18n.uploadDatamineXlsx(), datamineUploadHandler);
         dataminexlsxUpload.addSucceededListener(datamineUploadHandler);
         EsoRawStringRecipeUploadHandler esoRawStringRecipeUploadHandler = new EsoRawStringRecipeUploadHandler();
         Upload esoRawStringRecipeUpload = new Upload(i18n.uploadEsoRawRecipeData(), esoRawStringRecipeUploadHandler);
         esoRawStringRecipeUpload.addSucceededListener(esoRawStringRecipeUploadHandler);
-        VerticalLayout vl = new VerticalLayout(header, dataminexlsxUpload, esoRawStringRecipeUpload);
+        EsoRawStringUploadHandler esoRawStringUploadHandler=new EsoRawStringUploadHandler();
+        Upload esoRawStringUpload=new Upload("Update item translations", esoRawStringUploadHandler);
+        esoRawStringUpload.addSucceededListener(esoRawStringUploadHandler);
+        VerticalLayout vl = new VerticalLayout(header, dataminexlsxUpload, esoRawStringRecipeUpload,esoRawStringUpload);
+        header.build();
         setCompositionRoot(vl);
 
     }
@@ -94,11 +97,56 @@ public class ImportView extends CustomComponent implements View {
                         Cell textEnCell = r.getCell(4);
                         Cell textDeCell = r.getCell(5);
                         Cell textFrCell = r.getCell(6);
+                        Cell textRuCell = r.getCell(7);
                         Long id = getLongFromCell(idCell);
                         String textEn = getStringFromCell(textEnCell).replace("Diagram: ", "").replace("Design: ", "").replace("Pattern: ", "").replace("Blueprint: ", "").replace("Praxis: ", "").replace("Formula: ", "");
                         String textDe = getStringFromCell(textDeCell).replace("Skizze: ", "").replace("Entwurf: ", "").replace("Vorlage: ", "").replace("Blaupause: ", "").replace("Anleitung: ", "").replace("Formel: ", "").replace("^f", "").replace("^m", "").replace(":m", "").replace(":n", "").replace(":f", "").replace(":p", "");
                         String textFr = getStringFromCell(textFrCell).replace("Diagramme : ", "").replace("Croquis : ", "").replace("Préparation : ", "").replace("Plan : ", "").replace("Praxis : ", "").replace("Formule : ", "").replace("^f", "").replace("^m", "");
-                        dBService.addItemRecipe(id, textEn, textDe, textFr);
+                        String textRu = getStringFromCell(textRuCell).replace("диаграмма: ", "").replace("проект: ", "").replace("шаблон: ", "").replace("чертеж: ", "").replace("схема: ", "").replace("формула: ", "").replace("^f", "").replace("^m", "");
+                        dBService.addItemRecipe(id, textEn, textDe, textFr, textRu);
+                    }
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(ImportView.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+    }
+
+    private class EsoRawStringUploadHandler implements Upload.Receiver, Upload.SucceededListener {
+
+        private ByteArrayOutputStream baos;
+
+        @Override
+        public OutputStream receiveUpload(String filename, String mimeType) {
+            baos = new ByteArrayOutputStream();
+            return baos;
+        }
+
+        @Override
+        public void uploadSucceeded(Upload.SucceededEvent event) {
+            try {
+                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+                XSSFWorkbook wb = new XSSFWorkbook(bais);
+                Iterator<Sheet> sheetIterator = wb.sheetIterator();
+                while (sheetIterator.hasNext()) {
+
+                    Sheet s = sheetIterator.next();
+                    Iterator<Row> rowIterator = s.rowIterator();
+                    rowIterator.next();
+                    while (rowIterator.hasNext()) {
+                        Row r = rowIterator.next();
+                        Cell idCell = r.getCell(3);
+                        Cell textEnCell = r.getCell(4);
+                        Cell textDeCell = r.getCell(5);
+                        Cell textFrCell = r.getCell(6);
+                        Cell textRuCell = r.getCell(7);
+                        Long id = getLongFromCell(idCell);
+                        String textEn = getStringFromCell(textEnCell).replace("Diagram: ", "").replace("Design: ", "").replace("Pattern: ", "").replace("Blueprint: ", "").replace("Praxis: ", "").replace("Formula: ", "");
+                        String textDe = getStringFromCell(textDeCell).replace("Skizze: ", "").replace("Entwurf: ", "").replace("Vorlage: ", "").replace("Blaupause: ", "").replace("Anleitung: ", "").replace("Formel: ", "").replace("^f", "").replace("^m", "").replace(":m", "").replace(":n", "").replace(":f", "").replace(":p", "");
+                        String textFr = getStringFromCell(textFrCell).replace("Diagramme : ", "").replace("Croquis : ", "").replace("Préparation : ", "").replace("Plan : ", "").replace("Praxis : ", "").replace("Formule : ", "").replace("^f", "").replace("^m", "");
+                        String textRu = getStringFromCell(textRuCell).replace("диаграмма: ", "").replace("проект: ", "").replace("шаблон: ", "").replace("чертеж: ", "").replace("схема: ", "").replace("формула: ", "").replace("^f", "").replace("^m", "");
+                        dBService.setItemTranslation(id, textEn, textDe, textFr, textRu);
                     }
                 }
             } catch (IOException ex) {
@@ -126,7 +174,7 @@ public class ImportView extends CustomComponent implements View {
                 Iterator<Sheet> sheetIterator = wb.sheetIterator();
                 while (sheetIterator.hasNext()) {
                     Sheet s = sheetIterator.next();
-                    if (s.getSheetName().equals("Furniture List 2.7.4")) {
+                    if (s.getSheetName().equals("Furniture List 2.7.8")) {
                         Iterator<Row> rowIterator = s.rowIterator();
                         rowIterator.next();
                         while (rowIterator.hasNext()) {
@@ -152,7 +200,7 @@ public class ImportView extends CustomComponent implements View {
                             dBService.addFurnitureItem(id, name, cat, subCat, quality);
 
                         }
-                    } else if (s.getSheetName().equals("Plans 2.7.4")) {
+                    } else if (s.getSheetName().equals("Plans 2.7.8")) {
                         Pattern p = Pattern.compile("^(.*)\\((\\d*)");
                         Iterator<Row> rowIterator = s.rowIterator();
                         rowIterator.next();
@@ -200,49 +248,54 @@ public class ImportView extends CustomComponent implements View {
 
     private String getStringFromCell(Cell c) {
         String result = null;
-        switch (c.getCellType()) {
-            case Cell.CELL_TYPE_STRING:
-                result = c.getStringCellValue();
-                break;
-            case Cell.CELL_TYPE_NUMERIC:
-                Double numValue = c.getNumericCellValue();
-                result = Integer.toString(numValue.intValue());
-                break;
-            case Cell.CELL_TYPE_FORMULA:
-                switch (c.getCachedFormulaResultType()) {
-                    case Cell.CELL_TYPE_NUMERIC:
-                        Double nnumValue = c.getNumericCellValue();
-                        result = Integer.toString(nnumValue.intValue());
-                        break;
-                    case Cell.CELL_TYPE_STRING:
-                        result = c.getStringCellValue();
-                        break;
-                }
+        if (c != null) {
+            switch (c.getCellType()) {
+                case Cell.CELL_TYPE_STRING:
+                    result = c.getStringCellValue();
+                    break;
+                case Cell.CELL_TYPE_NUMERIC:
+                    Double numValue = c.getNumericCellValue();
+                    result = Integer.toString(numValue.intValue());
+                    break;
+                case Cell.CELL_TYPE_FORMULA:
+                    switch (c.getCachedFormulaResultType()) {
+                        case Cell.CELL_TYPE_NUMERIC:
+                            Double nnumValue = c.getNumericCellValue();
+                            result = Integer.toString(nnumValue.intValue());
+                            break;
+                        case Cell.CELL_TYPE_STRING:
+                            result = c.getStringCellValue();
+                            break;
+                    }
+            }
         }
+
         return result;
     }
 
     private Long getLongFromCell(Cell c) {
         Long result = null;
-        switch (c.getCellType()) {
-            case Cell.CELL_TYPE_STRING:
-                result = Long.valueOf(c.getStringCellValue());
-                break;
-            case Cell.CELL_TYPE_NUMERIC:
-                Double d = c.getNumericCellValue();
-                result = d.longValue();
-                break;
-            case Cell.CELL_TYPE_FORMULA:
-                switch (c.getCachedFormulaResultType()) {
-                    case Cell.CELL_TYPE_NUMERIC:
-                        Double dd = c.getNumericCellValue();
-                        result = dd.longValue();
-                        break;
-                    case Cell.CELL_TYPE_STRING:
-                        result = Long.valueOf(c.getStringCellValue());
-                        break;
-                }
-                break;
+        if (c != null) {
+            switch (c.getCellType()) {
+                case Cell.CELL_TYPE_STRING:
+                    result = Long.valueOf(c.getStringCellValue());
+                    break;
+                case Cell.CELL_TYPE_NUMERIC:
+                    Double d = c.getNumericCellValue();
+                    result = d.longValue();
+                    break;
+                case Cell.CELL_TYPE_FORMULA:
+                    switch (c.getCachedFormulaResultType()) {
+                        case Cell.CELL_TYPE_NUMERIC:
+                            Double dd = c.getNumericCellValue();
+                            result = dd.longValue();
+                            break;
+                        case Cell.CELL_TYPE_STRING:
+                            result = Long.valueOf(c.getStringCellValue());
+                            break;
+                    }
+                    break;
+            }
         }
         return result;
     }

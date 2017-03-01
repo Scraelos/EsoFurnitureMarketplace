@@ -49,6 +49,12 @@ public class SysAccount extends DAO implements UserDetails {
     @Transient
     private Set<Recipe> knownRecipesRaw;
 
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(255)")
+    private USER_LANGUAGE userLanguage;
+
+    private Boolean useEnItemNames;
+
     @Override
     public Long getId() {
         return this.id;
@@ -148,6 +154,22 @@ public class SysAccount extends DAO implements UserDetails {
 
     public void setEsoServer(ESO_SERVER esoServer) {
         this.esoServer = esoServer;
+    }
+
+    public USER_LANGUAGE getUserLanguage() {
+        return userLanguage;
+    }
+
+    public void setUserLanguage(USER_LANGUAGE userLanguage) {
+        this.userLanguage = userLanguage;
+    }
+
+    public Boolean getUseEnItemNames() {
+        return useEnItemNames;
+    }
+
+    public void setUseEnItemNames(Boolean useEnItemNames) {
+        this.useEnItemNames = useEnItemNames;
     }
 
 }
