@@ -5,6 +5,9 @@
  */
 package org.scraelos.esofurnituremp.view;
 
+import com.github.peholmst.i18n4vaadin.LocaleChangedEvent;
+import com.github.peholmst.i18n4vaadin.LocaleChangedListener;
+import com.github.peholmst.i18n4vaadin.util.I18NHolder;
 import com.vaadin.data.Validator;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
@@ -39,7 +42,7 @@ import ru.xpoft.vaadin.VaadinView;
 @Scope("prototype")
 @VaadinView(UserProfileView.NAME)
 @Secured({"ROLE_USER"})
-public class UserProfileView extends CustomComponent implements View {
+public class UserProfileView extends CustomComponent implements View, LocaleChangedListener {
 
     public static final String NAME = "profile";
     private ComboBox serverBox;
@@ -90,7 +93,6 @@ public class UserProfileView extends CustomComponent implements View {
             }
         });
 
-
         serverBox = new ComboBox();
         languageBox = new ComboBox();
         useEnItemNamesBox = new CheckBox();
@@ -131,22 +133,43 @@ public class UserProfileView extends CustomComponent implements View {
         header.build();
         user = SpringSecurityHelper.getUser();
         i18n = new Bundle();
+        serverBox.addItems(Arrays.asList(ESO_SERVER.values()));
+        serverBox.setNullSelectionAllowed(false);
+        serverBox.setValue(user.getEsoServer());
+        languageBox.setNullSelectionAllowed(false);
+        languageBox.addItems(Arrays.asList(USER_LANGUAGE.values()));
+        languageBox.setValue(user.getUserLanguage());
+        useEnItemNamesBox.setValue(user.getUseEnItemNames());
+        localize();
+
+    }
+
+    public void localize() {
         oldPassword.setCaption(i18n.oldPassword());
         password.setCaption(i18n.newPassword());
         passwordRepeat.setCaption(i18n.newPasswordConfirm());
         changePassword.setCaption(i18n.changePassword());
-        serverBox.addItems(Arrays.asList(ESO_SERVER.values()));
-        serverBox.setNullSelectionAllowed(false);
         serverBox.setCaption(i18n.server());
-        serverBox.setValue(user.getEsoServer());
         languageBox.setCaption(i18n.languageCaption());
-        languageBox.setNullSelectionAllowed(false);
-        languageBox.addItems(Arrays.asList(USER_LANGUAGE.values()));
-        languageBox.setValue(user.getUserLanguage());
         useEnItemNamesBox.setCaption(i18n.useEnglishItemNames());
-        useEnItemNamesBox.setValue(user.getUseEnItemNames());
         saveSettings.setCaption(i18n.saveProfileCaption());
+    }
 
+    @Override
+    public void localeChanged(LocaleChangedEvent lce) {
+        localize();
+    }
+
+    @Override
+    public void attach() {
+        super.attach();
+        I18NHolder.get().addLocaleChangedListener(this);
+    }
+
+    @Override
+    public void detach() {
+        I18NHolder.get().removeLocaleChangedListener(this);
+        super.detach();
     }
 
     private class DoublePasswordValidator implements Validator {

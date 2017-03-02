@@ -5,6 +5,9 @@
  */
 package org.scraelos.esofurnituremp.view;
 
+import com.github.peholmst.i18n4vaadin.LocaleChangedEvent;
+import com.github.peholmst.i18n4vaadin.LocaleChangedListener;
+import com.github.peholmst.i18n4vaadin.util.I18NHolder;
 import com.vaadin.data.Item;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.navigator.View;
@@ -45,7 +48,7 @@ import ru.xpoft.vaadin.VaadinView;
 @Scope("prototype")
 @VaadinView(ImportKnownRecipesView.NAME)
 @Secured({"ROLE_USER"})
-public class ImportKnownRecipesView extends CustomComponent implements View {
+public class ImportKnownRecipesView extends CustomComponent implements View, LocaleChangedListener {
 
     public static final String NAME = "importknownrecipes";
     private Header header;
@@ -55,24 +58,23 @@ public class ImportKnownRecipesView extends CustomComponent implements View {
     private Table table;
     private HierarchicalContainer container;
     private Button importButton;
-    
 
     @Autowired
     private DBService dBService;
-    private Bundle l18n=new Bundle();
+    private Bundle i18n = new Bundle();
     private static final Logger LOG = Logger.getLogger(ImportKnownRecipesView.class.getName());
 
     public ImportKnownRecipesView() {
         header = new Header();
         this.setSizeFull();
         UploadHandler handler = new UploadHandler();
-        server = new ComboBox(l18n.server(), Arrays.asList(ESO_SERVER.values()));
+        server = new ComboBox(null, Arrays.asList(ESO_SERVER.values()));
         server.setNullSelectionAllowed(false);
         server.setValue(SpringSecurityHelper.getUser().getEsoServer());
-        upload = new Upload(l18n.uploadCraftStoreFile(), handler);
+        upload = new Upload(null, handler);
         upload.addSucceededListener(handler);
         upload.setImmediate(true);
-        importButton = new Button(l18n.importNewRecipes(), new Button.ClickListener() {
+        importButton = new Button(null, new Button.ClickListener() {
 
             @Override
             public void buttonClick(Button.ClickEvent event) {
@@ -85,7 +87,7 @@ public class ImportKnownRecipesView extends CustomComponent implements View {
         importButton.setEnabled(false);
         HorizontalLayout hl = new HorizontalLayout(server, upload, importButton);
         hl.setComponentAlignment(importButton, Alignment.BOTTOM_LEFT);
-        table = new Table(l18n.newKnownRecipes());
+        table = new Table();
         table.setSizeFull();
         container = new HierarchicalContainer();
         container.addContainerProperty("recipe", Recipe.class, null);
@@ -93,7 +95,6 @@ public class ImportKnownRecipesView extends CustomComponent implements View {
 
         table.setContainerDataSource(container);
         table.setVisibleColumns(new Object[]{"recipe", "characterName"});
-        table.setColumnHeaders(new String[]{l18n.recipe(), l18n.characterName()});
         table.setCellStyleGenerator(new CustomCellStyleGenerator());
         VerticalLayout vl = new VerticalLayout(header, hl, table);
         vl.setSizeFull();
@@ -104,6 +105,32 @@ public class ImportKnownRecipesView extends CustomComponent implements View {
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         header.build();
+        localize();
+    }
+
+    private void localize() {
+        server.setCaption(i18n.server());
+        upload.setCaption(i18n.uploadCraftStoreFile());
+        importButton.setCaption(i18n.importNewRecipes());
+        table.setCaption(i18n.newKnownRecipes());
+        table.setColumnHeaders(new String[]{i18n.recipe(), i18n.characterName()});
+    }
+
+    @Override
+    public void localeChanged(LocaleChangedEvent lce) {
+        localize();
+    }
+
+    @Override
+    public void attach() {
+        super.attach();
+        I18NHolder.get().addLocaleChangedListener(this);
+    }
+
+    @Override
+    public void detach() {
+        I18NHolder.get().removeLocaleChangedListener(this);
+        super.detach();
     }
 
     private class CustomCellStyleGenerator implements Table.CellStyleGenerator {
@@ -165,7 +192,7 @@ public class ImportKnownRecipesView extends CustomComponent implements View {
                     importButton.setEnabled(true);
                 }
             } catch (JSONException ex) {
-                Notification.show(l18n.uploadErrorTitle(), l18n.uploadErrorIDNotFound(userId), Notification.Type.ERROR_MESSAGE);
+                Notification.show(i18n.uploadErrorTitle(), i18n.uploadErrorIDNotFound(userId), Notification.Type.ERROR_MESSAGE);
             }
         }
 
