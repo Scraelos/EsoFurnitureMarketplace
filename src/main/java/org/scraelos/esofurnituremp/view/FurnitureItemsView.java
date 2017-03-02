@@ -5,11 +5,13 @@
  */
 package org.scraelos.esofurnituremp.view;
 
+import com.github.peholmst.i18n4vaadin.LocaleChangedEvent;
+import com.github.peholmst.i18n4vaadin.LocaleChangedListener;
+import com.github.peholmst.i18n4vaadin.util.I18NHolder;
 import com.vaadin.data.Item;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.data.util.PropertyValueGenerator;
-import com.vaadin.data.util.converter.Converter;
 import com.vaadin.event.FieldEvents;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.event.MouseEvents;
@@ -43,7 +45,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -75,7 +76,7 @@ import ru.xpoft.vaadin.VaadinView;
 @Component
 @Scope("prototype")
 @VaadinView(FurnitureItemsView.NAME)
-public class FurnitureItemsView extends CustomComponent implements View {
+public class FurnitureItemsView extends CustomComponent implements View, LocaleChangedListener {
 
     public static final String NAME = "furniture";
 
@@ -96,6 +97,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
 
     private HierarchicalContainer craftersContainer;
 
+    private HorizontalLayout filters;
     private CheckBox onlyCraftable;
     private ComboBox server;
     private TextField searchField;
@@ -116,14 +118,13 @@ public class FurnitureItemsView extends CustomComponent implements View {
         vl.setSizeFull();
         header = new Header();
         vl.addComponent(header);
-        HorizontalLayout filters = new HorizontalLayout();
-        filters.setCaption(i18n.filters());
-        server = new ComboBox(i18n.serverForCraftersSearch(), Arrays.asList(ESO_SERVER.values()));
+        filters = new HorizontalLayout();
+        server = new ComboBox(null, Arrays.asList(ESO_SERVER.values()));
         server.setNullSelectionAllowed(false);
 
         filters.addComponent(server);
 
-        onlyCraftable = new CheckBox(i18n.displayOnlyCraftable(), false);
+        onlyCraftable = new CheckBox(null, false);
         onlyCraftable.addValueChangeListener(new Property.ValueChangeListener() {
 
             @Override
@@ -137,7 +138,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
         vl.addComponent(filters);
         HorizontalLayout textfilter = new HorizontalLayout();
         textfilter.setSpacing(true);
-        searchField = new TextField(i18n.searchField());
+        searchField = new TextField();
         searchField.setWidth(300f, Unit.PIXELS);
         searchField.addTextChangeListener(new FieldEvents.TextChangeListener() {
 
@@ -149,7 +150,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
         });
         searchField.setTextChangeEventMode(AbstractTextField.TextChangeEventMode.TIMEOUT);
         searchField.setTextChangeTimeout(2000);
-        searchFieldIgnoresOtherFilters = new CheckBox(i18n.searchFieldIgnoreFilters(), true);
+        searchFieldIgnoresOtherFilters = new CheckBox(null, true);
         searchFieldIgnoresOtherFilters.addValueChangeListener(new Property.ValueChangeListener() {
 
             @Override
@@ -164,7 +165,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
         vl.addComponent(textfilter);
         HorizontalLayout hl = new HorizontalLayout();
         hl.setSizeFull();
-        tree = new Tree(i18n.categories());
+        tree = new Tree(null);
         tree.setSizeFull();
         tree.setWidth(200f, Unit.PIXELS);
         tree.addItemClickListener(new TreeItemClickListener());
@@ -183,7 +184,6 @@ public class FurnitureItemsView extends CustomComponent implements View {
         hl.addComponent(tree);
         grid = new Grid();
         grid.setStyleName("my-grid");
-        grid.setCaption(i18n.furnitureListItemTableCaption());
         grid.setSizeFull();
         grid.addItemClickListener(new ItemClickEvent.ItemClickListener() {
 
@@ -202,7 +202,7 @@ public class FurnitureItemsView extends CustomComponent implements View {
         listContainer = new GeneratedPropertyListContainer<>(FurnitureItem.class);
         hl.addComponent(grid);
         hl.setExpandRatio(grid, 1f);
-        craftersTable = new Table(i18n.craftersTableCaption());
+        craftersTable = new Table();
         craftersTable.setSizeFull();
         craftersContainer = new HierarchicalContainer();
         craftersContainer.addContainerProperty("id", String.class, null);
@@ -234,12 +234,6 @@ public class FurnitureItemsView extends CustomComponent implements View {
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         header.build();
-        Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
-        if (useEnglishNames == null || !useEnglishNames) {
-            itemNameColumn = i18n.localizedItemNameColumn();
-        } else {
-            itemNameColumn = "nameEn";
-        }
         specification = new FurnitureItemSpecification();
         screenshotClickListener = new ScreenshotClickListener();
         tree.setContainerDataSource(dBService.getItemCategories());
@@ -262,17 +256,53 @@ public class FurnitureItemsView extends CustomComponent implements View {
         });
         listContainer.addGeneratedProperty("screenshots", new ScreenShotsColumnGenerator());
         grid.setContainerDataSource(listContainer);
-        grid.getColumn(itemNameColumn).setWidth(400).setHeaderCaption(i18n.item());
-        grid.getColumn("category").setHeaderCaption(i18n.category());
-        grid.getColumn("screenshots").setHeaderCaption(i18n.screenshots()).setRenderer(new ComponentRenderer()).setExpandRatio(1);
-        grid.setColumns(new Object[]{itemNameColumn, "screenshots", "category"});
-        loadItems();
+        grid.getColumn("screenshots").setRenderer(new ComponentRenderer()).setExpandRatio(1);
         if (SpringSecurityHelper.getUser() != null) {
             server.setValue(SpringSecurityHelper.getUser().getEsoServer());
         } else {
             server.setValue(ESO_SERVER.EU);
         }
+        localize();
+        loadItems();
+    }
 
+    @Override
+    public void attach() {
+        super.attach();
+        I18NHolder.get().addLocaleChangedListener(this);
+    }
+
+    @Override
+    public void detach() {
+        I18NHolder.get().removeLocaleChangedListener(this);
+        super.detach();
+    }
+
+    @Override
+    public void localeChanged(LocaleChangedEvent lce) {
+        localize();
+        grid.refreshAllRows();
+    }
+
+    private void localize() {
+        Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+        if (useEnglishNames == null || !useEnglishNames) {
+            itemNameColumn = i18n.localizedItemNameColumn();
+        } else {
+            itemNameColumn = "nameEn";
+        }
+        craftersTable.setCaption(i18n.craftersTableCaption());
+        filters.setCaption(i18n.filters());
+        server.setCaption(i18n.serverForCraftersSearch());
+        onlyCraftable.setCaption(i18n.displayOnlyCraftable());
+        searchField.setCaption(i18n.searchField());
+        searchFieldIgnoresOtherFilters.setCaption(i18n.searchFieldIgnoreFilters());
+        tree.setCaption(i18n.categories());
+        grid.setCaption(i18n.furnitureListItemTableCaption());
+        grid.setColumns(new Object[]{itemNameColumn, "screenshots", "category"});
+        grid.getColumn(itemNameColumn).setWidth(400).setHeaderCaption(i18n.item());
+        grid.getColumn("category").setHeaderCaption(i18n.category());
+        grid.getColumn("screenshots").setHeaderCaption(i18n.screenshots());
     }
 
     private class TreeItemClickListener implements ItemClickEvent.ItemClickListener {

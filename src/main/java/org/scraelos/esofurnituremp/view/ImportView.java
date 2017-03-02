@@ -52,8 +52,7 @@ public class ImportView extends CustomComponent implements View {
     private DBService dBService;
     private Bundle i18n = new Bundle();
 
-    @Override
-    public void enter(ViewChangeListener.ViewChangeEvent event) {
+    public ImportView() {
         header = new Header();
         DatamineUploadHandler datamineUploadHandler = new DatamineUploadHandler();
         Upload dataminexlsxUpload = new Upload(i18n.uploadDatamineXlsx(), datamineUploadHandler);
@@ -61,13 +60,16 @@ public class ImportView extends CustomComponent implements View {
         EsoRawStringRecipeUploadHandler esoRawStringRecipeUploadHandler = new EsoRawStringRecipeUploadHandler();
         Upload esoRawStringRecipeUpload = new Upload(i18n.uploadEsoRawRecipeData(), esoRawStringRecipeUploadHandler);
         esoRawStringRecipeUpload.addSucceededListener(esoRawStringRecipeUploadHandler);
-        EsoRawStringUploadHandler esoRawStringUploadHandler=new EsoRawStringUploadHandler();
-        Upload esoRawStringUpload=new Upload("Update item translations", esoRawStringUploadHandler);
+        EsoRawStringUploadHandler esoRawStringUploadHandler = new EsoRawStringUploadHandler();
+        Upload esoRawStringUpload = new Upload("Update item translations", esoRawStringUploadHandler);
         esoRawStringUpload.addSucceededListener(esoRawStringUploadHandler);
-        VerticalLayout vl = new VerticalLayout(header, dataminexlsxUpload, esoRawStringRecipeUpload,esoRawStringUpload);
-        header.build();
+        VerticalLayout vl = new VerticalLayout(header, dataminexlsxUpload, esoRawStringRecipeUpload, esoRawStringUpload);
         setCompositionRoot(vl);
+    }
 
+    @Override
+    public void enter(ViewChangeListener.ViewChangeEvent event) {
+        header.build();
     }
 
     private class EsoRawStringRecipeUploadHandler implements Upload.Receiver, Upload.SucceededListener {

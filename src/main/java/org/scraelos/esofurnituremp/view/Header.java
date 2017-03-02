@@ -8,6 +8,7 @@ package org.scraelos.esofurnituremp.view;
 import com.vaadin.data.Property;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.ui.Alignment;
+import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
@@ -30,6 +31,16 @@ public class Header extends VerticalLayout {
     private final MenuBar menuBar;
     private final Bundle i18n = new Bundle();
     private final ComboBox languageBox;
+    private final CheckBox useEnglishNamesBox;
+
+    private MenuBar.MenuItem adminMenu;
+    private MenuBar.MenuItem importMenuItem;
+    private MenuBar.MenuItem usersMenuItem;
+    private MenuBar.MenuItem furnitureCatalogMenuItem;
+    private MenuBar.MenuItem knownRecipesMenuItem;
+    private MenuBar.MenuItem userProfileMenuItem;
+    private MenuBar.MenuItem logoutMenuItem;
+    private MenuBar.MenuItem loginMenuItem;
 
     public Header() {
         setWidth(100f, Unit.PERCENTAGE);
@@ -38,6 +49,7 @@ public class Header extends VerticalLayout {
         languageBox = new ComboBox(null, Arrays.asList(USER_LANGUAGE.values()));
         languageBox.setHeight(40f, Unit.PIXELS);
         languageBox.setIcon(FontAwesome.LANGUAGE);
+        useEnglishNamesBox = new CheckBox();
 
     }
 
@@ -46,15 +58,15 @@ public class Header extends VerticalLayout {
         hl.setSizeFull();
         SysAccount user = SpringSecurityHelper.getUser();
         if (SpringSecurityHelper.hasRole("ROLE_ADMIN")) {
-            MenuBar.MenuItem adminMenu = menuBar.addItem(i18n.adminSubmenuCaption(), null);
-            adminMenu.addItem(i18n.importMenuItemCaption(), new MenuBar.Command() {
+            adminMenu = menuBar.addItem(i18n.adminSubmenuCaption(), FontAwesome.COGS, null);
+            importMenuItem = adminMenu.addItem(i18n.importMenuItemCaption(), new MenuBar.Command() {
 
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
                     getUI().getNavigator().navigateTo(ImportView.NAME);
                 }
             });
-            adminMenu.addItem(i18n.usersMenuItemCaption(),FontAwesome.USERS, new MenuBar.Command() {
+            usersMenuItem = adminMenu.addItem(i18n.usersMenuItemCaption(), FontAwesome.USERS, new MenuBar.Command() {
 
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
@@ -63,7 +75,7 @@ public class Header extends VerticalLayout {
             });
         }
 
-        menuBar.addItem(i18n.furnitureCatalogMenuItemCaption(),FontAwesome.TABLE, new MenuBar.Command() {
+        furnitureCatalogMenuItem = menuBar.addItem(i18n.furnitureCatalogMenuItemCaption(), FontAwesome.TABLE, new MenuBar.Command() {
 
             @Override
             public void menuSelected(MenuBar.MenuItem selectedItem) {
@@ -71,14 +83,14 @@ public class Header extends VerticalLayout {
             }
         });
         if (user != null && SpringSecurityHelper.hasRole("ROLE_USER")) {
-            menuBar.addItem(i18n.knownRecipesMenuItemCaption(),FontAwesome.BOOKMARK, new MenuBar.Command() {
+            knownRecipesMenuItem = menuBar.addItem(i18n.knownRecipesMenuItemCaption(), FontAwesome.BOOKMARK, new MenuBar.Command() {
 
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
                     getUI().getNavigator().navigateTo(KnownRecipesView.NAME);
                 }
             });
-            menuBar.addItem(i18n.userProfileMenuItemCaption(),FontAwesome.USER, new MenuBar.Command() {
+            userProfileMenuItem = menuBar.addItem(i18n.userProfileMenuItemCaption(), FontAwesome.USER, new MenuBar.Command() {
 
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
@@ -87,7 +99,7 @@ public class Header extends VerticalLayout {
             });
         }
         if (user != null) {
-            menuBar.addItem(i18n.logoutMenuItemCaption(user.getUsername()),FontAwesome.SIGN_OUT, new MenuBar.Command() {
+            logoutMenuItem = menuBar.addItem(i18n.logoutMenuItemCaption(user.getUsername()), FontAwesome.SIGN_OUT, new MenuBar.Command() {
 
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
@@ -95,7 +107,7 @@ public class Header extends VerticalLayout {
                 }
             });
         } else {
-            menuBar.addItem(i18n.loginMenuItemCaption(),FontAwesome.SIGN_IN, new MenuBar.Command() {
+            loginMenuItem = menuBar.addItem(i18n.loginMenuItemCaption(), FontAwesome.SIGN_IN, new MenuBar.Command() {
 
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
@@ -111,19 +123,67 @@ public class Header extends VerticalLayout {
         }
         languageBox.setNullSelectionAllowed(false);
         languageBox.addValueChangeListener((Property.ValueChangeEvent event) -> {
-            if (languageBox.getValue() != null) {
-                getUI().setLocale(((USER_LANGUAGE) languageBox.getValue()).getLocale());
-                getUI().getNavigator().navigateTo(getUI().getNavigator().getState());
-            }
+            updateLocale();
         });
-        FormLayout languageLayout=new FormLayout(languageBox);
+        FormLayout languageLayout = new FormLayout(languageBox);
         languageLayout.addStyleName(ValoTheme.FORMLAYOUT_LIGHT);
         languageLayout.setHeight(40f, Unit.PIXELS);
-        languageLayout.setWidth(200f, Unit.PIXELS);
+        languageLayout.setWidth(175f, Unit.PIXELS);
         hl.addComponent(languageLayout);
         hl.setComponentAlignment(languageLayout, Alignment.TOP_RIGHT);
+        useEnglishNamesBox.setCaption(i18n.useEnglishItemNames());
+
+        Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+        if (useEnglishNames != null) {
+            useEnglishNamesBox.setValue(useEnglishNames);
+        }
+        useEnglishNamesBox.addValueChangeListener(new Property.ValueChangeListener() {
+
+            @Override
+            public void valueChange(Property.ValueChangeEvent event) {
+                updateLocale();
+            }
+        });
+        FormLayout itemNamesLayout = new FormLayout(useEnglishNamesBox);
+        itemNamesLayout.addStyleName(ValoTheme.FORMLAYOUT_LIGHT);
+        itemNamesLayout.setHeight(40f, Unit.PIXELS);
+        itemNamesLayout.setWidth(250f, Unit.PIXELS);
+        hl.addComponent(itemNamesLayout);
+        hl.setComponentAlignment(itemNamesLayout, Alignment.TOP_RIGHT);
         hl.setExpandRatio(menuBar, 1f);
         addComponent(hl);
+    }
+
+    private void updateLocale() {
+        getUI().getSession().setAttribute("useEnglishNames", useEnglishNamesBox.getValue());
+        getUI().setLocale(((USER_LANGUAGE) languageBox.getValue()).getLocale());
+
+        useEnglishNamesBox.setCaption(i18n.useEnglishItemNames());
+        if (adminMenu != null) {
+            adminMenu.setText(i18n.adminSubmenuCaption());
+        }
+        if (importMenuItem != null) {
+            importMenuItem.setText(i18n.importMenuItemCaption());
+        }
+        if (usersMenuItem != null) {
+            usersMenuItem.setText(i18n.usersMenuItemCaption());
+        }
+        if (furnitureCatalogMenuItem != null) {
+            furnitureCatalogMenuItem.setText(i18n.furnitureCatalogMenuItemCaption());
+        }
+        if (knownRecipesMenuItem != null) {
+            knownRecipesMenuItem.setText(i18n.knownRecipesMenuItemCaption());
+        }
+        if (userProfileMenuItem != null) {
+            userProfileMenuItem.setText(i18n.userProfileMenuItemCaption());
+        }
+        if (logoutMenuItem != null) {
+            logoutMenuItem.setText(i18n.logoutMenuItemCaption());
+        }
+        if (loginMenuItem != null) {
+            loginMenuItem.setText(i18n.loginMenuItemCaption());
+        }
+
     }
 
 }
