@@ -178,7 +178,7 @@ public class Header extends VerticalLayout {
             userProfileMenuItem.setText(i18n.userProfileMenuItemCaption());
         }
         if (logoutMenuItem != null) {
-            logoutMenuItem.setText(i18n.logoutMenuItemCaption());
+            logoutMenuItem.setText(i18n.logoutMenuItemCaption(SpringSecurityHelper.getUser().getUsername()));
         }
         if (loginMenuItem != null) {
             loginMenuItem.setText(i18n.loginMenuItemCaption());
