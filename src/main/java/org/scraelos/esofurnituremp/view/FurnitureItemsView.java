@@ -231,6 +231,8 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         specification.setSearchString(searchValue);
         if (itemQuality.getValue() != null) {
             specification.setItemQuality((ITEM_QUALITY) itemQuality.getValue());
+        } else {
+            specification.setItemQuality(null);
         }
         specification.setSearchStringIgnoresAll(searchFieldIgnoresOtherFilters.getValue());
         furnitureList = new SortableLazyList<>((int firstRow, boolean sortAscending, String property) -> repo.findAll(specification, new PageRequest(
