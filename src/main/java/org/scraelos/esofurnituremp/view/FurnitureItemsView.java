@@ -12,6 +12,7 @@ import com.vaadin.data.Item;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.data.util.PropertyValueGenerator;
+import com.vaadin.data.util.converter.Converter;
 import com.vaadin.event.FieldEvents;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.event.MouseEvents;
@@ -19,6 +20,7 @@ import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.StreamResource;
+import com.vaadin.ui.AbstractSelect;
 import com.vaadin.ui.AbstractTextField;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
@@ -45,6 +47,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -54,6 +57,7 @@ import org.scraelos.esofurnituremp.data.FurnitureItemRepository;
 import org.scraelos.esofurnituremp.data.FurnitureItemSpecification;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
+import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
 import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemScreenshot;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
@@ -99,6 +103,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
     private HorizontalLayout filters;
     private CheckBox onlyCraftable;
+    private ComboBox itemQuality;
     private ComboBox server;
     private TextField searchField;
     private CheckBox searchFieldIgnoresOtherFilters;
@@ -117,12 +122,17 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
         header = new Header();
+        specification = new FurnitureItemSpecification();
         vl.addComponent(header);
         filters = new HorizontalLayout();
         server = new ComboBox(null, Arrays.asList(ESO_SERVER.values()));
         server.setNullSelectionAllowed(false);
 
         filters.addComponent(server);
+        itemQuality = new ComboBox(null, Arrays.asList(ITEM_QUALITY.values()));
+        itemQuality.setNullSelectionAllowed(true);
+
+        filters.addComponent(itemQuality);
 
         onlyCraftable = new CheckBox(null, false);
         onlyCraftable.addValueChangeListener(new Property.ValueChangeListener() {
@@ -219,6 +229,9 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         specification.setCategory(currentCategory);
         specification.setOnlyCraftable(onlyCraftable.getValue());
         specification.setSearchString(searchValue);
+        if (itemQuality.getValue() != null) {
+            specification.setItemQuality((ITEM_QUALITY) itemQuality.getValue());
+        }
         specification.setSearchStringIgnoresAll(searchFieldIgnoresOtherFilters.getValue());
         furnitureList = new SortableLazyList<>((int firstRow, boolean sortAscending, String property) -> repo.findAll(specification, new PageRequest(
                 firstRow / PAGESIZE,
@@ -234,7 +247,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         header.build();
-        specification = new FurnitureItemSpecification();
+
         screenshotClickListener = new ScreenshotClickListener();
         tree.setContainerDataSource(dBService.getItemCategories());
         grid.setCellStyleGenerator(new CustomCellStyleGenerator());
@@ -262,8 +275,15 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         } else {
             server.setValue(ESO_SERVER.EU);
         }
-        localize();
+        localize(getUI().getLocale());
         loadItems();
+        itemQuality.addValueChangeListener(new Property.ValueChangeListener() {
+
+            @Override
+            public void valueChange(Property.ValueChangeEvent event) {
+                loadItems();
+            }
+        });
     }
 
     @Override
@@ -280,11 +300,11 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
     @Override
     public void localeChanged(LocaleChangedEvent lce) {
-        localize();
+        localize(lce.getNewLocale());
         grid.refreshAllRows();
     }
 
-    private void localize() {
+    private void localize(Locale locale) {
         Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
         if (useEnglishNames == null || !useEnglishNames) {
             itemNameColumn = i18n.localizedItemNameColumn();
@@ -294,6 +314,28 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         craftersTable.setCaption(i18n.craftersTableCaption());
         filters.setCaption(i18n.filters());
         server.setCaption(i18n.serverForCraftersSearch());
+        itemQuality.setCaption(i18n.itemQualityCaption());
+        for (ITEM_QUALITY q : ITEM_QUALITY.values()) {
+            if (useEnglishNames == null || !useEnglishNames) {
+                switch (locale.getLanguage()) {
+                    case "en":
+                        itemQuality.setItemCaption(q, q.getNameEn());
+                        break;
+                    case "de":
+                        itemQuality.setItemCaption(q, q.getNameDe());
+                        break;
+                    case "fr":
+                        itemQuality.setItemCaption(q, q.getNameFr());
+                        break;
+                    case "ru":
+                        itemQuality.setItemCaption(q, q.getNameRu());
+                        break;
+                }
+            } else {
+                itemQuality.setItemCaption(q, q.getNameEn());
+            }
+        }
+        itemQuality.markAsDirtyRecursive();
         onlyCraftable.setCaption(i18n.displayOnlyCraftable());
         searchField.setCaption(i18n.searchField());
         searchFieldIgnoresOtherFilters.setCaption(i18n.searchFieldIgnoreFilters());
@@ -303,6 +345,52 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         grid.getColumn(itemNameColumn).setWidth(400).setHeaderCaption(i18n.item());
         grid.getColumn("category").setHeaderCaption(i18n.category());
         grid.getColumn("screenshots").setHeaderCaption(i18n.screenshots());
+    }
+
+    private class ItemQualityConverter implements Converter {
+
+        @Override
+        public Object convertToModel(Object value, Class targetType, Locale locale) throws ConversionException {
+            return null;
+        }
+
+        @Override
+        public Object convertToPresentation(Object value, Class targetType, Locale locale) throws ConversionException {
+            String result = "";
+            if (value != null) {
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (locale.getLanguage()) {
+                        case "en":
+                            result = ((ITEM_QUALITY) value).getNameEn();
+                            break;
+                        case "de":
+                            result = ((ITEM_QUALITY) value).getNameDe();
+                            break;
+                        case "fr":
+                            result = ((ITEM_QUALITY) value).getNameFr();
+                            break;
+                        case "ru":
+                            result = ((ITEM_QUALITY) value).getNameRu();
+                            break;
+                    }
+                } else {
+                    result = ((ITEM_QUALITY) value).getNameEn();
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public Class getModelType() {
+            return ITEM_QUALITY.class;
+        }
+
+        @Override
+        public Class getPresentationType() {
+            return String.class;
+        }
+
     }
 
     private class TreeItemClickListener implements ItemClickEvent.ItemClickListener {

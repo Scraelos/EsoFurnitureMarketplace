@@ -11,9 +11,45 @@ package org.scraelos.esofurnituremp.model;
  */
 public enum ITEM_QUALITY {
 
-    Legendary,
-    Epic,
-    Superior,
-    Fine,
-    Standard;
+    Legendary("Legendary", "Legendary", "Legendary", "Легендарное"),
+    Epic("Epic", "Epic", "Epic", "Эпическое"),
+    Superior("Superior", "Superior", "Superior", "Превосходное"),
+    Fine("Fine", "Fine", "Fine", "Хорошее"),
+    Standard("Standard", "Standard", "Standard", "Обычное");
+
+    private ITEM_QUALITY(String nameEn_, String nameDe_, String nameFr_, String nameRu_) {
+        nameEn = nameEn_;
+        nameDe = nameDe_;
+        nameFr = nameFr_;
+        nameRu = nameRu_;
+    }
+
+    public String getNameEn() {
+        return nameEn;
+    }
+
+    public String getNameDe() {
+        return nameDe;
+    }
+
+    public String getNameFr() {
+        return nameFr;
+    }
+
+    public String getNameRu() {
+        return nameRu;
+    }
+
+    private final String nameEn;
+    private final String nameDe;
+    private final String nameFr;
+    private final String nameRu;
+
+    @Override
+    public String toString() {
+        return nameEn;
+    }
+    
+    
+
 }

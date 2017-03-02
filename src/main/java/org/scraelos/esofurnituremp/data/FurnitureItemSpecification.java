@@ -12,6 +12,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
+import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -25,6 +26,11 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
     private Boolean searchStringIgnoresAll;
     private Boolean onlyCraftable;
     private ItemSubCategory category;
+    private ITEM_QUALITY itemQuality;
+
+    public void setItemQuality(ITEM_QUALITY itemQuality) {
+        this.itemQuality = itemQuality;
+    }
 
     public String getSearchString() {
         return searchString;
@@ -79,6 +85,9 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
             }
             if (onlyCraftable != null && onlyCraftable) {
                 predicates.add(cb.isNotNull(root.get("recipe")));
+            }
+            if (itemQuality != null) {
+                predicates.add(cb.equal(root.get("itemQuality"), itemQuality));
             }
             if (textSearch != null) {
                 predicates.add(textSearch);
