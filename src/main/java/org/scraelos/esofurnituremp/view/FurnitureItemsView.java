@@ -108,7 +108,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
     private FurnitureItemSpecification specification;
 
-    static final int PAGESIZE = 45;
+    static final int PAGESIZE = 20;
 
     private String itemNameColumn;
 

@@ -92,7 +92,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     private GeneratedPropertyListContainer<KnownRecipe> listContainer = new GeneratedPropertyListContainer(KnownRecipe.class);
     private KnownRecipeSpecification specification;
     private ScreenshotClickListener screenshotClickListener;
-    static final int PAGESIZE = 45;
+    static final int PAGESIZE = 20;
 
     public KnownRecipesView() {
         header = new Header();
@@ -253,6 +253,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         grid.getColumn("recipe").setHeaderCaption(i18n.recipe());
         grid.getColumn("characterName").setHeaderCaption(i18n.characterName());
         grid.getColumn("esoServer").setHeaderCaption(i18n.server());
+        grid.getColumn("screenshots").setHeaderCaption(i18n.screenshots());
     }
 
     public void refreshGridItem(Object itemId) {
