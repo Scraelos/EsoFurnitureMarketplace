@@ -190,6 +190,22 @@ public class DBService {
             recipeQuery2.distinct(true);
             recipeList = em.createQuery(recipeQuery2).getResultList();
         }
+        if (recipeList == null || recipeList.isEmpty()) {
+            FurnitureItem find = em.find(FurnitureItem.class, id);
+            if (find != null) {
+                CriteriaQuery<Recipe> recipeQuery2 = builder.createQuery(Recipe.class);
+                Root<Recipe> recipeRoot2 = recipeQuery2.from(Recipe.class);
+                recipeQuery2.select(recipeRoot2);
+                recipeQuery2.where(builder.and(
+                        builder.isNull(recipeRoot2.get("itemQuality")),
+                        builder.equal(recipeRoot2.get("nameRu"), find.getNameRu())
+                )
+                );
+                recipeQuery2.distinct(true);
+                recipeList = em.createQuery(recipeQuery2).getResultList();
+            }
+
+        }
         if (recipeList != null && !recipeList.isEmpty()) {
             recipe = recipeList.get(0);
             FurnitureItem furnitureItem = em.find(FurnitureItem.class, id);
@@ -447,7 +463,7 @@ public class DBService {
             em.persist(entity);
         }
     }
-    
+
     @Transactional
     public void saveUserProfile(SysAccount user) {
         SysAccount account = em.find(SysAccount.class, user.getId());
