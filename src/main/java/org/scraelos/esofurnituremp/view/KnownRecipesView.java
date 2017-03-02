@@ -5,6 +5,9 @@
  */
 package org.scraelos.esofurnituremp.view;
 
+import com.github.peholmst.i18n4vaadin.LocaleChangedEvent;
+import com.github.peholmst.i18n4vaadin.LocaleChangedListener;
+import com.github.peholmst.i18n4vaadin.util.I18NHolder;
 import com.vaadin.data.util.converter.Converter;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.navigator.View;
@@ -44,7 +47,7 @@ import ru.xpoft.vaadin.VaadinView;
 @Scope("prototype")
 @VaadinView(KnownRecipesView.NAME)
 @Secured({"ROLE_USER"})
-public class KnownRecipesView extends CustomComponent implements View {
+public class KnownRecipesView extends CustomComponent implements View, LocaleChangedListener {
 
     public static final String NAME = "knownrecipes";
     private Header header;
@@ -72,7 +75,7 @@ public class KnownRecipesView extends CustomComponent implements View {
         header = new Header();
         vl.addComponent(header);
         actions = new HorizontalLayout();
-        importButton = new Button(i18n.importDataFromCraftStoreButtonCaption(), new Button.ClickListener() {
+        importButton = new Button(null, new Button.ClickListener() {
 
             @Override
             public void buttonClick(Button.ClickEvent event) {
@@ -83,7 +86,7 @@ public class KnownRecipesView extends CustomComponent implements View {
         vl.addComponent(actions);
         HorizontalLayout hl = new HorizontalLayout();
         hl.setSizeFull();
-        tree = new Tree(i18n.categories());
+        tree = new Tree();
         tree.setSizeFull();
         tree.setWidth(200f, Sizeable.Unit.PIXELS);
         tree.addItemClickListener(new TreeItemClickListener());
@@ -100,7 +103,7 @@ public class KnownRecipesView extends CustomComponent implements View {
             }
         });
         hl.addComponent(tree);
-        grid = new Grid(i18n.knownRecipesTableCaption());
+        grid = new Grid();
         grid.setSizeFull();
         grid.setCellStyleGenerator(new CustomCellStyleGenerator());
         hl.addComponent(grid);
@@ -118,7 +121,7 @@ public class KnownRecipesView extends CustomComponent implements View {
         tree.setContainerDataSource(dBService.getItemCategories());
         grid.setContainerDataSource(listContainer);
         grid.setColumns(new Object[]{"recipe", "characterName", "esoServer"});
-        grid.getColumn("recipe").setHeaderCaption(i18n.recipe()).setConverter(new Converter<String, Recipe>() {
+        grid.getColumn("recipe").setConverter(new Converter<String, Recipe>() {
 
             @Override
             public Recipe convertToModel(String value, Class<? extends Recipe> targetType, Locale locale) throws Converter.ConversionException {
@@ -177,8 +180,7 @@ public class KnownRecipesView extends CustomComponent implements View {
             }
 
         });
-        grid.getColumn("characterName").setHeaderCaption(i18n.characterName());
-        grid.getColumn("esoServer").setHeaderCaption(i18n.server());
+        localize();
         loadItems();
 
     }
@@ -193,6 +195,33 @@ public class KnownRecipesView extends CustomComponent implements View {
                 () -> (int) repo.count(specification),
                 PAGESIZE);
         listContainer.setCollection(itemList);
+    }
+
+    @Override
+    public void attach() {
+        super.attach();
+        I18NHolder.get().addLocaleChangedListener(this);
+    }
+
+    @Override
+    public void detach() {
+        I18NHolder.get().removeLocaleChangedListener(this);
+        super.detach();
+    }
+
+    @Override
+    public void localeChanged(LocaleChangedEvent lce) {
+        localize();
+        grid.refreshAllRows();
+    }
+
+    private void localize() {
+        importButton.setCaption(i18n.importDataFromCraftStoreButtonCaption());
+        tree.setCaption(i18n.categories());
+        grid.setCaption(i18n.knownRecipesTableCaption());
+        grid.getColumn("recipe").setHeaderCaption(i18n.recipe());
+        grid.getColumn("characterName").setHeaderCaption(i18n.characterName());
+        grid.getColumn("esoServer").setHeaderCaption(i18n.server());
     }
 
     private class TreeItemClickListener implements ItemClickEvent.ItemClickListener {
