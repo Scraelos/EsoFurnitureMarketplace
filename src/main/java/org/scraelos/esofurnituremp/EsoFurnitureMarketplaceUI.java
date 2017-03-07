@@ -113,7 +113,8 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         @Message(key = "authErrorDescription", value = "Could not authenticate"),
         @Message(key = "passwordRepeat", value = "Repeat Password"),
         @Message(key = "registrationErrorCaption", value = "Registration error"),
-        @Message(key = "itemQualityCaption", value = "Quality"),})
+        @Message(key = "itemQualityCaption", value = "Quality"),
+        @Message(key = "recipeTypeCaption", value = "Recipe Type"),})
     @Override
     protected void init(VaadinRequest request) {
         setSizeFull();

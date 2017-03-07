@@ -9,6 +9,7 @@ import com.github.peholmst.i18n4vaadin.LocaleChangedEvent;
 import com.github.peholmst.i18n4vaadin.LocaleChangedListener;
 import com.github.peholmst.i18n4vaadin.util.I18NHolder;
 import com.vaadin.data.Item;
+import com.vaadin.data.Property;
 import com.vaadin.data.util.PropertyValueGenerator;
 import com.vaadin.data.util.converter.Converter;
 import com.vaadin.event.ItemClickEvent;
@@ -20,6 +21,7 @@ import com.vaadin.server.Sizeable;
 import com.vaadin.server.StreamResource;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.HorizontalLayout;
@@ -38,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,10 +50,12 @@ import org.scraelos.esofurnituremp.Bundle;
 import org.scraelos.esofurnituremp.data.KnownRecipeRepository;
 import org.scraelos.esofurnituremp.data.KnownRecipeSpecification;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
+import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
 import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemScreenshot;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.scraelos.esofurnituremp.model.KnownRecipe;
+import org.scraelos.esofurnituremp.model.RECIPE_TYPE;
 import org.scraelos.esofurnituremp.model.Recipe;
 import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
 import org.scraelos.esofurnituremp.service.DBService;
@@ -86,6 +91,8 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     private Tree tree;
     private Grid grid;
     private HorizontalLayout actions;
+    private HorizontalLayout filters;
+    private ComboBox recipeType;
     private Button importButton;
 
     private SortableLazyList<KnownRecipe> itemList;
@@ -111,6 +118,23 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         });
         actions.addComponent(importButton);
         vl.addComponent(actions);
+        filters = new HorizontalLayout();
+        recipeType = new ComboBox(null, Arrays.asList(RECIPE_TYPE.values()));
+        recipeType.setNullSelectionAllowed(true);
+        recipeType.addValueChangeListener(new Property.ValueChangeListener() {
+
+            @Override
+            public void valueChange(Property.ValueChangeEvent event) {
+                if (recipeType.getValue() != null && (recipeType.getValue() instanceof RECIPE_TYPE)) {
+                    specification.setRecipeType((RECIPE_TYPE) recipeType.getValue());
+                } else {
+                    specification.setRecipeType(null);
+                }
+                loadItems();
+            }
+        });
+        filters.addComponent(recipeType);
+        vl.addComponent(filters);
         HorizontalLayout hl = new HorizontalLayout();
         hl.setSizeFull();
         tree = new Tree();
@@ -211,7 +235,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             }
 
         });
-        localize();
+        localize(getUI().getLocale());
         loadItems();
 
     }
@@ -242,14 +266,36 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
 
     @Override
     public void localeChanged(LocaleChangedEvent lce) {
-        localize();
+        localize(lce.getNewLocale());
         grid.refreshAllRows();
     }
 
-    private void localize() {
+    private void localize(Locale locale) {
+        Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
         importButton.setCaption(i18n.importDataFromCraftStoreButtonCaption());
         tree.setCaption(i18n.categories());
         grid.setCaption(i18n.knownRecipesTableCaption());
+        recipeType.setCaption(i18n.recipeTypeCaption());
+        for (RECIPE_TYPE t : RECIPE_TYPE.values()) {
+            if (useEnglishNames == null || !useEnglishNames) {
+                switch (locale.getLanguage()) {
+                    case "en":
+                        recipeType.setItemCaption(t, t.getNameEn());
+                        break;
+                    case "de":
+                        recipeType.setItemCaption(t, t.getNameDe());
+                        break;
+                    case "fr":
+                        recipeType.setItemCaption(t, t.getNameFr());
+                        break;
+                    case "ru":
+                        recipeType.setItemCaption(t, t.getNameRu());
+                        break;
+                }
+            } else {
+                recipeType.setItemCaption(t, t.getNameEn());
+            }
+        }
         grid.getColumn("recipe").setHeaderCaption(i18n.recipe());
         grid.getColumn("characterName").setHeaderCaption(i18n.characterName());
         grid.getColumn("esoServer").setHeaderCaption(i18n.server());
