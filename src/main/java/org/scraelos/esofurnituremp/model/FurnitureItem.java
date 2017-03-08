@@ -41,6 +41,7 @@ public class FurnitureItem extends DAO {
     private Recipe recipe;
     @OneToMany(mappedBy = "furnitureItem", cascade = CascadeType.ALL)
     private List<ItemScreenshot> itemScreenshots;
+    private String itemLink;
 
     @Override
     public Long getId() {
@@ -114,6 +115,14 @@ public class FurnitureItem extends DAO {
 
     public void setItemScreenshots(List<ItemScreenshot> itemScreenshots) {
         this.itemScreenshots = itemScreenshots;
+    }
+
+    public String getItemLink() {
+        return itemLink;
+    }
+
+    public void setItemLink(String itemLink) {
+        this.itemLink = itemLink;
     }
 
 }

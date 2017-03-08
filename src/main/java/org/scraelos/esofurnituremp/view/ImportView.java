@@ -186,6 +186,7 @@ public class ImportView extends CustomComponent implements View {
                             Cell catCell = r.getCell(2);
                             Cell subCatCell = r.getCell(3);
                             Cell qualityCell = r.getCell(4);
+                            Cell linkCell = r.getCell(12);
                             Long id = getLongFromCell(idCell);
                             String name = getStringFromCell(nameCell);
                             String cat = getStringFromCell(catCell);
@@ -199,7 +200,8 @@ public class ImportView extends CustomComponent implements View {
                             }
                             String qualityString = getStringFromCell(qualityCell);
                             ITEM_QUALITY quality = ITEM_QUALITY.valueOf(qualityString);
-                            dBService.addFurnitureItem(id, name, cat, subCat, quality);
+                            String itemLink = getStringFromCell(linkCell);
+                            dBService.addFurnitureItem(id, name, cat, subCat, quality, itemLink);
 
                         }
                     } else if (s.getSheetName().equals("Plans 2.7.8")) {
