@@ -12,6 +12,7 @@ import com.vaadin.data.Item;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.data.util.PropertyValueGenerator;
+import com.vaadin.data.util.converter.Converter;
 import com.vaadin.event.FieldEvents;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.event.MouseEvents;
@@ -36,6 +37,7 @@ import com.vaadin.ui.Tree;
 import com.vaadin.ui.Upload;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
+import com.vaadin.ui.themes.ValoTheme;
 import de.datenhahn.vaadin.componentrenderer.ComponentRenderer;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -44,6 +46,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
@@ -61,6 +67,7 @@ import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemScreenshot;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.scraelos.esofurnituremp.model.KnownRecipe;
+import org.scraelos.esofurnituremp.model.RecipeIngredient;
 import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
 import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,6 +129,9 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
     private VerticalLayout itemInfoLayout;
     private Label itemNameLabel;
+
+    private Grid materialsGrid;
+    private GeneratedPropertyListContainer materialsContainer;
 
     FurnitureItem selectedFurnitureItem;
 
@@ -224,9 +234,12 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
                 itemInfoLayout.setVisible(true);
                 if (selectedFurnitureItem.getRecipe() != null) {
+                    materialsContainer.setCollection(selectedFurnitureItem.getRecipe().getRecipeIngredients());
+                    materialsGrid.setVisible(true);
                     craftersContainer.setCollection(dBService.getCrafters(selectedFurnitureItem.getRecipe(), (ESO_SERVER) server.getValue()));
                     craftersGrid.setVisible(true);
                 } else {
+                    materialsGrid.setVisible(false);
                     craftersGrid.setVisible(false);
                 }
             }
@@ -238,6 +251,12 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         itemInfoLayout.setSizeFull();
         itemNameLabel = new Label();
         itemInfoLayout.addComponent(itemNameLabel);
+        materialsGrid = new Grid();
+        materialsGrid.setSizeFull();
+        materialsContainer = new GeneratedPropertyListContainer(RecipeIngredient.class);
+        materialsGrid.setContainerDataSource(materialsContainer);
+        materialsGrid.setColumns("ingredient", "count");
+        itemInfoLayout.addComponent(materialsGrid);
 
         craftersGrid = new Grid();
         craftersGrid.setSizeFull();
@@ -258,12 +277,88 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         );
         craftersGrid.setContainerDataSource(craftersContainer);
         craftersGrid.setColumns(new Object[]{"esoId", "craftPrice", "craftPriceWithMats"});
+        craftersGrid.getColumn("craftPrice").setConverter(new Converter<String, BigDecimal>() {
+
+            @Override
+            public BigDecimal convertToModel(String value, Class<? extends BigDecimal> targetType, Locale locale) throws Converter.ConversionException {
+                if (value != null) {
+                    try {
+                        Number parse = NumberFormat.getInstance(locale).parse(value);
+                        BigDecimal result = BigDecimal.valueOf(parse.doubleValue()).setScale(2, RoundingMode.HALF_UP);
+                        return result;
+                    } catch (ParseException ex) {
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+            }
+
+            @Override
+            public String convertToPresentation(BigDecimal value, Class<? extends String> targetType, Locale locale) throws Converter.ConversionException {
+                if (value != null) {
+                    return NumberFormat.getInstance(locale).format(value.doubleValue());
+                } else {
+                    return i18n.nullPrice();
+                }
+            }
+
+            @Override
+            public Class<BigDecimal> getModelType() {
+                return BigDecimal.class;
+            }
+
+            @Override
+            public Class<String> getPresentationType() {
+                return String.class;
+            }
+
+        });
+        craftersGrid.getColumn("craftPriceWithMats").setConverter(new Converter<String, BigDecimal>() {
+
+            @Override
+            public BigDecimal convertToModel(String value, Class<? extends BigDecimal> targetType, Locale locale) throws Converter.ConversionException {
+                if (value != null) {
+                    try {
+                        Number parse = NumberFormat.getInstance(locale).parse(value);
+                        BigDecimal result = BigDecimal.valueOf(parse.doubleValue()).setScale(2, RoundingMode.HALF_UP);
+                        return result;
+                    } catch (ParseException ex) {
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+            }
+
+            @Override
+            public String convertToPresentation(BigDecimal value, Class<? extends String> targetType, Locale locale) throws Converter.ConversionException {
+                if (value != null) {
+                    return NumberFormat.getInstance(locale).format(value.doubleValue());
+                } else {
+                    return i18n.nullPrice();
+                }
+            }
+
+            @Override
+            public Class<BigDecimal> getModelType() {
+                return BigDecimal.class;
+            }
+
+            @Override
+            public Class<String> getPresentationType() {
+                return String.class;
+            }
+
+        });
         craftersGrid.setVisible(false);
         itemInfoLayout.setVisible(false);
+        materialsGrid.setVisible(false);
         itemInfoLayout.addComponent(craftersGrid);
+        itemInfoLayout.setExpandRatio(materialsGrid, 0.5f);
         itemInfoLayout.setExpandRatio(craftersGrid, 1f);
         hl.addComponent(itemInfoLayout);
-        hl.setExpandRatio(itemInfoLayout, 0.5f);
+        hl.setExpandRatio(itemInfoLayout, 0.4f);
         vl.addComponent(hl);
         vl.setExpandRatio(hl, 1f);
         setCompositionRoot(vl);
@@ -393,6 +488,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         grid.setColumns(new Object[]{itemNameColumn, "links", "screenshots", "category"});
         grid.getColumn(itemNameColumn).setWidth(400).setHeaderCaption(i18n.item());
         grid.getColumn("category").setHeaderCaption(i18n.category());
+        grid.getColumn("links").setHeaderCaption(i18n.itemLink());
         grid.getColumn("screenshots").setHeaderCaption(i18n.screenshots());
         if (selectedFurnitureItem != null) {
             if (useEnglishNames == null || !useEnglishNames) {
@@ -401,6 +497,9 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
                 itemNameLabel.setCaption(selectedFurnitureItem.getNameEn());
             }
         }
+        materialsGrid.setCaption(i18n.materials());
+        craftersGrid.getColumn("craftPrice").setHeaderCaption(i18n.craftPrice());
+        craftersGrid.getColumn("craftPriceWithMats").setHeaderCaption(i18n.craftPriceWithMats());
 
     }
 
@@ -465,6 +564,21 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
             hl.setSpacing(true);
             final FurnitureItem furnitureItem = (FurnitureItem) itemId;
             int counter = 0;
+            if (SpringSecurityHelper.hasRole("ROLE_UPLOAD_SCREENSHOTS")) {
+                Button uploadScreenShot = new Button(FontAwesome.UPLOAD);
+                uploadScreenShot.setData(furnitureItem);
+                uploadScreenShot.addClickListener(new Button.ClickListener() {
+
+                    @Override
+                    public void buttonClick(Button.ClickEvent event) {
+                        UploadScreenshotWindow window = new UploadScreenshotWindow(furnitureItem);
+                        getUI().addWindow(window);
+
+                    }
+                });
+                hl.addComponent(uploadScreenShot);
+
+            }
             for (final ItemScreenshot s : furnitureItem.getItemScreenshots()) {
                 StreamResource.StreamSource streamSource = new StreamResource.StreamSource() {
 
@@ -487,24 +601,9 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
                 hl.setComponentAlignment(screenshotThumbPanel, Alignment.TOP_LEFT);
                 hl.setExpandRatio(screenshotThumbPanel, 1f);
                 counter++;
-                if (counter > 2) {
+                if (counter > 1) {
                     break;
                 }
-            }
-            if (SpringSecurityHelper.hasRole("ROLE_UPLOAD_SCREENSHOTS")) {
-                Button uploadScreenShot = new Button(FontAwesome.UPLOAD);
-                uploadScreenShot.setData(furnitureItem);
-                uploadScreenShot.addClickListener(new Button.ClickListener() {
-
-                    @Override
-                    public void buttonClick(Button.ClickEvent event) {
-                        UploadScreenshotWindow window = new UploadScreenshotWindow(furnitureItem);
-                        getUI().addWindow(window);
-
-                    }
-                });
-                hl.addComponent(uploadScreenShot);
-
             }
 
             return hl;

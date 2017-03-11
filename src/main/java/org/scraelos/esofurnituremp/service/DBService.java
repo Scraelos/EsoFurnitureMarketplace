@@ -401,8 +401,6 @@ public class DBService {
             knownRecipe.setCharacterName(characterName);
             knownRecipe.setEsoServer(server);
             knownRecipe.setRecipe(recipe);
-            knownRecipe.setCraftPrice(BigDecimal.ZERO);
-            knownRecipe.setCraftPriceWithMats(BigDecimal.ZERO);
             em.persist(knownRecipe);
         }
     }

@@ -119,6 +119,8 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         @Message(key = "itemLink", value = "Ingame Link"),
         @Message(key = "craftPrice", value = "Craft Price"),
         @Message(key = "craftPriceWithMats", value = "Craft Price with crafter's materials"),
+        @Message(key = "materials", value = "Materials"),
+        @Message(key = "nullPrice", value = "N/A"),
         @Message(key = "recipeTypeCaption", value = "Recipe Type")
     })
     @Override
@@ -151,6 +153,9 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
                 + "}"
                 + ".fine {"
                 + "    color: #2DC50E;"
+                + "}"
+                + ".standard {"
+                + "    color: #000000;"
                 + "}"
                 + ".v-caption-horizontal {"
                 + "  display: inline-block;"
