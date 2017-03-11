@@ -10,28 +10,47 @@ import com.github.peholmst.i18n4vaadin.LocaleChangedListener;
 import com.github.peholmst.i18n4vaadin.util.I18NHolder;
 import com.vaadin.data.Item;
 import com.vaadin.data.Property;
+import com.vaadin.data.fieldgroup.FieldGroup;
 import com.vaadin.data.util.PropertyValueGenerator;
 import com.vaadin.data.util.converter.Converter;
+import com.vaadin.data.util.converter.StringToBooleanConverter;
+import com.vaadin.event.FieldEvents;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.event.MouseEvents;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
+import com.vaadin.server.ClientConnector;
+import com.vaadin.server.ClientMethodInvocation;
+import com.vaadin.server.ErrorHandler;
+import com.vaadin.server.Extension;
 import com.vaadin.server.FontAwesome;
+import com.vaadin.server.ServerRpcManager;
 import com.vaadin.server.Sizeable;
 import com.vaadin.server.StreamResource;
+import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.VaadinResponse;
+import com.vaadin.shared.communication.SharedState;
+import com.vaadin.ui.AbstractTextField;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Image;
 import com.vaadin.ui.Panel;
+import com.vaadin.ui.TextField;
 import com.vaadin.ui.Tree;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.Upload;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
+import com.vaadin.ui.renderers.AbstractJavaScriptRenderer;
+import com.vaadin.ui.renderers.Renderer;
 import de.datenhahn.vaadin.componentrenderer.ComponentRenderer;
+import elemental.json.JsonObject;
+import elemental.json.JsonValue;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -41,6 +60,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,6 +87,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
 import org.vaadin.liveimageeditor.LiveImageEditor;
+import org.vaadin.viritin.ListContainer.DynaBeanItem;
 import org.vaadin.viritin.SortableLazyList;
 import org.vaadin.viritin.grid.GeneratedPropertyListContainer;
 import ru.xpoft.vaadin.VaadinView;
@@ -92,6 +114,12 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     private Grid grid;
     private HorizontalLayout actions;
     private HorizontalLayout filters;
+    private HorizontalLayout textFilter;
+    private ComboBox itemQuality;
+    private TextField searchField;
+    private CheckBox searchFieldIgnoresOtherFilters;
+    private String searchValue;
+    private ItemSubCategory currentCategory;
     private ComboBox recipeType;
     private Button importButton;
 
@@ -125,16 +153,46 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
 
             @Override
             public void valueChange(Property.ValueChangeEvent event) {
-                if (recipeType.getValue() != null && (recipeType.getValue() instanceof RECIPE_TYPE)) {
-                    specification.setRecipeType((RECIPE_TYPE) recipeType.getValue());
-                } else {
-                    specification.setRecipeType(null);
-                }
                 loadItems();
             }
         });
         filters.addComponent(recipeType);
+        itemQuality = new ComboBox(null, Arrays.asList(ITEM_QUALITY.values()));
+        itemQuality.setNullSelectionAllowed(true);
+        itemQuality.addValueChangeListener(new Property.ValueChangeListener() {
+
+            @Override
+            public void valueChange(Property.ValueChangeEvent event) {
+                loadItems();
+            }
+        });
+        filters.addComponent(itemQuality);
         vl.addComponent(filters);
+        textFilter = new HorizontalLayout();
+        searchField = new TextField();
+        searchField.setWidth(300f, Unit.PIXELS);
+        searchField.addTextChangeListener(new FieldEvents.TextChangeListener() {
+
+            @Override
+            public void textChange(FieldEvents.TextChangeEvent event) {
+                searchValue = event.getText();
+                loadItems();
+            }
+        });
+        searchField.setTextChangeEventMode(AbstractTextField.TextChangeEventMode.TIMEOUT);
+        searchField.setTextChangeTimeout(2000);
+        searchFieldIgnoresOtherFilters = new CheckBox(null, true);
+        searchFieldIgnoresOtherFilters.addValueChangeListener(new Property.ValueChangeListener() {
+
+            @Override
+            public void valueChange(Property.ValueChangeEvent event) {
+                loadItems();
+            }
+        });
+        textFilter.addComponent(searchField);
+        textFilter.addComponent(searchFieldIgnoresOtherFilters);
+        textFilter.setComponentAlignment(searchFieldIgnoresOtherFilters, Alignment.BOTTOM_LEFT);
+        vl.addComponent(textFilter);
         HorizontalLayout hl = new HorizontalLayout();
         hl.setSizeFull();
         tree = new Tree();
@@ -173,10 +231,37 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         specification = new KnownRecipeSpecification(SpringSecurityHelper.getUser());
         tree.setContainerDataSource(dBService.getItemCategories());
         listContainer.addGeneratedProperty("screenshots", new ScreenShotsColumnGenerator());
+        listContainer.addGeneratedProperty("links", new ItemLinkCoumnGenerator());
+
         grid.setContainerDataSource(listContainer);
-        grid.setColumns(new Object[]{"recipe", "screenshots", "characterName", "esoServer"});
-        grid.getColumn("screenshots").setRenderer(new ComponentRenderer()).setExpandRatio(1);
-        grid.getColumn("recipe").setWidth(450).setConverter(new Converter<String, Recipe>() {
+        grid.setColumns(new Object[]{"recipe", "links", "screenshots", "characterName", "esoServer", "craftPrice", "craftPriceWithMats"});
+        grid.setEditorEnabled(true);
+        grid.getEditorFieldGroup().addCommitHandler(new FieldGroup.CommitHandler() {
+
+            @Override
+            public void preCommit(FieldGroup.CommitEvent commitEvent) throws FieldGroup.CommitException {
+
+            }
+
+            @Override
+            public void postCommit(FieldGroup.CommitEvent commitEvent) throws FieldGroup.CommitException {
+                for (Object itemId : listContainer.getItemIds()) {
+                    if (commitEvent.getFieldBinder().getItemDataSource().equals(listContainer.getItem(itemId))) {
+                        KnownRecipe recipe = (KnownRecipe) itemId;
+                        dBService.saveEntity(recipe);
+                        refreshGridItem(itemId);
+                    }
+                }
+
+            }
+        });
+        grid.getColumn("characterName").setEditable(false);
+        grid.getColumn("esoServer").setEditable(false);
+        grid.getColumn("craftPrice").setEditable(true);
+        grid.getColumn("craftPriceWithMats").setEditable(true);
+        grid.getColumn("links").setEditable(false).setRenderer(new ComponentRenderer());
+        grid.getColumn("screenshots").setEditable(false).setRenderer(new ComponentRenderer()).setExpandRatio(1);
+        grid.getColumn("recipe").setWidth(450).setEditable(false).setConverter(new Converter<String, Recipe>() {
 
             @Override
             public Recipe convertToModel(String value, Class<? extends Recipe> targetType, Locale locale) throws Converter.ConversionException {
@@ -241,6 +326,19 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     }
 
     private void loadItems() {
+        specification.setSearchString(searchValue);
+        specification.setSearchStringIgnoresAll(searchFieldIgnoresOtherFilters.getValue());
+        specification.setCategory(currentCategory);
+        if (recipeType.getValue() != null && (recipeType.getValue() instanceof RECIPE_TYPE)) {
+            specification.setRecipeType((RECIPE_TYPE) recipeType.getValue());
+        } else {
+            specification.setRecipeType(null);
+        }
+        if (itemQuality.getValue() != null) {
+            specification.setItemQuality((ITEM_QUALITY) itemQuality.getValue());
+        } else {
+            specification.setItemQuality(null);
+        }
         itemList = new SortableLazyList<>((int firstRow, boolean sortAscending, String property) -> repo.findAll(specification, new PageRequest(
                 firstRow / PAGESIZE,
                 PAGESIZE,
@@ -296,10 +394,39 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
                 recipeType.setItemCaption(t, t.getNameEn());
             }
         }
+        itemQuality.setCaption(i18n.itemQualityCaption());
+        for (ITEM_QUALITY q : ITEM_QUALITY.values()) {
+            if (useEnglishNames == null || !useEnglishNames) {
+                switch (locale.getLanguage()) {
+                    case "en":
+                        itemQuality.setItemCaption(q, q.getNameEn());
+                        break;
+                    case "de":
+                        itemQuality.setItemCaption(q, q.getNameDe());
+                        break;
+                    case "fr":
+                        itemQuality.setItemCaption(q, q.getNameFr());
+                        break;
+                    case "ru":
+                        itemQuality.setItemCaption(q, q.getNameRu());
+                        break;
+                }
+            } else {
+                itemQuality.setItemCaption(q, q.getNameEn());
+            }
+        }
+        itemQuality.markAsDirtyRecursive();
+        searchField.setCaption(i18n.searchField());
+        searchFieldIgnoresOtherFilters.setCaption(i18n.searchFieldIgnoreFilters());
         grid.getColumn("recipe").setHeaderCaption(i18n.recipe());
         grid.getColumn("characterName").setHeaderCaption(i18n.characterName());
         grid.getColumn("esoServer").setHeaderCaption(i18n.server());
         grid.getColumn("screenshots").setHeaderCaption(i18n.screenshots());
+        grid.getColumn("links").setHeaderCaption(i18n.itemLink());
+        grid.getColumn("craftPrice").setHeaderCaption(i18n.craftPrice());
+        grid.getColumn("craftPriceWithMats").setHeaderCaption(i18n.craftPriceWithMats());
+        grid.setEditorCancelCaption(i18n.gridItemCancelCaption());
+        grid.setEditorSaveCaption(i18n.gridItemSaveCaption());
     }
 
     public void refreshGridItem(Object itemId) {
@@ -314,7 +441,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             if (itemId instanceof ItemCategory) {
                 tree.expandItem(itemId);
             } else if (itemId instanceof ItemSubCategory) {
-                specification.setCategory((ItemSubCategory) itemId);
+                currentCategory = (ItemSubCategory) itemId;
                 loadItems();
             }
         }
@@ -334,6 +461,31 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             }
 
             return null;
+        }
+
+    }
+
+    private class ItemLinkCoumnGenerator extends PropertyValueGenerator<VerticalLayout> {
+
+        @Override
+        public VerticalLayout getValue(Item item, Object itemId, Object propertyId) {
+            VerticalLayout result = new VerticalLayout();
+            final KnownRecipe knownRecipe = (KnownRecipe) itemId;
+            if (knownRecipe.getRecipe().getFurnitureItem() != null) {
+                TextField linkField = new TextField();
+                linkField.setValue(knownRecipe.getRecipe().getFurnitureItem().getItemLink());
+                linkField.setReadOnly(true);
+                String linkeId = "itemLink" + knownRecipe.getId();
+                linkField.setId(linkeId);
+                result.addComponent(linkField);
+            }
+
+            return result;
+        }
+
+        @Override
+        public Class<VerticalLayout> getType() {
+            return VerticalLayout.class;
         }
 
     }

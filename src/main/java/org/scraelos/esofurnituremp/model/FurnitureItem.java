@@ -6,6 +6,7 @@
 package org.scraelos.esofurnituremp.model;
 
 import java.util.List;
+import java.util.Locale;
 import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -123,6 +124,21 @@ public class FurnitureItem extends DAO {
 
     public void setItemLink(String itemLink) {
         this.itemLink = itemLink;
+    }
+
+    public String getLocalizedName(Locale l) {
+        String lang = l.getLanguage();
+        switch (lang) {
+            case "en":
+                return nameEn;
+            case "de":
+                return nameDe;
+            case "fr":
+                return nameFr;
+            case "ru":
+                return nameRu;
+        }
+        return nameEn;
     }
 
 }

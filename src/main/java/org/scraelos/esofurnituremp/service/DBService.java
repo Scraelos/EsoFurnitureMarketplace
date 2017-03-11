@@ -8,6 +8,7 @@ package org.scraelos.esofurnituremp.service;
 import com.vaadin.data.Item;
 import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.data.util.HierarchicalContainer;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +26,7 @@ import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
 import org.scraelos.esofurnituremp.model.Ingredient;
 import org.scraelos.esofurnituremp.model.ItemCategory;
+import org.scraelos.esofurnituremp.model.ItemScreenshot;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.scraelos.esofurnituremp.model.KnownRecipe;
 import org.scraelos.esofurnituremp.model.RECIPE_TYPE;
@@ -285,7 +287,7 @@ public class DBService {
     }
 
     @Transactional
-    public void addFurnitureItem(Long id, String name, String cat, String subCat, ITEM_QUALITY quality) {
+    public void addFurnitureItem(Long id, String name, String cat, String subCat, ITEM_QUALITY quality, String itemLink) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<ItemCategory> catQuery = builder.createQuery(ItemCategory.class);
         Root<ItemCategory> catRoot = catQuery.from(ItemCategory.class);
@@ -329,6 +331,7 @@ public class DBService {
             item.setNameEn(name);
             item.setSubCategory(itemSubCategory);
             item.setItemQuality(quality);
+            item.setItemLink(itemLink);
             em.merge(item);
         } else {
             item = new FurnitureItem();
@@ -336,6 +339,7 @@ public class DBService {
             item.setNameEn(name);
             item.setSubCategory(itemSubCategory);
             item.setItemQuality(quality);
+            item.setItemLink(itemLink);
             em.persist(item);
 
         }
@@ -371,37 +375,19 @@ public class DBService {
     }
 
     @Transactional
-    public HierarchicalContainer getCrafters(HierarchicalContainer hc, Recipe recipe, ESO_SERVER server) {
-        hc.removeAllItems();
+    public List<KnownRecipe> getCrafters(Recipe recipe, ESO_SERVER server) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<KnownRecipe> q = builder.createQuery(KnownRecipe.class);
         Root<KnownRecipe> root = q.from(KnownRecipe.class);
         q.select(root);
-
         q.where(builder.and(
                 builder.equal(root.get("recipe"), recipe),
                 builder.equal(root.get("esoServer"), server)
         )
         );
         q.distinct(true);
-
         List<KnownRecipe> resultList = em.createQuery(q).getResultList();
-        if (resultList != null) {
-            for (KnownRecipe r : resultList) {
-                Item item = hc.addItem(r.getAccount().getEsoId());
-                if (item != null) {
-                    item.getItemProperty("id").setValue("@" + r.getAccount().getEsoId());
-                }
-
-            }
-        }
-        if (hc.size() == 0) {
-            Item item = hc.addItem("no crafters");
-            if (item != null) {
-                item.getItemProperty("id").setValue("no crafters found");
-            }
-        }
-        return hc;
+        return resultList;
     }
 
     @Transactional
@@ -415,6 +401,8 @@ public class DBService {
             knownRecipe.setCharacterName(characterName);
             knownRecipe.setEsoServer(server);
             knownRecipe.setRecipe(recipe);
+            knownRecipe.setCraftPrice(BigDecimal.ZERO);
+            knownRecipe.setCraftPriceWithMats(BigDecimal.ZERO);
             em.persist(knownRecipe);
         }
     }
@@ -471,5 +459,14 @@ public class DBService {
         account.setUseEnItemNames(user.getUseEnItemNames());
         account.setUserLanguage(user.getUserLanguage());
         em.merge(account);
+    }
+
+    @Transactional
+    public void deleteScreenShot(ItemScreenshot itemScreenshot) {
+        ItemScreenshot s = em.find(ItemScreenshot.class, itemScreenshot.getId());
+        if (s != null) {
+            em.remove(s);
+        }
+
     }
 }

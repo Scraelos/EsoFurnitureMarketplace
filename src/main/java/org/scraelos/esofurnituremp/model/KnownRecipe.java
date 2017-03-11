@@ -5,6 +5,7 @@
  */
 package org.scraelos.esofurnituremp.model;
 
+import java.math.BigDecimal;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -35,6 +36,8 @@ public class KnownRecipe extends DAO {
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(255)")
     private ESO_SERVER esoServer;
+    private BigDecimal craftPrice;
+    private BigDecimal craftPriceWithMats;
 
     @Override
     public Long getId() {
@@ -76,6 +79,22 @@ public class KnownRecipe extends DAO {
 
     public void setEsoServer(ESO_SERVER esoServer) {
         this.esoServer = esoServer;
+    }
+
+    public BigDecimal getCraftPrice() {
+        return craftPrice;
+    }
+
+    public void setCraftPrice(BigDecimal craftPrice) {
+        this.craftPrice = craftPrice;
+    }
+
+    public BigDecimal getCraftPriceWithMats() {
+        return craftPriceWithMats;
+    }
+
+    public void setCraftPriceWithMats(BigDecimal craftPriceWithMats) {
+        this.craftPriceWithMats = craftPriceWithMats;
     }
 
 }

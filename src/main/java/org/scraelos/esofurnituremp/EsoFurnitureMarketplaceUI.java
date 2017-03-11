@@ -114,7 +114,13 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         @Message(key = "passwordRepeat", value = "Repeat Password"),
         @Message(key = "registrationErrorCaption", value = "Registration error"),
         @Message(key = "itemQualityCaption", value = "Quality"),
-        @Message(key = "recipeTypeCaption", value = "Recipe Type"),})
+        @Message(key = "gridItemSaveCaption", value = "Save"),
+        @Message(key = "gridItemCancelCaption", value = "Cancel"),
+        @Message(key = "itemLink", value = "Ingame Link"),
+        @Message(key = "craftPrice", value = "Craft Price"),
+        @Message(key = "craftPriceWithMats", value = "Craft Price with crafter's materials"),
+        @Message(key = "recipeTypeCaption", value = "Recipe Type")
+    })
     @Override
     protected void init(VaadinRequest request) {
         setSizeFull();
@@ -122,7 +128,19 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         ErrorHandler defaultErrorHandler = VaadinSession.getCurrent().getErrorHandler();
         VaadinSession.getCurrent().setErrorHandler(new SecurityErrorHandler(navigator, defaultErrorHandler));
         Page.Styles styles = Page.getCurrent().getStyles();
-        styles.add(".legendary {"
+        styles.add(".v-caption-legendary {"
+                + "    color: #CCAA1A;"
+                + "}"
+                + ".v-caption-epic {"
+                + "    color: #A02EF7;"
+                + "}"
+                + ".v-caption-superior {"
+                + "    color: #3A92FF;"
+                + "}"
+                + ".v-caption-fine {"
+                + "    color: #2DC50E;"
+                + "}"
+                + ".legendary {"
                 + "    color: #CCAA1A;"
                 + "}"
                 + ".epic {"
