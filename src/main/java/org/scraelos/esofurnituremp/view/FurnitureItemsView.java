@@ -110,6 +110,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
     private HorizontalLayout filters;
     private CheckBox onlyCraftable;
+    private CheckBox hasCrafters;
     private ComboBox itemQuality;
     private ComboBox server;
     private TextField searchField;
@@ -145,6 +146,13 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         filters = new HorizontalLayout();
         server = new ComboBox(null, Arrays.asList(ESO_SERVER.values()));
         server.setNullSelectionAllowed(false);
+        server.addValueChangeListener(new Property.ValueChangeListener() {
+
+            @Override
+            public void valueChange(Property.ValueChangeEvent event) {
+                loadItems();
+            }
+        });
 
         filters.addComponent(server);
         itemQuality = new ComboBox(null, Arrays.asList(ITEM_QUALITY.values()));
@@ -162,6 +170,16 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         });
         filters.addComponent(onlyCraftable);
         filters.setComponentAlignment(onlyCraftable, Alignment.BOTTOM_LEFT);
+        hasCrafters = new CheckBox(null, false);
+        hasCrafters.addValueChangeListener(new Property.ValueChangeListener() {
+
+            @Override
+            public void valueChange(Property.ValueChangeEvent event) {
+                loadItems();
+            }
+        });
+        filters.addComponent(hasCrafters);
+        filters.setComponentAlignment(hasCrafters, Alignment.BOTTOM_LEFT);
         filters.setSpacing(true);
         vl.addComponent(filters);
         HorizontalLayout textfilter = new HorizontalLayout();
@@ -367,7 +385,9 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
     private void loadItems() {
         specification.setCategory(currentCategory);
         specification.setOnlyCraftable(onlyCraftable.getValue());
+        specification.setHasCrafters(hasCrafters.getValue());
         specification.setSearchString(searchValue);
+        specification.setEsoServer((ESO_SERVER) server.getValue());
         if (itemQuality.getValue() != null) {
             specification.setItemQuality((ITEM_QUALITY) itemQuality.getValue());
         } else {
@@ -481,6 +501,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         }
         itemQuality.markAsDirtyRecursive();
         onlyCraftable.setCaption(i18n.displayOnlyCraftable());
+        hasCrafters.setCaption(i18n.hasCrafters());
         searchField.setCaption(i18n.searchField());
         searchFieldIgnoresOtherFilters.setCaption(i18n.searchFieldIgnoreFilters());
         tree.setCaption(i18n.categories());

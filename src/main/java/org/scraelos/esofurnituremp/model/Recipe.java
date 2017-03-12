@@ -41,6 +41,8 @@ public class Recipe extends DAO {
     private ITEM_QUALITY itemQuality;
     @OneToMany(mappedBy = "recipe")
     private Set<RecipeIngredient> recipeIngredients;
+    @OneToMany(mappedBy = "recipe")
+    private Set<KnownRecipe> knownRecipes;
 
     @Override
     public Long getId() {
@@ -122,6 +124,14 @@ public class Recipe extends DAO {
             return recipeType.name() + ": " + nameEn;
         }
         return nameEn;
+    }
+
+    public Set<KnownRecipe> getKnownRecipes() {
+        return knownRecipes;
+    }
+
+    public void setKnownRecipes(Set<KnownRecipe> knownRecipes) {
+        this.knownRecipes = knownRecipes;
     }
 
 }

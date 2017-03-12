@@ -11,6 +11,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import org.scraelos.esofurnituremp.model.ESO_SERVER;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
@@ -25,8 +26,10 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
     private String searchString;
     private Boolean searchStringIgnoresAll;
     private Boolean onlyCraftable;
+    private Boolean hasCrafters;
     private ItemSubCategory category;
     private ITEM_QUALITY itemQuality;
+    private ESO_SERVER esoServer;
 
     public void setItemQuality(ITEM_QUALITY itemQuality) {
         this.itemQuality = itemQuality;
@@ -64,6 +67,14 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
         this.category = category;
     }
 
+    public void setHasCrafters(Boolean hasCrafters) {
+        this.hasCrafters = hasCrafters;
+    }
+
+    public void setEsoServer(ESO_SERVER esoServer) {
+        this.esoServer = esoServer;
+    }
+
     @Override
     public Predicate toPredicate(Root<FurnitureItem> root, CriteriaQuery<?> cq, CriteriaBuilder cb) {
         Predicate result = null;
@@ -85,6 +96,10 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
             }
             if (onlyCraftable != null && onlyCraftable) {
                 predicates.add(cb.isNotNull(root.get("recipe")));
+            }
+            if (hasCrafters != null && hasCrafters) {
+                predicates.add(cb.equal(root.join("recipe").join("knownRecipes").get("esoServer"), esoServer));
+                cq.distinct(true);
             }
             if (itemQuality != null) {
                 predicates.add(cb.equal(root.get("itemQuality"), itemQuality));

@@ -121,6 +121,7 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         @Message(key = "craftPriceWithMats", value = "Craft Price with crafter's materials"),
         @Message(key = "materials", value = "Materials"),
         @Message(key = "nullPrice", value = "N/A"),
+        @Message(key = "hasCrafters", value = "Only with crafters available"),
         @Message(key = "recipeTypeCaption", value = "Recipe Type")
     })
     @Override
