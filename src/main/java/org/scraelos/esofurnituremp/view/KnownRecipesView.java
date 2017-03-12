@@ -122,11 +122,13 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     private ItemSubCategory currentCategory;
     private ComboBox recipeType;
     private Button importButton;
+    private ScreenShotViewWindwow screenShotViewWindwow;
 
     private SortableLazyList<KnownRecipe> itemList;
     private GeneratedPropertyListContainer<KnownRecipe> listContainer = new GeneratedPropertyListContainer(KnownRecipe.class);
     private KnownRecipeSpecification specification;
     private ScreenshotClickListener screenshotClickListener;
+    private DeleteImageClickListener deleteImageClickListener;
     static final int PAGESIZE = 20;
 
     public KnownRecipesView() {
@@ -228,6 +230,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         header.build();
         screenshotClickListener = new ScreenshotClickListener();
+        deleteImageClickListener = new DeleteImageClickListener();
         specification = new KnownRecipeSpecification(SpringSecurityHelper.getUser());
         tree.setContainerDataSource(dBService.getItemCategories());
         listContainer.addGeneratedProperty("screenshots", new ScreenShotsColumnGenerator());
@@ -501,6 +504,21 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             if (knownRecipe.getRecipe().getFurnitureItem() != null) {
                 final FurnitureItem furnitureItem = knownRecipe.getRecipe().getFurnitureItem();
                 int counter = 0;
+                if (SpringSecurityHelper.hasRole("ROLE_UPLOAD_SCREENSHOTS")) {
+                    Button uploadScreenShot = new Button(FontAwesome.UPLOAD);
+                    uploadScreenShot.setData(furnitureItem);
+                    uploadScreenShot.addClickListener(new Button.ClickListener() {
+
+                        @Override
+                        public void buttonClick(Button.ClickEvent event) {
+                            UploadScreenshotWindow window = new UploadScreenshotWindow(knownRecipe);
+                            getUI().addWindow(window);
+
+                        }
+                    });
+                    hl.addComponent(uploadScreenShot);
+
+                }
                 for (final ItemScreenshot s : furnitureItem.getItemScreenshots()) {
                     StreamResource.StreamSource streamSource = new StreamResource.StreamSource() {
 
@@ -527,23 +545,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
                         break;
                     }
                 }
-                if (SpringSecurityHelper.hasRole("ROLE_UPLOAD_SCREENSHOTS")) {
-                    Button uploadScreenShot = new Button(FontAwesome.UPLOAD);
-                    uploadScreenShot.setData(furnitureItem);
-                    uploadScreenShot.addClickListener(new Button.ClickListener() {
-
-                        @Override
-                        public void buttonClick(Button.ClickEvent event) {
-                            UploadScreenshotWindow window = new UploadScreenshotWindow(knownRecipe);
-                            getUI().addWindow(window);
-
-                        }
-                    });
-                    hl.addComponent(uploadScreenShot);
-
-                }
             }
-
             return hl;
         }
 
@@ -671,8 +673,8 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         public void click(MouseEvents.ClickEvent event) {
             Image i = (Image) event.getComponent();
             final ItemScreenshot sc = (ItemScreenshot) i.getData();
-            ScreenShotViewWindwow window = new ScreenShotViewWindwow(sc);
-            getUI().addWindow(window);
+            screenShotViewWindwow = new ScreenShotViewWindwow(sc);
+            getUI().addWindow(screenShotViewWindwow);
         }
 
     }
@@ -759,7 +761,39 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             Image screenshotImage = new Image(null, new StreamResource(screenshotStreamSource, s.getFileName()));
             screenshotImage.setWidth(1048f, Unit.PIXELS);
             screenshotImage.setAlternateText(i18n.screenshotAlternativeText(s.getFileName(), s.getAuthor().getEsoId()));
-            panel.setContent(screenshotImage);
+            VerticalLayout imageLayout = new VerticalLayout();
+            imageLayout.setSizeFull();
+            imageLayout.addComponent(screenshotImage);
+            if (SpringSecurityHelper.getUser() != null && SpringSecurityHelper.hasRole("ROLE_UPLOAD_SCREENSHOTS") && SpringSecurityHelper.getUser().equals(s.getAuthor())) {
+                Button deleteButton = new Button();
+                deleteButton.addClickListener(deleteImageClickListener);
+                deleteButton.setData(s);
+                deleteButton.setIcon(FontAwesome.RECYCLE);
+                imageLayout.addComponent(deleteButton);
+                imageLayout.setComponentAlignment(deleteButton, Alignment.BOTTOM_CENTER);
+            }
+
+            panel.setContent(imageLayout);
+        }
+
+    }
+
+    private class DeleteImageClickListener implements Button.ClickListener {
+
+        @Override
+        public void buttonClick(Button.ClickEvent event) {
+            ItemScreenshot itemScreenshot = (ItemScreenshot) event.getButton().getData();
+            FurnitureItem furnitureItem = itemScreenshot.getFurnitureItem();
+            furnitureItem.getItemScreenshots().remove(itemScreenshot);
+            dBService.deleteScreenShot(itemScreenshot);
+            for (Object itemId : listContainer.getItemIds()) {
+                KnownRecipe r = (KnownRecipe) itemId;
+                if (r.getRecipe().getFurnitureItem() != null && r.getRecipe().getFurnitureItem().equals(furnitureItem)) {
+                    refreshGridItem(r);
+                    break;
+                }
+            }
+            screenShotViewWindwow.close();
         }
 
     }
