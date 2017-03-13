@@ -302,7 +302,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
                 if (value != null) {
                     try {
                         Number parse = NumberFormat.getInstance(locale).parse(value);
-                        BigDecimal result = BigDecimal.valueOf(parse.doubleValue()).setScale(2, RoundingMode.HALF_UP);
+                        BigDecimal result = BigDecimal.valueOf(parse.doubleValue()).setScale(0, RoundingMode.HALF_UP);
                         return result;
                     } catch (ParseException ex) {
                         return null;
@@ -339,7 +339,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
                 if (value != null) {
                     try {
                         Number parse = NumberFormat.getInstance(locale).parse(value);
-                        BigDecimal result = BigDecimal.valueOf(parse.doubleValue()).setScale(2, RoundingMode.HALF_UP);
+                        BigDecimal result = BigDecimal.valueOf(parse.doubleValue()).setScale(0, RoundingMode.HALF_UP);
                         return result;
                     } catch (ParseException ex) {
                         return null;

@@ -13,23 +13,15 @@ import com.vaadin.data.Property;
 import com.vaadin.data.fieldgroup.FieldGroup;
 import com.vaadin.data.util.PropertyValueGenerator;
 import com.vaadin.data.util.converter.Converter;
-import com.vaadin.data.util.converter.StringToBooleanConverter;
+import com.vaadin.data.validator.BigDecimalRangeValidator;
 import com.vaadin.event.FieldEvents;
 import com.vaadin.event.ItemClickEvent;
 import com.vaadin.event.MouseEvents;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
-import com.vaadin.server.ClientConnector;
-import com.vaadin.server.ClientMethodInvocation;
-import com.vaadin.server.ErrorHandler;
-import com.vaadin.server.Extension;
 import com.vaadin.server.FontAwesome;
-import com.vaadin.server.ServerRpcManager;
 import com.vaadin.server.Sizeable;
 import com.vaadin.server.StreamResource;
-import com.vaadin.server.VaadinRequest;
-import com.vaadin.server.VaadinResponse;
-import com.vaadin.shared.communication.SharedState;
 import com.vaadin.ui.AbstractTextField;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
@@ -46,11 +38,7 @@ import com.vaadin.ui.UI;
 import com.vaadin.ui.Upload;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
-import com.vaadin.ui.renderers.AbstractJavaScriptRenderer;
-import com.vaadin.ui.renderers.Renderer;
 import de.datenhahn.vaadin.componentrenderer.ComponentRenderer;
-import elemental.json.JsonObject;
-import elemental.json.JsonValue;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -58,10 +46,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -87,7 +77,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
 import org.vaadin.liveimageeditor.LiveImageEditor;
-import org.vaadin.viritin.ListContainer.DynaBeanItem;
 import org.vaadin.viritin.SortableLazyList;
 import org.vaadin.viritin.grid.GeneratedPropertyListContainer;
 import ru.xpoft.vaadin.VaadinView;
@@ -122,6 +111,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     private ItemSubCategory currentCategory;
     private ComboBox recipeType;
     private Button importButton;
+    private Button massPriceSetupButton;
     private ScreenShotViewWindwow screenShotViewWindwow;
 
     private SortableLazyList<KnownRecipe> itemList;
@@ -147,6 +137,16 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             }
         });
         actions.addComponent(importButton);
+        massPriceSetupButton = new Button(null, new Button.ClickListener() {
+
+            @Override
+            public void buttonClick(Button.ClickEvent event) {
+                MassPricesSetupWindow window = new MassPricesSetupWindow();
+                getUI().addWindow(window);
+                window.localize();
+            }
+        });
+        actions.addComponent(massPriceSetupButton);
         vl.addComponent(actions);
         filters = new HorizontalLayout();
         recipeType = new ComboBox(null, Arrays.asList(RECIPE_TYPE.values()));
@@ -374,6 +374,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     private void localize(Locale locale) {
         Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
         importButton.setCaption(i18n.importDataFromCraftStoreButtonCaption());
+        massPriceSetupButton.setCaption(i18n.massPriceSetup());
         tree.setCaption(i18n.categories());
         grid.setCaption(i18n.knownRecipesTableCaption());
         recipeType.setCaption(i18n.recipeTypeCaption());
@@ -794,6 +795,151 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
                 }
             }
             screenShotViewWindwow.close();
+        }
+
+    }
+
+    private class MassPricesSetupWindow extends Window {
+
+        private ComboBox itemQualityBox;
+        private CheckBox isPriceNull;
+        private CheckBox isPriceWithMatsNull;
+        private TextField priceField;
+        private TextField priceWithMatsField;
+        private Button setupPriceButton;
+
+        public MassPricesSetupWindow() {
+            this.setModal(true);
+            this.setResizable(false);
+            this.setWidth(1400f, Unit.PIXELS);
+            this.setHeight(70, Unit.PIXELS);
+            center();
+            HorizontalLayout hl = new HorizontalLayout();
+            hl.setDefaultComponentAlignment(Alignment.BOTTOM_LEFT);
+            itemQualityBox = new ComboBox(i18n.itemQualityCaption(), Arrays.asList(ITEM_QUALITY.values()));
+            itemQualityBox.setNullSelectionAllowed(false);
+            itemQualityBox.setCaption(i18n.itemQualityCaption());
+
+            hl.addComponent(itemQualityBox);
+            isPriceNull = new CheckBox(i18n.massPriceSetupNullCraftPrice(), true);
+            hl.addComponent(isPriceNull);
+            priceField = new TextField(i18n.craftPrice());
+            priceField.setNullRepresentation("");
+            priceField.addValidator(new BigDecimalRangeValidator(i18n.wrongPriceMessage(), BigDecimal.ONE, BigDecimal.valueOf(1000000000L).setScale(2, RoundingMode.HALF_UP)));
+            hl.addComponent(priceField);
+            isPriceWithMatsNull = new CheckBox(i18n.massPriceSetupNullCraftPriceWithMats(), true);
+            hl.addComponent(isPriceWithMatsNull);
+            priceWithMatsField = new TextField(i18n.craftPriceWithMats());
+            priceWithMatsField.setNullRepresentation("");
+            priceWithMatsField.addValidator(new BigDecimalRangeValidator(i18n.wrongPriceMessage(), BigDecimal.ONE, BigDecimal.valueOf(1000000000L).setScale(0, RoundingMode.HALF_UP)));
+            hl.addComponent(priceWithMatsField);
+            setupPriceButton = new Button(i18n.applyPricesButton(), new Button.ClickListener() {
+
+                @Override
+                public void buttonClick(Button.ClickEvent event) {
+                    if (itemQualityBox.isValid() && priceField.isValid() && priceWithMatsField.isValid()) {
+                        dBService.applyPrices(SpringSecurityHelper.getUser(), (ITEM_QUALITY) itemQualityBox.getValue(), (BigDecimal) priceField.getConvertedValue(), (BigDecimal) priceWithMatsField.getConvertedValue(), isPriceNull.getValue(), isPriceWithMatsNull.getValue());
+                        loadItems();
+                    }
+                }
+            });
+            hl.addComponent(setupPriceButton);
+            this.setContent(hl);
+
+        }
+
+        public void localize() {
+            priceField.setConverter(new Converter<String, BigDecimal>() {
+
+                @Override
+                public BigDecimal convertToModel(String value, Class<? extends BigDecimal> targetType, Locale locale) throws Converter.ConversionException {
+                    if (value == null) {
+                        return null;
+                    }
+                    try {
+                        Number parse = NumberFormat.getInstance(locale).parse(value);
+                        BigDecimal result = BigDecimal.valueOf(parse.doubleValue()).setScale(0, RoundingMode.HALF_UP);
+                        return result;
+                    } catch (ParseException ex) {
+                        return null;
+                    }
+                }
+
+                @Override
+                public String convertToPresentation(BigDecimal value, Class<? extends String> targetType, Locale locale) throws Converter.ConversionException {
+                    if (value != null) {
+                        return NumberFormat.getInstance(locale).format(value.doubleValue());
+                    } else {
+                        return "";
+                    }
+                }
+
+                @Override
+                public Class<BigDecimal> getModelType() {
+                    return BigDecimal.class;
+                }
+
+                @Override
+                public Class<String> getPresentationType() {
+                    return String.class;
+                }
+            });
+            priceWithMatsField.setConverter(new Converter<String, BigDecimal>() {
+
+                @Override
+                public BigDecimal convertToModel(String value, Class<? extends BigDecimal> targetType, Locale locale) throws Converter.ConversionException {
+                    if (value == null) {
+                        return null;
+                    }
+                    try {
+                        Number parse = NumberFormat.getInstance(locale).parse(value);
+                        BigDecimal result = BigDecimal.valueOf(parse.doubleValue()).setScale(0, RoundingMode.HALF_UP);
+                        return result;
+                    } catch (ParseException ex) {
+                        return null;
+                    }
+                }
+
+                @Override
+                public String convertToPresentation(BigDecimal value, Class<? extends String> targetType, Locale locale) throws Converter.ConversionException {
+                    if (value != null) {
+                        return NumberFormat.getInstance(locale).format(value.doubleValue());
+                    } else {
+                        return "";
+                    }
+                }
+
+                @Override
+                public Class<BigDecimal> getModelType() {
+                    return BigDecimal.class;
+                }
+
+                @Override
+                public Class<String> getPresentationType() {
+                    return String.class;
+                }
+            });
+            Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+            for (ITEM_QUALITY q : ITEM_QUALITY.values()) {
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (getUI().getLocale().getLanguage()) {
+                        case "en":
+                            itemQualityBox.setItemCaption(q, q.getNameEn());
+                            break;
+                        case "de":
+                            itemQualityBox.setItemCaption(q, q.getNameDe());
+                            break;
+                        case "fr":
+                            itemQualityBox.setItemCaption(q, q.getNameFr());
+                            break;
+                        case "ru":
+                            itemQualityBox.setItemCaption(q, q.getNameRu());
+                            break;
+                    }
+                } else {
+                    itemQualityBox.setItemCaption(q, q.getNameEn());
+                }
+            }
         }
 
     }

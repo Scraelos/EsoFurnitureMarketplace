@@ -467,4 +467,56 @@ public class DBService {
         }
 
     }
+
+    @Transactional
+    public void applyPrices(SysAccount account, ITEM_QUALITY quality, BigDecimal price, BigDecimal priceWithMats, Boolean nullPrice, Boolean nullPriceWithMats) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<KnownRecipe> q1 = cb.createQuery(KnownRecipe.class);
+        Root<KnownRecipe> root1 = q1.from(KnownRecipe.class);
+        q1.select(root1);
+        if (nullPrice) {
+            q1.where(cb.and(
+                    cb.equal(root1.get("recipe").get("itemQuality"), quality),
+                    cb.equal(root1.get("account"), account),
+                    cb.isNull(root1.get("craftPrice"))
+            ));
+        } else {
+            q1.where(cb.and(
+                    cb.equal(root1.get("recipe").get("itemQuality"), quality),
+                    cb.equal(root1.get("account"), account)
+            ));
+        }
+        q1.distinct(true);
+        List<KnownRecipe> list1 = em.createQuery(q1).getResultList();
+        if (list1 != null && !list1.isEmpty()) {
+            for (KnownRecipe r : list1) {
+                r.setCraftPrice(price);
+                em.merge(r);
+            }
+        }
+
+        CriteriaQuery<KnownRecipe> q2 = cb.createQuery(KnownRecipe.class);
+        Root<KnownRecipe> root2 = q2.from(KnownRecipe.class);
+        q2.select(root2);
+        if (nullPriceWithMats) {
+            q2.where(cb.and(
+                    cb.equal(root2.get("recipe").get("itemQuality"), quality),
+                    cb.equal(root2.get("account"), account),
+                    cb.isNull(root2.get("craftPrice"))
+            ));
+        } else {
+            q2.where(cb.and(
+                    cb.equal(root2.get("recipe").get("itemQuality"), quality),
+                    cb.equal(root2.get("account"), account)
+            ));
+        }
+        q2.distinct(true);
+        List<KnownRecipe> list2 = em.createQuery(q2).getResultList();
+        if (list2 != null && !list2.isEmpty()) {
+            for (KnownRecipe r : list2) {
+                r.setCraftPrice(priceWithMats);
+                em.merge(r);
+            }
+        }
+    }
 }
