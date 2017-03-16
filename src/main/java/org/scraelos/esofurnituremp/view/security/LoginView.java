@@ -5,7 +5,6 @@
  */
 package org.scraelos.esofurnituremp.view.security;
 
-import com.vaadin.data.fieldgroup.FieldGroup;
 import com.vaadin.data.validator.EmailValidator;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
@@ -23,6 +22,8 @@ import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
+import com.wcs.wcslib.vaadin.widget.recaptcha.ReCaptcha;
+import com.wcs.wcslib.vaadin.widget.recaptcha.shared.ReCaptchaOptions;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -72,6 +73,7 @@ public class LoginView extends CustomComponent implements View,
 
     private final ComboBox activeServer;
     private final Label activeServerlabel;
+    private ReCaptcha captcha;
 
     private Bundle i18n;
 
@@ -89,7 +91,7 @@ public class LoginView extends CustomComponent implements View,
         setSizeFull();
         i18n = new Bundle();
         user = new TextField(i18n.email());
-        user.setWidth(100f,Unit.PERCENTAGE);
+        user.setWidth(100f, Unit.PERCENTAGE);
         user.setRequired(true);
         user.setImmediate(true);
         user.setInputPrompt(i18n.emailPromt());
@@ -97,7 +99,7 @@ public class LoginView extends CustomComponent implements View,
         user.setInvalidAllowed(false);
 
         password = new PasswordField(i18n.password());
-        password.setWidth(100f,Unit.PERCENTAGE);
+        password.setWidth(100f, Unit.PERCENTAGE);
         password.setRequired(true);
         password.setImmediate(true);
         password.setNullRepresentation("");
@@ -115,7 +117,7 @@ public class LoginView extends CustomComponent implements View,
         loginFields.setSizeFull();
 
         newUser = new TextField(i18n.email());
-        newUser.setWidth(100f,Unit.PERCENTAGE);
+        newUser.setWidth(100f, Unit.PERCENTAGE);
         newUser.setRequired(true);
         newUser.setImmediate(true);
         newUser.setInputPrompt(i18n.emailPromt());
@@ -123,7 +125,7 @@ public class LoginView extends CustomComponent implements View,
         newUser.setInvalidAllowed(false);
 
         newUserRepeat = new TextField(i18n.emailRepeat());
-        newUserRepeat.setWidth(100f,Unit.PERCENTAGE);
+        newUserRepeat.setWidth(100f, Unit.PERCENTAGE);
         newUserRepeat.setRequired(true);
         newUserRepeat.setImmediate(true);
         newUserRepeat.setInputPrompt(i18n.emailRepeatPromt());
@@ -135,26 +137,34 @@ public class LoginView extends CustomComponent implements View,
         activeServerlabel = new Label(i18n.activeServerNotice());
 
         newUserId = new TextField(i18n.ingameId());
-        newUserId.setWidth(100f,Unit.PERCENTAGE);
+        newUserId.setWidth(100f, Unit.PERCENTAGE);
         newUserId.setRequired(true);
         newUserId.setImmediate(true);
         newUserId.setInputPrompt(i18n.ingameIdPromt());
         newUserId.setInvalidAllowed(false);
 
         newPassword = new PasswordField(i18n.password());
-        newPassword.setWidth(100f,Unit.PERCENTAGE);
+        newPassword.setWidth(100f, Unit.PERCENTAGE);
         newPassword.setRequired(true);
         newPassword.setImmediate(true);
         newPassword.setNullRepresentation("");
 
         newPasswordRepeat = new PasswordField(i18n.passwordRepeat());
-        newPasswordRepeat.setWidth(100f,Unit.PERCENTAGE);
+        newPasswordRepeat.setWidth(100f, Unit.PERCENTAGE);
         newPasswordRepeat.setRequired(true);
         newPasswordRepeat.setImmediate(true);
         newPasswordRepeat.setNullRepresentation("");
-
+        captcha = new ReCaptcha(
+                "6LfQMRkUAAAAAHVI39ktj2xc1ZpTMYvLKKnjrZ_z",
+                new ReCaptchaOptions() {
+                    {
+                        theme = "light";
+                        sitekey = "6LfQMRkUAAAAAJG4zPW6yD4vJJLE1CjkCh53qGwH";
+                    }
+                }
+        );
         registerButton = new Button(i18n.registerAndLogin(), this);
-        registerFields = new FormLayout(newUser, newUserRepeat, newUserId, activeServer, activeServerlabel, newPassword, newPasswordRepeat, registerButton);
+        registerFields = new FormLayout(newUser, newUserRepeat, newUserId, activeServer, activeServerlabel, newPassword, newPasswordRepeat, captcha, registerButton);
         registerFields.addStyleName(ValoTheme.FORMLAYOUT_LIGHT);
         registerFields.setSpacing(true);
         registerFields.setMargin(new MarginInfo(true, true, true, false));
@@ -200,21 +210,28 @@ public class LoginView extends CustomComponent implements View,
                 Logger.getLogger(LoginView.class.getName()).log(Level.INFO, null, ex);
             }
 
-        } else if (event.getButton() == registerButton && newUser.isValid() && newUserRepeat.isValid() && newPassword.isValid() && newPasswordRepeat.isValid() && newUserId.isValid()) {
-            try {
-                dBService.registerUser(newUser.getValue(), newPassword.getValue(), newUserId.getValue(), (ESO_SERVER) activeServer.getValue());
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(newUser.getValue(), newPassword.getValue());
-                Authentication authenticate = authenticationManager.authenticate(authentication);
-                SecurityContextHolder.getContext().setAuthentication(authenticate);
-                LOG.log(Level.INFO, "{0} {1}", new Object[]{authenticate.getPrincipal(), authenticate.isAuthenticated()});
-                if (authentication.getPrincipal() instanceof SysAccount && ((SysAccount) authentication.getPrincipal()).getUserLanguage() != null) {
-                    getUI().setLocale(((SysAccount) authentication.getPrincipal()).getUserLanguage().getLocale());
+        } else if (event.getButton() == registerButton) {
+            if (captcha.validate()) {
+                if (newUser.isValid() && newUserRepeat.isValid() && newPassword.isValid() && newPasswordRepeat.isValid() && newUserId.isValid()) {
+                    try {
+                        dBService.registerUser(newUser.getValue(), newPassword.getValue(), newUserId.getValue(), (ESO_SERVER) activeServer.getValue());
+                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(newUser.getValue(), newPassword.getValue());
+                        Authentication authenticate = authenticationManager.authenticate(authentication);
+                        SecurityContextHolder.getContext().setAuthentication(authenticate);
+                        LOG.log(Level.INFO, "{0} {1}", new Object[]{authenticate.getPrincipal(), authenticate.isAuthenticated()});
+                        if (authentication.getPrincipal() instanceof SysAccount && ((SysAccount) authentication.getPrincipal()).getUserLanguage() != null) {
+                            getUI().setLocale(((SysAccount) authentication.getPrincipal()).getUserLanguage().getLocale());
+                        }
+                        getUI().getNavigator().navigateTo(forwardTo);
+                    } catch (Exception ex) {
+                        Logger.getLogger(LoginView.class.getName()).log(Level.SEVERE, null, ex);
+                        Notification.show(i18n.registrationErrorCaption(), ex.getMessage(), Notification.Type.ERROR_MESSAGE);
+                    }
                 }
-                getUI().getNavigator().navigateTo(forwardTo);
-            } catch (Exception ex) {
-                Logger.getLogger(LoginView.class.getName()).log(Level.SEVERE, null, ex);
-                Notification.show(i18n.registrationErrorCaption(), ex.getMessage(), Notification.Type.ERROR_MESSAGE);
+            } else {
+                captcha.reload();
             }
+
         }
     }
 

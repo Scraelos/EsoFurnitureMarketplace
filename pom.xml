@@ -266,7 +266,21 @@
             <artifactId>componentrenderer</artifactId>
             <version>1.0.3</version>
         </dependency>
-        
+        <dependency>
+            <groupId>com.github.vaadin4qbanos</groupId>
+            <artifactId>jsclipboard</artifactId>
+            <version>1.0.3</version>
+        </dependency> 
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <version>3.3.0.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>com.wcs.wcslib</groupId>
+            <artifactId>wcslib-vaadin-widget-recaptcha</artifactId>
+            <version>2.0.2</version>
+        </dependency>      
         <!-- Implementation without CDI -->
         <dependency>
             <groupId>com.github.peholmst.i18n4vaadin</groupId>
