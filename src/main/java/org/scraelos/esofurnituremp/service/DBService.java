@@ -34,6 +34,7 @@ import org.scraelos.esofurnituremp.model.Recipe;
 import org.scraelos.esofurnituremp.model.RecipeIngredient;
 import org.scraelos.esofurnituremp.model.SysAccount;
 import org.scraelos.esofurnituremp.model.SysAccountRole;
+import org.scraelos.esofurnituremp.model.SystemProperty;
 import org.scraelos.esofurnituremp.model.lib.DAO;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -107,6 +108,22 @@ public class DBService {
     }
 
     @Transactional
+    public void createSystemProperties() {
+        List<SystemProperty> propertys = new ArrayList<>();
+        propertys.add(new SystemProperty(1L, "smtpServer", null));
+        propertys.add(new SystemProperty(2L, "smtpUser", null));
+        propertys.add(new SystemProperty(3L, "smtpPassword", null));
+        propertys.add(new SystemProperty(4L, "emailFrom", null));
+        propertys.add(new SystemProperty(5L, "smtpPort", null));
+        propertys.stream().forEach((s) -> {
+            SystemProperty find = em.find(SystemProperty.class, s.getId());
+            if (find == null) {
+                em.persist(s);
+            }
+        });
+    }
+
+    @Transactional
     public void createDefaultAdminUser() {
         try {
             SysAccount account = getAccount("admin@admin.ru");
@@ -155,15 +172,26 @@ public class DBService {
             r.setNameFr(textFr);
             r.setNameRu(textRu);
             em.merge(r);
+        } else {
+            FurnitureItem f = em.find(FurnitureItem.class, id);
+            if (f != null) {
+                f.setNameEn(textEn);
+                f.setNameDe(textDe);
+                f.setNameFr(textFr);
+                f.setNameRu(textRu);
+                em.merge(f);
+            } else {
+                Ingredient i = em.find(Ingredient.class, id);
+                if (i != null) {
+                    i.setNameEn(textEn);
+                    i.setNameDe(textDe);
+                    i.setNameFr(textFr);
+                    i.setNameRu(textRu);
+                    em.merge(i);
+                }
+            }
         }
-        FurnitureItem f = em.find(FurnitureItem.class, id);
-        if (f != null) {
-            f.setNameEn(textEn);
-            f.setNameDe(textDe);
-            f.setNameFr(textFr);
-            f.setNameRu(textRu);
-            em.merge(f);
-        }
+
     }
 
     @Transactional
@@ -195,21 +223,28 @@ public class DBService {
         if (recipeList == null || recipeList.isEmpty()) {
             FurnitureItem find = em.find(FurnitureItem.class, id);
             if (find != null) {
-                CriteriaQuery<Recipe> recipeQuery2 = builder.createQuery(Recipe.class);
-                Root<Recipe> recipeRoot2 = recipeQuery2.from(Recipe.class);
-                recipeQuery2.select(recipeRoot2);
-                recipeQuery2.where(builder.and(
-                        builder.isNull(recipeRoot2.get("itemQuality")),
-                        builder.equal(recipeRoot2.get("nameRu"), find.getNameRu())
-                )
-                );
-                recipeQuery2.distinct(true);
-                recipeList = em.createQuery(recipeQuery2).getResultList();
+                if (find.getRecipe() == null) {
+                    CriteriaQuery<Recipe> recipeQuery2 = builder.createQuery(Recipe.class);
+                    Root<Recipe> recipeRoot2 = recipeQuery2.from(Recipe.class);
+                    recipeQuery2.select(recipeRoot2);
+                    recipeQuery2.where(builder.and(
+                            builder.isNull(recipeRoot2.get("itemQuality")),
+                            builder.equal(recipeRoot2.get("nameDe"), find.getNameDe())
+                    )
+                    );
+                    recipeQuery2.distinct(true);
+                    recipeList = em.createQuery(recipeQuery2).getResultList();
+                } else {
+                    recipe=find.getRecipe();
+                }
+
             }
 
         }
-        if (recipeList != null && !recipeList.isEmpty()) {
+        if (recipe==null&&recipeList != null && !recipeList.isEmpty()) {
             recipe = recipeList.get(0);
+        }
+        if (recipe!=null) {
             FurnitureItem furnitureItem = em.find(FurnitureItem.class, id);
             recipe.setFurnitureItem(furnitureItem);
             recipe.setItemQuality(itemQuality);

@@ -144,8 +144,8 @@ public class ImportView extends CustomComponent implements View {
                         Cell textFrCell = r.getCell(6);
                         Cell textRuCell = r.getCell(7);
                         Long id = getLongFromCell(idCell);
-                        String textEn = getStringFromCell(textEnCell).replace("Diagram: ", "").replace("Design: ", "").replace("Pattern: ", "").replace("Blueprint: ", "").replace("Praxis: ", "").replace("Formula: ", "");
-                        String textDe = getStringFromCell(textDeCell).replace("Skizze: ", "").replace("Entwurf: ", "").replace("Vorlage: ", "").replace("Blaupause: ", "").replace("Anleitung: ", "").replace("Formel: ", "").replace("^f", "").replace("^m", "").replace(":m", "").replace(":n", "").replace(":f", "").replace(":p", "");
+                        String textEn = getStringFromCell(textEnCell).replace("Diagram: ", "").replace("Design: ", "").replace("Pattern: ", "").replace("Blueprint: ", "").replace("Praxis: ", "").replace("Formula: ", "").replace("^f", "").replace("^m", "").replace(":m", "").replace(":n", "").replace(":f", "").replace(":p", "").replace("^n", "");
+                        String textDe = getStringFromCell(textDeCell).replace("Skizze: ", "").replace("Entwurf: ", "").replace("Vorlage: ", "").replace("Blaupause: ", "").replace("Anleitung: ", "").replace("Formel: ", "").replace("^f", "").replace("^m", "").replace(":m", "").replace(":n", "").replace(":f", "").replace(":p", "").replace("^n", "");
                         String textFr = getStringFromCell(textFrCell).replace("Diagramme : ", "").replace("Croquis : ", "").replace("Préparation : ", "").replace("Plan : ", "").replace("Praxis : ", "").replace("Formule : ", "").replace("^f", "").replace("^m", "");
                         String textRu = getStringFromCell(textRuCell).replace("диаграмма: ", "").replace("проект: ", "").replace("шаблон: ", "").replace("чертеж: ", "").replace("схема: ", "").replace("формула: ", "").replace("^f", "").replace("^m", "");
                         dBService.setItemTranslation(id, textEn, textDe, textFr, textRu);

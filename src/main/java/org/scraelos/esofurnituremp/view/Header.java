@@ -36,6 +36,7 @@ public class Header extends VerticalLayout {
     private MenuBar.MenuItem adminMenu;
     private MenuBar.MenuItem importMenuItem;
     private MenuBar.MenuItem usersMenuItem;
+    private MenuBar.MenuItem systemPropertiesMenuItem;
     private MenuBar.MenuItem furnitureCatalogMenuItem;
     private MenuBar.MenuItem knownRecipesMenuItem;
     private MenuBar.MenuItem userProfileMenuItem;
@@ -71,6 +72,13 @@ public class Header extends VerticalLayout {
                 @Override
                 public void menuSelected(MenuBar.MenuItem selectedItem) {
                     getUI().getNavigator().navigateTo(UsersView.NAME);
+                }
+            });
+            systemPropertiesMenuItem = adminMenu.addItem("System Properties", FontAwesome.GEARS, new MenuBar.Command() {
+
+                @Override
+                public void menuSelected(MenuBar.MenuItem selectedItem) {
+                    getUI().getNavigator().navigateTo(SystemPropertiesView.NAME);
                 }
             });
         }

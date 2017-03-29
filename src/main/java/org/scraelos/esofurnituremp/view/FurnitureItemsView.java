@@ -63,6 +63,7 @@ import org.scraelos.esofurnituremp.data.FurnitureItemSpecification;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
+import org.scraelos.esofurnituremp.model.Ingredient;
 import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemScreenshot;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
@@ -274,6 +275,50 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         materialsContainer = new GeneratedPropertyListContainer(RecipeIngredient.class);
         materialsGrid.setContainerDataSource(materialsContainer);
         materialsGrid.setColumns("ingredient", "count");
+        materialsGrid.getColumn("ingredient").setConverter(new Converter<String, Ingredient>() {
+
+            @Override
+            public Ingredient convertToModel(String value, Class<? extends Ingredient> targetType, Locale locale) throws Converter.ConversionException {
+                return null;
+            }
+
+            @Override
+            public String convertToPresentation(Ingredient value, Class<? extends String> targetType, Locale locale) throws Converter.ConversionException {
+                String result = null;
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (locale.getLanguage()) {
+                        case "en":
+                            result = value.getNameEn();
+                            break;
+                        case "de":
+                            result = value.getNameDe();
+                            break;
+                        case "fr":
+                            result = value.getNameFr();
+                            break;
+                        case "ru":
+                            result = value.getNameRu();
+                            break;
+                    }
+                } else {
+                    result = value.getNameEn();
+                }
+
+                return result;
+            }
+
+            @Override
+            public Class<Ingredient> getModelType() {
+                return Ingredient.class;
+            }
+
+            @Override
+            public Class<String> getPresentationType() {
+                return String.class;
+            }
+
+        });
         itemInfoLayout.addComponent(materialsGrid);
 
         craftersGrid = new Grid();
@@ -434,6 +479,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         grid.setContainerDataSource(listContainer);
         grid.getColumn("links").setRenderer(new ComponentRenderer());
         grid.getColumn("screenshots").setRenderer(new ComponentRenderer()).setExpandRatio(1);
+        grid.getColumn("category").setSortable(false);
         if (SpringSecurityHelper.getUser() != null) {
             server.setValue(SpringSecurityHelper.getUser().getEsoServer());
         } else {
@@ -466,6 +512,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
     public void localeChanged(LocaleChangedEvent lce) {
         localize(lce.getNewLocale());
         grid.refreshAllRows();
+        materialsGrid.refreshAllRows();
     }
 
     private void localize(Locale locale) {
