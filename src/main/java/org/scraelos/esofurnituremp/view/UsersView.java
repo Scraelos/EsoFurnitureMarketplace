@@ -15,6 +15,7 @@ import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.Page;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
+import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
@@ -23,8 +24,11 @@ import com.vaadin.ui.Table;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.TwinColSelect;
 import com.vaadin.ui.VerticalLayout;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.scraelos.esofurnituremp.Bundle;
+import org.scraelos.esofurnituremp.model.ESO_SERVER;
 import org.scraelos.esofurnituremp.model.SysAccount;
 import org.scraelos.esofurnituremp.model.SysAccountRole;
 import org.scraelos.esofurnituremp.service.DBService;
@@ -46,6 +50,7 @@ import ru.xpoft.vaadin.VaadinView;
 public class UsersView extends CustomComponent implements View {
 
     public static final String NAME = "users";
+    private Bundle i18n = new Bundle();
     private HorizontalLayout actions;
     private Button refreshButton;
     private Button addButton;
@@ -55,6 +60,8 @@ public class UsersView extends CustomComponent implements View {
     private FormLayout form;
     private FieldGroup fieldGroup;
     private TextField username;
+    private TextField esoId;
+    private ComboBox esoServer;
     private PasswordField password;
     private PasswordField passwordRepeat;
     private TwinColSelect roles;
@@ -70,7 +77,7 @@ public class UsersView extends CustomComponent implements View {
     public UsersView() {
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
-        header=new Header();
+        header = new Header();
         vl.addComponent(header);
         actions = new HorizontalLayout();
         refreshButton = new Button("Refresh");
@@ -98,7 +105,7 @@ public class UsersView extends CustomComponent implements View {
         table.setSizeFull();
         container = new BeanItemContainer<>(SysAccount.class);
         table.setContainerDataSource(container);
-        table.setVisibleColumns(new Object[]{"username", "roles"});
+        table.setVisibleColumns(new Object[]{"username", "esoId", "roles"});
         table.addItemClickListener(new TableClickListener());
 
         tableAndForm.addComponent(table);
@@ -109,6 +116,13 @@ public class UsersView extends CustomComponent implements View {
         username.setNullRepresentation("");
         username.setRequired(true);
         form.addComponent(username);
+        esoId = new TextField("esoId");
+        esoId.setNullRepresentation("");
+        esoId.setRequired(true);
+        form.addComponent(esoId);
+        esoServer = new ComboBox(i18n.activeServer(), Arrays.asList(ESO_SERVER.values()));
+        esoServer.setNullSelectionAllowed(false);
+        form.addComponent(esoServer);
         password = new PasswordField("Password");
         form.addComponent(password);
         passwordRepeat = new PasswordField("Repeat Password");
@@ -157,6 +171,8 @@ public class UsersView extends CustomComponent implements View {
         form.setVisible(true);
         fieldGroup = new FieldGroup(currentUserItem);
         fieldGroup.bind(username, "username");
+        fieldGroup.bind(esoId, "esoId");
+        fieldGroup.bind(esoServer, "esoServer");
         fieldGroup.bind(roles, "roles");
         fieldGroup.bind(enabled, "enabled");
 
