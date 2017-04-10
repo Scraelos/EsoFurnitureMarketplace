@@ -85,6 +85,7 @@ public class DBService {
             account.setEnabled(Boolean.TRUE);
             account.setPassword(hashedPassword);
             account.setEsoId(esoId);
+            account.setEsoServer(server);
             Set<SysAccountRole> roles = new HashSet<>();
             roles.add(new SysAccountRole(1L));
             account.setRoles(roles);
