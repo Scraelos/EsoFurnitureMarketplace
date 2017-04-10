@@ -273,7 +273,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         itemNameLabel = new Label();
         itemInfoLayout.addComponent(itemNameLabel);
         itemLinkField = new TextField();
-        itemLinkField.setWidth(400f, Unit.PIXELS);
+        itemLinkField.setWidth(420f, Unit.PIXELS);
         itemLinkField.addStyleName(ValoTheme.TEXTFIELD_TINY);
         itemLinkField.addStyleName(ValoTheme.TEXTFIELD_SMALL);
         itemInfoLayout.addComponent(itemLinkField);
@@ -347,6 +347,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         );
         craftersGrid.setContainerDataSource(craftersContainer);
         craftersGrid.setColumns(new Object[]{"esoId", "craftPrice", "craftPriceWithMats"});
+        craftersGrid.getColumn("esoId").setMinimumWidth(300).setExpandRatio(2);
         craftersGrid.getColumn("craftPrice").setConverter(new Converter<String, BigDecimal>() {
 
             @Override
@@ -427,7 +428,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         itemInfoLayout.addComponent(craftersGrid);
         itemInfoLayout.setExpandRatio(craftersGrid, 1f);
         hl.addComponent(itemInfoLayout);
-        hl.setExpandRatio(itemInfoLayout, 0.4f);
+        hl.setExpandRatio(itemInfoLayout, 0.6f);
         vl.addComponent(hl);
         vl.setExpandRatio(hl, 1f);
         setCompositionRoot(vl);
