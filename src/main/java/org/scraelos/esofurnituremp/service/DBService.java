@@ -423,7 +423,15 @@ public class DBService {
         );
         q.distinct(true);
         List<KnownRecipe> resultList = em.createQuery(q).getResultList();
-        return resultList;
+        List<SysAccount> accounts=new ArrayList<>();
+        List<KnownRecipe> newList=new ArrayList<>();
+        for(KnownRecipe r:resultList) {
+            if(!accounts.contains(r.getAccount())) {
+                accounts.add(r.getAccount());
+                newList.add(r);
+            }
+        }
+        return newList;
     }
 
     @Transactional
