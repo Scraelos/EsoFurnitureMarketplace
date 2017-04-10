@@ -10,7 +10,6 @@ import com.github.peholmst.i18n4vaadin.LocaleChangedListener;
 import com.github.peholmst.i18n4vaadin.util.I18NHolder;
 import com.vaadin.data.Item;
 import com.vaadin.data.Property;
-import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.data.util.PropertyValueGenerator;
 import com.vaadin.data.util.converter.Converter;
 import com.vaadin.event.FieldEvents;
@@ -31,7 +30,6 @@ import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Image;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Panel;
-import com.vaadin.ui.Table;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.Tree;
 import com.vaadin.ui.Upload;
@@ -131,6 +129,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
     private VerticalLayout itemInfoLayout;
     private Label itemNameLabel;
+    private TextField itemLinkField;
 
     private Grid materialsGrid;
     private GeneratedPropertyListContainer materialsContainer;
@@ -251,6 +250,9 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
                     itemNameLabel.addStyleName(selectedFurnitureItem.getItemQuality().name().toLowerCase());
                 }
 
+                itemLinkField.setReadOnly(false);
+                itemLinkField.setValue(selectedFurnitureItem.getItemLink());
+                itemLinkField.setReadOnly(true);
                 itemInfoLayout.setVisible(true);
                 if (selectedFurnitureItem.getRecipe() != null) {
                     materialsContainer.setCollection(selectedFurnitureItem.getRecipe().getRecipeIngredients());
@@ -267,9 +269,14 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         hl.addComponent(grid);
         hl.setExpandRatio(grid, 1f);
         itemInfoLayout = new VerticalLayout();
-        itemInfoLayout.setSizeFull();
+        itemInfoLayout.setDefaultComponentAlignment(Alignment.TOP_LEFT);
         itemNameLabel = new Label();
         itemInfoLayout.addComponent(itemNameLabel);
+        itemLinkField = new TextField();
+        itemLinkField.setWidth(400f, Unit.PIXELS);
+        itemLinkField.addStyleName(ValoTheme.TEXTFIELD_TINY);
+        itemLinkField.addStyleName(ValoTheme.TEXTFIELD_SMALL);
+        itemInfoLayout.addComponent(itemLinkField);
         materialsGrid = new Grid();
         materialsGrid.setSizeFull();
         materialsContainer = new GeneratedPropertyListContainer(RecipeIngredient.class);
@@ -418,7 +425,6 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         itemInfoLayout.setVisible(false);
         materialsGrid.setVisible(false);
         itemInfoLayout.addComponent(craftersGrid);
-        itemInfoLayout.setExpandRatio(materialsGrid, 0.5f);
         itemInfoLayout.setExpandRatio(craftersGrid, 1f);
         hl.addComponent(itemInfoLayout);
         hl.setExpandRatio(itemInfoLayout, 0.4f);
@@ -475,9 +481,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
         });
         listContainer.addGeneratedProperty("screenshots", new ScreenShotsColumnGenerator());
-        listContainer.addGeneratedProperty("links", new ItemLinkCoumnGenerator());
         grid.setContainerDataSource(listContainer);
-        grid.getColumn("links").setRenderer(new ComponentRenderer());
         grid.getColumn("screenshots").setRenderer(new ComponentRenderer()).setExpandRatio(1);
         grid.getColumn("category").setSortable(false);
         if (SpringSecurityHelper.getUser() != null) {
@@ -553,10 +557,9 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         searchFieldIgnoresOtherFilters.setCaption(i18n.searchFieldIgnoreFilters());
         tree.setCaption(i18n.categories());
         grid.setCaption(i18n.furnitureListItemTableCaption());
-        grid.setColumns(new Object[]{itemNameColumn, "links", "screenshots", "category"});
+        grid.setColumns(new Object[]{itemNameColumn, "screenshots", "category"});
         grid.getColumn(itemNameColumn).setWidth(400).setHeaderCaption(i18n.item());
         grid.getColumn("category").setHeaderCaption(i18n.category());
-        grid.getColumn("links").setHeaderCaption(i18n.itemLink());
         grid.getColumn("screenshots").setHeaderCaption(i18n.screenshots());
         if (selectedFurnitureItem != null) {
             if (useEnglishNames == null || !useEnglishNames) {
@@ -597,28 +600,6 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
             }
 
             return null;
-        }
-
-    }
-
-    private class ItemLinkCoumnGenerator extends PropertyValueGenerator<VerticalLayout> {
-
-        @Override
-        public VerticalLayout getValue(Item item, Object itemId, Object propertyId) {
-            VerticalLayout result = new VerticalLayout();
-            final FurnitureItem furnitureItem = (FurnitureItem) itemId;
-            TextField linkField = new TextField();
-            linkField.setValue(furnitureItem.getItemLink());
-            linkField.setReadOnly(true);
-            String linkeId = "itemLink" + furnitureItem.getId();
-            linkField.setId(linkeId);
-            result.addComponent(linkField);
-            return result;
-        }
-
-        @Override
-        public Class<VerticalLayout> getType() {
-            return VerticalLayout.class;
         }
 
     }
