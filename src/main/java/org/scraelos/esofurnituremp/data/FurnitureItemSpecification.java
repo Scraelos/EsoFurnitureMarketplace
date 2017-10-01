@@ -9,12 +9,16 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Subquery;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
+import org.scraelos.esofurnituremp.model.Recipe;
+import org.scraelos.esofurnituremp.model.SysAccount;
 import org.springframework.data.jpa.domain.Specification;
 
 /**
@@ -30,6 +34,9 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
     private ItemSubCategory category;
     private ITEM_QUALITY itemQuality;
     private ESO_SERVER esoServer;
+    private Boolean unknownRecipes;
+    private SysAccount account;
+    private String crafterId;
 
     public void setItemQuality(ITEM_QUALITY itemQuality) {
         this.itemQuality = itemQuality;
@@ -75,10 +82,23 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
         this.esoServer = esoServer;
     }
 
+    public void setUnknownRecipes(Boolean unknownRecipes) {
+        this.unknownRecipes = unknownRecipes;
+    }
+
+    public void setAccount(SysAccount account) {
+        this.account = account;
+    }
+
+    public void setCrafterId(String crafterId) {
+        this.crafterId = crafterId;
+    }
+
     @Override
     public Predicate toPredicate(Root<FurnitureItem> root, CriteriaQuery<?> cq, CriteriaBuilder cb) {
         Predicate result = null;
         Predicate textSearch = null;
+        cq.distinct(true);
         if (searchString != null && searchString.length() > 2) {
             textSearch = cb.or(
                     cb.like(cb.lower(root.get("nameEn")), "%" + searchString.toLowerCase() + "%"),
@@ -94,15 +114,28 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
             if (category != null) {
                 predicates.add(cb.equal(root.get("subCategory"), category));
             }
-            if (onlyCraftable != null && onlyCraftable) {
+            if ((onlyCraftable != null && onlyCraftable) || (unknownRecipes != null && unknownRecipes)) {
                 predicates.add(cb.isNotNull(root.get("recipe")));
             }
-            if (hasCrafters != null && hasCrafters) {
+            if (crafterId != null && !crafterId.isEmpty()) {
+                Path<Object> knownJoin = root.join("recipe").join("knownRecipes");
+                predicates.add(cb.equal(knownJoin.get("esoServer"), esoServer));
+                predicates.add(cb.equal(knownJoin.get("account").get("esoId"), crafterId));
+            } else if (hasCrafters != null && hasCrafters) {
                 predicates.add(cb.equal(root.join("recipe").join("knownRecipes").get("esoServer"), esoServer));
-                cq.distinct(true);
             }
             if (itemQuality != null) {
                 predicates.add(cb.equal(root.get("itemQuality"), itemQuality));
+            }
+            if (unknownRecipes != null && unknownRecipes && account != null) {
+                Subquery<Recipe> subquery = cq.subquery(Recipe.class);
+                Root fromRecipe = subquery.from(Recipe.class);
+                subquery.select(fromRecipe);
+                subquery.where(cb.and(
+                        cb.equal(fromRecipe.join("knownRecipes").get("account"), account),
+                        cb.equal(fromRecipe.get("id"), root.get("recipe").get("id"))
+                ));
+                predicates.add(cb.not(root.get("recipe").in(subquery)));
             }
             if (textSearch != null) {
                 predicates.add(textSearch);

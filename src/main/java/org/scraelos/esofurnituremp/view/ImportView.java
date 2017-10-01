@@ -176,7 +176,7 @@ public class ImportView extends CustomComponent implements View {
                 Iterator<Sheet> sheetIterator = wb.sheetIterator();
                 while (sheetIterator.hasNext()) {
                     Sheet s = sheetIterator.next();
-                    if (s.getSheetName().equals("Furniture List 2.7.8")) {
+                    if (s.getSheetName().equals("Furniture List 3.1.2")) {
                         Iterator<Row> rowIterator = s.rowIterator();
                         rowIterator.next();
                         while (rowIterator.hasNext()) {
@@ -204,7 +204,7 @@ public class ImportView extends CustomComponent implements View {
                             dBService.addFurnitureItem(id, name, cat, subCat, quality, itemLink);
 
                         }
-                    } else if (s.getSheetName().equals("Plans 2.7.8")) {
+                    } else if (s.getSheetName().equals("Plans 3.1.2")) {
                         Pattern p = Pattern.compile("^(.*)\\((\\d*)");
                         Iterator<Row> rowIterator = s.rowIterator();
                         rowIterator.next();

@@ -8,6 +8,8 @@ package org.scraelos.esofurnituremp.model;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import org.scraelos.esofurnituremp.model.lib.DAO;
 
@@ -19,6 +21,7 @@ import org.scraelos.esofurnituremp.model.lib.DAO;
 public class Ingredient extends DAO {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Basic(optional = false)
     private Long id;
     @Column(unique = true)

@@ -33,6 +33,7 @@ public class ItemSubCategory extends DAO {
     private String nameFr;
     private String nameDe;
     private String nameRu;
+    private Integer ttcSubcategory;
     @ManyToOne
     private ItemCategory category;
 
@@ -84,6 +85,22 @@ public class ItemSubCategory extends DAO {
 
     public void setNameRu(String nameRu) {
         this.nameRu = nameRu;
+    }
+
+    public List<FurnitureItem> getFurnitureItems() {
+        return furnitureItems;
+    }
+
+    public void setFurnitureItems(List<FurnitureItem> furnitureItems) {
+        this.furnitureItems = furnitureItems;
+    }
+
+    public Integer getTtcSubcategory() {
+        return ttcSubcategory;
+    }
+
+    public void setTtcSubcategory(Integer ttcSubcategory) {
+        this.ttcSubcategory = ttcSubcategory;
     }
 
     @Override

@@ -236,24 +236,26 @@ public class DBService {
                     recipeQuery2.distinct(true);
                     recipeList = em.createQuery(recipeQuery2).getResultList();
                 } else {
-                    recipe=find.getRecipe();
+                    recipe = find.getRecipe();
                 }
 
             }
 
         }
-        if (recipe==null&&recipeList != null && !recipeList.isEmpty()) {
+        if (recipe == null && recipeList != null && !recipeList.isEmpty()) {
             recipe = recipeList.get(0);
         }
-        if (recipe!=null) {
+        if (recipe != null) {
             FurnitureItem furnitureItem = em.find(FurnitureItem.class, id);
             recipe.setFurnitureItem(furnitureItem);
             recipe.setItemQuality(itemQuality);
             recipe.setRecipeType(recipeType);
             em.merge(recipe);
             if (furnitureItem != null) {
-                furnitureItem.setRecipe(recipe);
-                em.merge(furnitureItem);
+                if (furnitureItem.getRecipe() == null) {
+                    furnitureItem.setRecipe(recipe);
+                    em.merge(furnitureItem);
+                }
             } else {
                 Logger.getLogger(DBService.class.getName()).info("Can't find " + id);
             }
@@ -423,10 +425,10 @@ public class DBService {
         );
         q.distinct(true);
         List<KnownRecipe> resultList = em.createQuery(q).getResultList();
-        List<SysAccount> accounts=new ArrayList<>();
-        List<KnownRecipe> newList=new ArrayList<>();
-        for(KnownRecipe r:resultList) {
-            if(!accounts.contains(r.getAccount())) {
+        List<SysAccount> accounts = new ArrayList<>();
+        List<KnownRecipe> newList = new ArrayList<>();
+        for (KnownRecipe r : resultList) {
+            if (!accounts.contains(r.getAccount())) {
                 accounts.add(r.getAccount());
                 newList.add(r);
             }

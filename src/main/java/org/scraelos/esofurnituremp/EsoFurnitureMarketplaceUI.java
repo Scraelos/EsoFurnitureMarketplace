@@ -127,7 +127,11 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         @Message(key = "wrongPriceMessage", value = "Wrong Price Value"),
         @Message(key = "applyPricesButton", value = "Apply Prices"),
         @Message(key = "massPriceSetup", value = "Mass Price Setup"),
-        @Message(key = "recipeTypeCaption", value = "Recipe Type")
+        @Message(key = "recipeTypeCaption", value = "Recipe Type"),
+        @Message(key = "ttcRecipeSearchItem", value = "Search recipe at TTC"),
+        @Message(key = "ttcSearchItem", value = "Search item at TTC"),
+        @Message(key = "unknownRecipes", value = "Unknown Recipe"),
+        @Message(key = "crafterId", value = "Crafter's id(without @)")
     })
     @Override
     protected void init(VaadinRequest request) {
