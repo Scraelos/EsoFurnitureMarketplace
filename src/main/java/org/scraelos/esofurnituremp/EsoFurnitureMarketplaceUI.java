@@ -131,6 +131,7 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         @Message(key = "ttcRecipeSearchItem", value = "Search recipe at TTC"),
         @Message(key = "ttcSearchItem", value = "Search item at TTC"),
         @Message(key = "unknownRecipes", value = "Unknown Recipe"),
+        @Message(key = "itemInfo", value = "Item Info"),
         @Message(key = "crafterId", value = "Crafter's id(without @)")
     })
     @Override

@@ -7,6 +7,7 @@ package org.scraelos.esofurnituremp.data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Path;
@@ -16,6 +17,7 @@ import javax.persistence.criteria.Subquery;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
+import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.scraelos.esofurnituremp.model.Recipe;
 import org.scraelos.esofurnituremp.model.SysAccount;
@@ -31,7 +33,8 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
     private Boolean searchStringIgnoresAll;
     private Boolean onlyCraftable;
     private Boolean hasCrafters;
-    private ItemSubCategory category;
+    private List<ItemCategory> categories = new ArrayList<>();
+    private List<ItemSubCategory> subCategories = new ArrayList<>();
     private ITEM_QUALITY itemQuality;
     private ESO_SERVER esoServer;
     private Boolean unknownRecipes;
@@ -42,36 +45,28 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
         this.itemQuality = itemQuality;
     }
 
-    public String getSearchString() {
-        return searchString;
-    }
-
     public void setSearchString(String searchString) {
         this.searchString = searchString;
-    }
-
-    public Boolean getSearchStringIgnoresAll() {
-        return searchStringIgnoresAll;
     }
 
     public void setSearchStringIgnoresAll(Boolean searchStringIgnoresAll) {
         this.searchStringIgnoresAll = searchStringIgnoresAll;
     }
 
-    public Boolean getOnlyCraftable() {
-        return onlyCraftable;
-    }
-
     public void setOnlyCraftable(Boolean onlyCraftable) {
         this.onlyCraftable = onlyCraftable;
     }
 
-    public ItemSubCategory getCategory() {
-        return category;
-    }
-
-    public void setCategory(ItemSubCategory category) {
-        this.category = category;
+    public void setCategories(Set<Object> list) {
+        subCategories.clear();
+        categories.clear();
+        for (Object o : list) {
+            if (o instanceof ItemSubCategory) {
+                subCategories.add((ItemSubCategory) o);
+            } else if (o instanceof ItemCategory) {
+                categories.add((ItemCategory) o);
+            }
+        }
     }
 
     public void setHasCrafters(Boolean hasCrafters) {
@@ -111,8 +106,12 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
             result = textSearch;
         } else {
             List<Predicate> predicates = new ArrayList<>();
-            if (category != null) {
-                predicates.add(cb.equal(root.get("subCategory"), category));
+            if (!categories.isEmpty() && !subCategories.isEmpty()) {
+                predicates.add(cb.or(root.get("subCategory").in(subCategories), root.get("subCategory").get("category").in(categories)));
+            } else if (!categories.isEmpty()) {
+                predicates.add(root.get("subCategory").get("category").in(categories));
+            } else if (!subCategories.isEmpty()) {
+                predicates.add(root.get("subCategory").in(subCategories));
             }
             if ((onlyCraftable != null && onlyCraftable) || (unknownRecipes != null && unknownRecipes)) {
                 predicates.add(cb.isNotNull(root.get("recipe")));
