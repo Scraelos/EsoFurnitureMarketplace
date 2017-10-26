@@ -22,6 +22,7 @@ import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.Sizeable;
 import com.vaadin.server.StreamResource;
+import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.AbstractTextField;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
@@ -79,7 +80,6 @@ import org.springframework.stereotype.Component;
 import org.vaadin.liveimageeditor.LiveImageEditor;
 import org.vaadin.viritin.SortableLazyList;
 import org.vaadin.viritin.grid.GeneratedPropertyListContainer;
-import ru.xpoft.vaadin.VaadinView;
 
 /**
  *
@@ -87,7 +87,7 @@ import ru.xpoft.vaadin.VaadinView;
  */
 @Component
 @Scope("prototype")
-@VaadinView(KnownRecipesView.NAME)
+@SpringView(name = KnownRecipesView.NAME)
 @Secured({"ROLE_USER"})
 public class KnownRecipesView extends CustomComponent implements View, LocaleChangedListener {
 

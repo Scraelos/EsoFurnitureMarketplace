@@ -6,6 +6,7 @@ package org.scraelos.esofurnituremp.view;
 
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
+import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
@@ -19,7 +20,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
 import org.vaadin.viritin.grid.MGrid;
-import ru.xpoft.vaadin.VaadinView;
 
 /**
  *
@@ -27,7 +27,7 @@ import ru.xpoft.vaadin.VaadinView;
  */
 @Component
 @Scope("prototype")
-@VaadinView(SystemPropertiesView.NAME)
+@SpringView(name = SystemPropertiesView.NAME)
 @Secured({"ROLE_ADMIN"})
 public class SystemPropertiesView extends CustomComponent implements View {
 

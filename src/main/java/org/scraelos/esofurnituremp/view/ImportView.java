@@ -7,6 +7,7 @@ package org.scraelos.esofurnituremp.view;
 
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
+import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.Upload;
 import com.vaadin.ui.VerticalLayout;
@@ -33,7 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
-import ru.xpoft.vaadin.VaadinView;
 
 /**
  *
@@ -41,7 +41,7 @@ import ru.xpoft.vaadin.VaadinView;
  */
 @Component
 @Scope("prototype")
-@VaadinView(ImportView.NAME)
+@SpringView(name = ImportView.NAME)
 @Secured({"ROLE_ADMIN"})
 public class ImportView extends CustomComponent implements View {
 
@@ -104,7 +104,7 @@ public class ImportView extends CustomComponent implements View {
                         String textEn = getStringFromCell(textEnCell).replace("Diagram: ", "").replace("Design: ", "").replace("Pattern: ", "").replace("Blueprint: ", "").replace("Praxis: ", "").replace("Formula: ", "");
                         String textDe = getStringFromCell(textDeCell).replace("Skizze: ", "").replace("Entwurf: ", "").replace("Vorlage: ", "").replace("Blaupause: ", "").replace("Anleitung: ", "").replace("Formel: ", "").replace("^f", "").replace("^m", "").replace(":m", "").replace(":n", "").replace(":f", "").replace(":p", "");
                         String textFr = getStringFromCell(textFrCell).replace("Diagramme : ", "").replace("Croquis : ", "").replace("Préparation : ", "").replace("Plan : ", "").replace("Praxis : ", "").replace("Formule : ", "").replace("^f", "").replace("^m", "");
-                        String textRu = getStringFromCell(textRuCell).replace("диаграмма: ", "").replace("проект: ", "").replace("шаблон: ", "").replace("чертеж: ", "").replace("схема: ", "").replace("формула: ", "").replace("^f", "").replace("^m", "");
+                        String textRu = getStringFromCell(textRuCell).replace("диаграмма: ", "").replace("проект: ", "").replace("шаблон: ", "").replace("чертеж: ", "").replace("схема: ", "").replace("формула: ", "").replace("Diagram: ", "").replace("Design: ", "").replace("Pattern: ", "").replace("Blueprint: ", "").replace("Praxis: ", "").replace("Formula: ", "").replace("^f", "").replace("^m", "");
                         dBService.addItemRecipe(id, textEn, textDe, textFr, textRu);
                     }
                 }

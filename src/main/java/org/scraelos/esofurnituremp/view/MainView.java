@@ -7,11 +7,12 @@ package org.scraelos.esofurnituremp.view;
 
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
+import com.vaadin.spring.annotation.SpringView;
+import com.vaadin.spring.annotation.ViewScope;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.VerticalLayout;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import ru.xpoft.vaadin.VaadinView;
 
 /**
  *
@@ -19,7 +20,8 @@ import ru.xpoft.vaadin.VaadinView;
  */
 @Component
 @Scope("prototype")
-@VaadinView(MainView.NAME)
+@ViewScope
+@SpringView(name = MainView.NAME)
 public class MainView extends CustomComponent implements View {
 
     public static final String NAME = "";
@@ -28,7 +30,7 @@ public class MainView extends CustomComponent implements View {
 
     public MainView() {
         header = new Header();
-        VerticalLayout vl= new VerticalLayout(header);
+        VerticalLayout vl = new VerticalLayout(header);
         vl.setSizeFull();
         setCompositionRoot(vl);
     }

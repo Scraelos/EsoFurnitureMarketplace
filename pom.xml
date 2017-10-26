@@ -83,13 +83,6 @@
             <version>${vaadin.version}</version>
         </dependency>
 
-        <!-- Spring Vaadin Integration -->
-        <dependency>
-            <groupId>ru.xpoft.vaadin</groupId>
-            <artifactId>spring-vaadin-integration</artifactId>
-            <version>${spring.vaadin.version}</version>
-        </dependency>
-
         <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -315,6 +308,12 @@
             <groupId>org.vaadin</groupId>
             <artifactId>viritin</artifactId>
             <version>1.61</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin-spring</artifactId>
+            <version>1.2.0</version>
             <type>jar</type>
         </dependency>
     </dependencies>

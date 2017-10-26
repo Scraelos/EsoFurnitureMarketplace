@@ -11,6 +11,7 @@ import com.github.peholmst.i18n4vaadin.util.I18NHolder;
 import com.vaadin.data.Validator;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
+import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
@@ -32,7 +33,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
-import ru.xpoft.vaadin.VaadinView;
 
 /**
  *
@@ -40,7 +40,7 @@ import ru.xpoft.vaadin.VaadinView;
  */
 @Component
 @Scope("prototype")
-@VaadinView(UserProfileView.NAME)
+@SpringView(name = UserProfileView.NAME)
 @Secured({"ROLE_USER"})
 public class UserProfileView extends CustomComponent implements View, LocaleChangedListener {
 

@@ -4,7 +4,7 @@
          id="WebApp_ID" version="2.5">
     <display-name>EsoFurnitureMarketplace</display-name>
 
-    <!-- Spring -->
+    <!-- Spring --><!--
     <listener>
         <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
     </listener>
@@ -16,10 +16,10 @@
         <param-value>/WEB-INF/root-context.xml</param-value>
     </context-param>
 
-    <!-- Vaadin servlet -->
+     Vaadin servlet 
     <servlet>
         <servlet-name>EsoFurnitureMarketplace</servlet-name>
-        <servlet-class>ru.xpoft.vaadin.SpringVaadinServlet</servlet-class>
+        <servlet-class>com.vaadin.spring.server.SpringVaadinServlet</servlet-class>
         <init-param>
             <param-name>beanName</param-name>
             <param-value>esoFurnitureMarketplaceUI</param-value>
@@ -39,7 +39,7 @@
         <description>Vaadin production mode</description>
         <param-name>productionMode</param-name>
         <param-value>true</param-value>
-    </context-param>
+    </context-param>-->
     
     
     <!-- Spring Security -->

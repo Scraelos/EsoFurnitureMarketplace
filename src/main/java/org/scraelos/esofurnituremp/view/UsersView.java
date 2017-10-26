@@ -13,6 +13,7 @@ import com.vaadin.event.ItemClickEvent;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.Page;
+import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
@@ -37,7 +38,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
-import ru.xpoft.vaadin.VaadinView;
 
 /**
  *
@@ -45,7 +45,7 @@ import ru.xpoft.vaadin.VaadinView;
  */
 @Component
 @Scope("prototype")
-@VaadinView(UsersView.NAME)
+@SpringView(name = UsersView.NAME)
 @Secured({"ROLE_ADMIN"})
 public class UsersView extends CustomComponent implements View {
 

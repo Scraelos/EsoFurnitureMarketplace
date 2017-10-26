@@ -12,6 +12,7 @@ import com.vaadin.data.Item;
 import com.vaadin.data.util.HierarchicalContainer;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
+import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.ComboBox;
@@ -38,7 +39,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
-import ru.xpoft.vaadin.VaadinView;
 
 /**
  *
@@ -46,7 +46,7 @@ import ru.xpoft.vaadin.VaadinView;
  */
 @Component
 @Scope("prototype")
-@VaadinView(ImportKnownRecipesView.NAME)
+@SpringView(name = ImportKnownRecipesView.NAME)
 @Secured({"ROLE_USER"})
 public class ImportKnownRecipesView extends CustomComponent implements View, LocaleChangedListener {
 
