@@ -533,7 +533,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             final KnownRecipe knownRecipe = (KnownRecipe) itemId;
             if (knownRecipe.getRecipe().getFurnitureItem() != null) {
                 TextField linkField = new TextField();
-                linkField.setValue(knownRecipe.getRecipe().getFurnitureItem().getItemLink());
+                linkField.setValue(knownRecipe.getRecipe().getItemLink());
                 linkField.setReadOnly(true);
                 String linkeId = "itemLink" + knownRecipe.getId();
                 linkField.setId(linkeId);
