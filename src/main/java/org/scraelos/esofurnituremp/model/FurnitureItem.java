@@ -13,6 +13,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
@@ -34,15 +35,19 @@ public class FurnitureItem extends DAO {
     private String nameFr;
     private String nameRu;
     @ManyToOne
-    private ItemSubCategory subCategory;
+    private FurnitureCategory category;
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(255)")
     private ITEM_QUALITY itemQuality;
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(255)")
+    private FURNITURE_THEME theme;
     @OneToOne
     private Recipe recipe;
     @OneToMany(mappedBy = "furnitureItem", cascade = CascadeType.ALL)
     private List<ItemScreenshot> itemScreenshots;
     private String itemLink;
+    private String icon;
 
     @Override
     public Long getId() {
@@ -62,12 +67,12 @@ public class FurnitureItem extends DAO {
         this.nameEn = nameEn;
     }
 
-    public ItemSubCategory getSubCategory() {
-        return subCategory;
+    public FurnitureCategory getCategory() {
+        return category;
     }
 
-    public void setSubCategory(ItemSubCategory subCategory) {
-        this.subCategory = subCategory;
+    public void setCategory(FurnitureCategory category) {
+        this.category = category;
     }
 
     public ITEM_QUALITY getItemQuality() {
@@ -124,6 +129,22 @@ public class FurnitureItem extends DAO {
 
     public void setItemLink(String itemLink) {
         this.itemLink = itemLink;
+    }
+
+    public String getIcon() {
+        return icon;
+    }
+
+    public void setIcon(String icon) {
+        this.icon = icon;
+    }
+
+    public FURNITURE_THEME getTheme() {
+        return theme;
+    }
+
+    public void setTheme(FURNITURE_THEME theme) {
+        this.theme = theme;
     }
 
     public String getLocalizedName(Locale l) {

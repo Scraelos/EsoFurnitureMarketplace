@@ -24,6 +24,23 @@ public enum ITEM_QUALITY {
         nameRu = nameRu_;
     }
 
+    public static ITEM_QUALITY valueOf(int code) {
+        switch (code) {
+            case 5:
+                return Legendary;
+            case 4:
+                return Epic;
+            case 3:
+                return Superior;
+            case 2:
+                return Fine;
+            case 1:
+                return Standard;
+            default:
+                return null;
+        }
+    }
+
     public String getNameEn() {
         return nameEn;
     }
@@ -49,7 +66,5 @@ public enum ITEM_QUALITY {
     public String toString() {
         return nameEn;
     }
-    
-    
 
 }

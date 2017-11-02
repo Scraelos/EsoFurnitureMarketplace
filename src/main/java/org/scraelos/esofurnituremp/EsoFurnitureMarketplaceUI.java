@@ -34,7 +34,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.context.ContextLoaderListener;
 
 /**
@@ -228,6 +230,8 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         @Message(key = "itemInfo", value = "Item Info")
         ,
         @Message(key = "crafterId", value = "Crafter's id(without @)")
+        ,
+        @Message(key = "theme", value = "Theme")
     })
 
     @WebListener
@@ -236,12 +240,14 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
 
     @Configuration
     @EnableVaadin
+    //@EnableJpaRepositories
+    //@EnableTransactionManagement
     @EnableVaadinNavigation
     public static class MyConfiguration {
     }
 
     @WebServlet(urlPatterns = "/*", name = "EsoFurnitureMarketplaceServlet", asyncSupported = true)
-    @VaadinServletConfiguration(ui = EsoFurnitureMarketplaceUI.class, productionMode = false)
+    @VaadinServletConfiguration(ui = EsoFurnitureMarketplaceUI.class, productionMode = true)
     public static class MyUIServlet extends SpringVaadinServlet {
     }
 

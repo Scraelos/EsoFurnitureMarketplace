@@ -43,6 +43,8 @@ public class Recipe extends DAO {
     private Set<RecipeIngredient> recipeIngredients;
     @OneToMany(mappedBy = "recipe")
     private Set<KnownRecipe> knownRecipes;
+    private String icon;
+    private String itemLink;
 
     @Override
     public Long getId() {
@@ -116,6 +118,22 @@ public class Recipe extends DAO {
 
     public void setNameRu(String nameRu) {
         this.nameRu = nameRu;
+    }
+
+    public String getIcon() {
+        return icon;
+    }
+
+    public void setIcon(String icon) {
+        this.icon = icon;
+    }
+
+    public String getItemLink() {
+        return itemLink;
+    }
+
+    public void setItemLink(String itemLink) {
+        this.itemLink = itemLink;
     }
 
     @Override

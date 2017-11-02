@@ -7,12 +7,14 @@ package org.scraelos.esofurnituremp.data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import org.scraelos.esofurnituremp.model.FURNITURE_THEME;
+import org.scraelos.esofurnituremp.model.FurnitureCategory;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
-import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.scraelos.esofurnituremp.model.KnownRecipe;
 import org.scraelos.esofurnituremp.model.RECIPE_TYPE;
 import org.scraelos.esofurnituremp.model.SysAccount;
@@ -28,7 +30,8 @@ public class KnownRecipeSpecification implements Specification<KnownRecipe> {
     private String searchString;
     private Boolean searchStringIgnoresAll;
     private ITEM_QUALITY itemQuality;
-    private ItemSubCategory category;
+    private FURNITURE_THEME theme;
+    private Set<FurnitureCategory> categories;
     private RECIPE_TYPE recipeType;
 
     public KnownRecipeSpecification(SysAccount account) {
@@ -39,6 +42,10 @@ public class KnownRecipeSpecification implements Specification<KnownRecipe> {
         this.searchString = searchString;
     }
 
+    public void setTheme(FURNITURE_THEME theme) {
+        this.theme = theme;
+    }
+
     public void setSearchStringIgnoresAll(Boolean searchStringIgnoresAll) {
         this.searchStringIgnoresAll = searchStringIgnoresAll;
     }
@@ -47,8 +54,8 @@ public class KnownRecipeSpecification implements Specification<KnownRecipe> {
         this.itemQuality = itemQuality;
     }
 
-    public void setCategory(ItemSubCategory category) {
-        this.category = category;
+    public void setCategories(Set<FurnitureCategory> categories) {
+        this.categories = categories;
     }
 
     public void setRecipeType(RECIPE_TYPE recipeType) {
@@ -72,14 +79,17 @@ public class KnownRecipeSpecification implements Specification<KnownRecipe> {
         if (searchStringIgnoresAll != null && searchStringIgnoresAll && textSearch != null) {
             predicates.add(textSearch);
         } else {
-            if (category != null) {
-                predicates.add(cb.equal(root.get("recipe").get("furnitureItem").get("subCategory"), category));
+            if (categories != null && !categories.isEmpty()) {
+                predicates.add(cb.or(root.get("recipe").get("furnitureItem").get("category").in(categories), root.get("recipe").get("furnitureItem").get("category").get("parent").in(categories)));
             }
             if (recipeType != null) {
                 predicates.add(cb.equal(root.get("recipe").get("recipeType"), recipeType));
             }
             if (itemQuality != null) {
                 predicates.add(cb.equal(root.get("recipe").get("itemQuality"), itemQuality));
+            }
+            if (theme != null) {
+                predicates.add(cb.equal(root.get("recipe").get("furnitureItem").get("theme"), theme));
             }
             if (textSearch != null) {
                 predicates.add(textSearch);

@@ -8,36 +8,40 @@ package org.scraelos.esofurnituremp.view;
 import com.github.peholmst.i18n4vaadin.LocaleChangedEvent;
 import com.github.peholmst.i18n4vaadin.LocaleChangedListener;
 import com.github.peholmst.i18n4vaadin.util.I18NHolder;
-import com.vaadin.data.Item;
-import com.vaadin.data.Property;
-import com.vaadin.data.fieldgroup.FieldGroup;
-import com.vaadin.data.util.PropertyValueGenerator;
-import com.vaadin.data.util.converter.Converter;
-import com.vaadin.data.validator.BigDecimalRangeValidator;
-import com.vaadin.event.FieldEvents;
-import com.vaadin.event.ItemClickEvent;
+import com.vaadin.data.TreeData;
+import com.vaadin.v7.data.Item;
+import com.vaadin.v7.data.Property;
+import com.vaadin.v7.data.fieldgroup.FieldGroup;
+import com.vaadin.v7.data.util.PropertyValueGenerator;
+import com.vaadin.v7.data.util.converter.Converter;
+import com.vaadin.v7.data.validator.BigDecimalRangeValidator;
+import com.vaadin.v7.event.FieldEvents;
+import com.vaadin.v7.event.ItemClickEvent;
 import com.vaadin.event.MouseEvents;
+import com.vaadin.event.selection.SelectionEvent;
+import com.vaadin.event.selection.SelectionListener;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.Sizeable;
 import com.vaadin.server.StreamResource;
 import com.vaadin.spring.annotation.SpringView;
-import com.vaadin.ui.AbstractTextField;
+import com.vaadin.v7.ui.AbstractTextField;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
-import com.vaadin.ui.CheckBox;
-import com.vaadin.ui.ComboBox;
+import com.vaadin.v7.ui.CheckBox;
+import com.vaadin.v7.ui.ComboBox;
 import com.vaadin.ui.CustomComponent;
-import com.vaadin.ui.Grid;
-import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.v7.ui.Grid;
+import com.vaadin.v7.ui.HorizontalLayout;
 import com.vaadin.ui.Image;
+import com.vaadin.ui.ItemCaptionGenerator;
 import com.vaadin.ui.Panel;
-import com.vaadin.ui.TextField;
+import com.vaadin.v7.ui.TextField;
 import com.vaadin.ui.Tree;
 import com.vaadin.ui.UI;
-import com.vaadin.ui.Upload;
-import com.vaadin.ui.VerticalLayout;
+import com.vaadin.v7.ui.Upload;
+import com.vaadin.v7.ui.VerticalLayout;
 import com.vaadin.ui.Window;
 import de.datenhahn.vaadin.componentrenderer.ComponentRenderer;
 import java.awt.Graphics2D;
@@ -53,6 +57,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,10 +66,13 @@ import org.apache.poi.util.IOUtils;
 import org.scraelos.esofurnituremp.Bundle;
 import org.scraelos.esofurnituremp.data.KnownRecipeRepository;
 import org.scraelos.esofurnituremp.data.KnownRecipeSpecification;
+import org.scraelos.esofurnituremp.model.FURNITURE_THEME;
+import org.scraelos.esofurnituremp.model.FurnitureCategory;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
 import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemScreenshot;
+import org.scraelos.esofurnituremp.model.ItemScreenshotFull;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.scraelos.esofurnituremp.model.KnownRecipe;
 import org.scraelos.esofurnituremp.model.RECIPE_TYPE;
@@ -78,8 +86,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
 import org.vaadin.liveimageeditor.LiveImageEditor;
-import org.vaadin.viritin.SortableLazyList;
-import org.vaadin.viritin.grid.GeneratedPropertyListContainer;
+import org.vaadin.viritin.v7.SortableLazyList;
+import org.vaadin.viritin.v7.grid.GeneratedPropertyListContainer;
 
 /**
  *
@@ -105,6 +113,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     private HorizontalLayout filters;
     private HorizontalLayout textFilter;
     private ComboBox itemQuality;
+    private com.vaadin.ui.ComboBox<FURNITURE_THEME> theme;
     private TextField searchField;
     private CheckBox searchFieldIgnoresOtherFilters;
     private String searchValue;
@@ -169,6 +178,32 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             }
         });
         filters.addComponent(itemQuality);
+        theme = new com.vaadin.ui.ComboBox(null, Arrays.asList(FURNITURE_THEME.values()));
+        theme.setPageLength(25);
+        theme.setEmptySelectionAllowed(true);
+        theme.setItemCaptionGenerator(new ItemCaptionGenerator<FURNITURE_THEME>() {
+            @Override
+            public String apply(FURNITURE_THEME item) {
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (getLocale().getLanguage()) {
+                        case "en":
+                            return item.getNameEn();
+                        case "de":
+                            return item.getNameDe();
+                        case "fr":
+                            return item.getNameFr();
+                        case "ru":
+                            return item.getNameRu();
+                    }
+                } else {
+                    return item.getNameEn();
+                }
+                return null;
+            }
+        });
+
+        filters.addComponent(theme);
         vl.addComponent(filters);
         textFilter = new HorizontalLayout();
         searchField = new TextField();
@@ -199,20 +234,15 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         hl.setSizeFull();
         tree = new Tree();
         tree.setSizeFull();
-        tree.setWidth(200f, Sizeable.Unit.PIXELS);
-        tree.addItemClickListener(new TreeItemClickListener());
-        tree.addExpandListener(new Tree.ExpandListener() {
-
+        tree.setWidth(250f, Unit.PIXELS);
+        tree.setSelectionMode(com.vaadin.ui.Grid.SelectionMode.SINGLE);
+        tree.addSelectionListener(new SelectionListener() {
             @Override
-            public void nodeExpand(Tree.ExpandEvent event) {
-                Object expandedItemId = event.getItemId();
-                for (Object itemId : tree.getItemIds()) {
-                    if (!itemId.equals(expandedItemId)) {
-                        tree.collapseItem(itemId);
-                    }
-                }
+            public void selectionChange(SelectionEvent event) {
+                loadItems();
             }
         });
+        tree.addStyleName("v-scrollable");
         hl.addComponent(tree);
         grid = new Grid();
         grid.setStyleName("my-grid");
@@ -232,7 +262,13 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         screenshotClickListener = new ScreenshotClickListener();
         deleteImageClickListener = new DeleteImageClickListener();
         specification = new KnownRecipeSpecification(SpringSecurityHelper.getUser());
-        tree.setContainerDataSource(dBService.getItemCategories());
+        List<FurnitureCategory> itemCategoriesList = dBService.getItemCategoriesList();
+        TreeData treeData = new TreeData();
+        treeData.addRootItems(itemCategoriesList);
+        for (FurnitureCategory c : itemCategoriesList) {
+            treeData.addItems(c, c.getChilds());
+        }
+        tree.setTreeData(treeData);
         listContainer.addGeneratedProperty("screenshots", new ScreenShotsColumnGenerator());
         listContainer.addGeneratedProperty("links", new ItemLinkCoumnGenerator());
 
@@ -331,7 +367,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     private void loadItems() {
         specification.setSearchString(searchValue);
         specification.setSearchStringIgnoresAll(searchFieldIgnoresOtherFilters.getValue());
-        specification.setCategory(currentCategory);
+        specification.setCategories(tree.getSelectedItems());
         if (recipeType.getValue() != null && (recipeType.getValue() instanceof RECIPE_TYPE)) {
             specification.setRecipeType((RECIPE_TYPE) recipeType.getValue());
         } else {
@@ -341,6 +377,11 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             specification.setItemQuality((ITEM_QUALITY) itemQuality.getValue());
         } else {
             specification.setItemQuality(null);
+        }
+        if (theme.getValue() != null) {
+            specification.setTheme(theme.getValue());
+        } else {
+            specification.setTheme(null);
         }
         itemList = new SortableLazyList<>((int firstRow, boolean sortAscending, String property) -> repo.findAll(specification, new PageRequest(
                 firstRow / PAGESIZE,
@@ -376,6 +417,34 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         importButton.setCaption(i18n.importDataFromCraftStoreButtonCaption());
         massPriceSetupButton.setCaption(i18n.massPriceSetup());
         tree.setCaption(i18n.categories());
+        tree.setItemCaptionGenerator(new ItemCaptionGenerator() {
+            @Override
+            public String apply(Object item) {
+
+                FurnitureCategory value = (FurnitureCategory) item;
+                String result = null;
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (getLocale().getLanguage()) {
+                        case "en":
+                            result = value.getTextEn();
+                            break;
+                        case "de":
+                            result = value.getTextDe();
+                            break;
+                        case "fr":
+                            result = value.getTextFr();
+                            break;
+                        case "ru":
+                            result = value.getTextRu();
+                            break;
+                    }
+                } else {
+                    result = value.getTextEn();
+                }
+                return result;
+            }
+        });
         grid.setCaption(i18n.knownRecipesTableCaption());
         recipeType.setCaption(i18n.recipeTypeCaption());
         for (RECIPE_TYPE t : RECIPE_TYPE.values()) {
@@ -420,6 +489,8 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             }
         }
         itemQuality.markAsDirtyRecursive();
+        theme.setCaption(i18n.theme());
+        theme.markAsDirtyRecursive();
         searchField.setCaption(i18n.searchField());
         searchFieldIgnoresOtherFilters.setCaption(i18n.searchFieldIgnoreFilters());
         grid.getColumn("recipe").setHeaderCaption(i18n.recipe());
@@ -435,21 +506,6 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
 
     public void refreshGridItem(Object itemId) {
         grid.refreshRows(itemId);
-    }
-
-    private class TreeItemClickListener implements ItemClickEvent.ItemClickListener {
-
-        @Override
-        public void itemClick(ItemClickEvent event) {
-            Object itemId = event.getItemId();
-            if (itemId instanceof ItemCategory) {
-                tree.expandItem(itemId);
-            } else if (itemId instanceof ItemSubCategory) {
-                currentCategory = (ItemSubCategory) itemId;
-                loadItems();
-            }
-        }
-
     }
 
     private class CustomCellStyleGenerator implements Grid.CellStyleGenerator {
@@ -532,7 +588,6 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
 
                     Image screenshotThumb = new Image(null, new StreamResource(streamSource, "thumb_" + s.getFileName()));
                     screenshotThumb.setSizeFull();
-                    screenshotThumb.setImmediate(true);
                     screenshotThumb.setData(s);
                     screenshotThumb.addClickListener(screenshotClickListener);
                     Panel screenshotThumbPanel = new Panel(screenshotThumb);
@@ -646,8 +701,12 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
                 screenshot.setAuthor(SpringSecurityHelper.getUser());
                 screenshot.setFurnitureItem(item.getRecipe().getFurnitureItem());
                 screenshot.setFileName(filename);
-                screenshot.setScreenshot(image);
+                ItemScreenshotFull itemScreenshotFull = new ItemScreenshotFull();
+                itemScreenshotFull.setScreenshot(image);
+                itemScreenshotFull.setThumb(screenshot);
+                screenshot.setFull(itemScreenshotFull);
                 screenshot.setThumbnail(resize(image, 100));
+                dBService.saveEntity(screenshot);
                 if (item.getRecipe().getFurnitureItem().getItemScreenshots() == null) {
                     item.getRecipe().getFurnitureItem().setItemScreenshots(new ArrayList<>());
                 }
@@ -725,7 +784,6 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
                 imagePanel.setHeight(100f, Unit.PIXELS);
                 Image screenshotThumb = new Image(null, new StreamResource(streamSource, "thumb_" + s.getFileName()));
                 screenshotThumb.setSizeFull();
-                screenshotThumb.setImmediate(true);
                 screenshotThumb.setData(s);
                 screenshotThumb.addClickListener(new MouseEvents.ClickListener() {
 
@@ -755,7 +813,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
 
                 @Override
                 public InputStream getStream() {
-                    ByteArrayInputStream bais = new ByteArrayInputStream(s.getScreenshot());
+                    ByteArrayInputStream bais = new ByteArrayInputStream(s.getFull().getScreenshot());
                     return bais;
                 }
             };

@@ -1,10 +1,10 @@
 package org.scraelos.esofurnituremp.view;
 
+import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.ExternalResource;
-import com.vaadin.server.FontAwesome;
-import com.vaadin.shared.ui.label.ContentMode;
+import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.Label;
@@ -29,7 +29,7 @@ public class AccessDeniedView extends CustomComponent implements View {
         vl.addComponent(new Label(bundle.accessDenied(), ContentMode.HTML));
         vl.addComponent(new Label(bundle.dontHavePermission()));
         Link homeLink = new Link(bundle.homePage(), new ExternalResource("#"));
-        homeLink.setIcon(FontAwesome.HOME);
+        homeLink.setIcon(VaadinIcons.HOME);
         vl.addComponent(homeLink);
         setCompositionRoot(vl);
     }

@@ -5,9 +5,9 @@
  */
 package org.scraelos.esofurnituremp.service;
 
-import com.vaadin.data.Item;
-import com.vaadin.data.util.BeanItemContainer;
-import com.vaadin.data.util.HierarchicalContainer;
+import com.vaadin.v7.data.Item;
+import com.vaadin.v7.data.util.BeanItemContainer;
+import com.vaadin.v7.data.util.HierarchicalContainer;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -17,16 +17,20 @@ import java.util.Set;
 import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
+import org.scraelos.esofurnituremp.model.FURNITURE_THEME;
+import org.scraelos.esofurnituremp.model.FurnitureCategory;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
 import org.scraelos.esofurnituremp.model.Ingredient;
 import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemScreenshot;
+import org.scraelos.esofurnituremp.model.ItemScreenshotFull;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.scraelos.esofurnituremp.model.KnownRecipe;
 import org.scraelos.esofurnituremp.model.RECIPE_TYPE;
@@ -194,6 +198,18 @@ public class DBService {
         }
 
     }
+    
+    @Transactional
+    public void setCatTranslation(Long id, String textEn, String textDe, String textFr, String textRu) {
+        FurnitureCategory r = em.find(FurnitureCategory.class, id);
+        if (r != null) {
+            r.setTextEn(textEn);
+            r.setTextDe(textDe);
+            r.setTextFr(textFr);
+            r.setTextRu(textRu);
+            em.merge(r);
+        }
+    }
 
     @Transactional
     public void addFurnitureRecipe(Long id, String name, RECIPE_TYPE recipeType, ITEM_QUALITY itemQuality, Map<String, Integer> ingredients) {
@@ -325,6 +341,13 @@ public class DBService {
     }
 
     @Transactional
+    public List<FurnitureCategory> getItemCategoriesList() {
+        TypedQuery<FurnitureCategory> catQ = em.createQuery("select a from FurnitureCategory a where active=TRUE and parent is null", FurnitureCategory.class);
+        List<FurnitureCategory> resultList = catQ.getResultList();
+        return resultList;
+    }
+
+    @Transactional
     public void addFurnitureItem(Long id, String name, String cat, String subCat, ITEM_QUALITY quality, String itemLink) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<ItemCategory> catQuery = builder.createQuery(ItemCategory.class);
@@ -367,7 +390,7 @@ public class DBService {
         FurnitureItem item = em.find(FurnitureItem.class, id);
         if (item != null) {
             item.setNameEn(name);
-            item.setSubCategory(itemSubCategory);
+            //item.setSubCategory(itemSubCategory);
             item.setItemQuality(quality);
             item.setItemLink(itemLink);
             em.merge(item);
@@ -375,12 +398,109 @@ public class DBService {
             item = new FurnitureItem();
             item.setId(id);
             item.setNameEn(name);
-            item.setSubCategory(itemSubCategory);
+            //item.setSubCategory(itemSubCategory);
             item.setItemQuality(quality);
             item.setItemLink(itemLink);
             em.persist(item);
 
         }
+    }
+
+    @Transactional
+    public void importFurnitureItem(Long furnitureId, Long furnitureTheme, String itemLink, Long quality, Long categoryId, Long subcategoryId, Long recipeId, String icon, String recipeIcon, String recipeLink, List<Long[]> ingredients) {
+        FurnitureItem item = em.find(FurnitureItem.class, furnitureId);
+        if (item == null) {
+            item = new FurnitureItem();
+            item.setId(furnitureId);
+            em.persist(item);
+            em.flush();
+        }
+        if (furnitureTheme != null) {
+            FURNITURE_THEME theme = FURNITURE_THEME.valueOf("SI_FURNITURETHEMETYPE" + furnitureTheme.toString());
+            if (theme != null) {
+                item.setTheme(theme);
+            }
+        }
+        if (icon != null) {
+            item.setIcon(icon);
+        }
+        if (itemLink != null) {
+            item.setItemLink(itemLink);
+        }
+        if (quality != null) {
+            ITEM_QUALITY itemQuality = ITEM_QUALITY.valueOf(quality.intValue());
+            if (itemQuality != null) {
+                item.setItemQuality(itemQuality);
+            }
+        }
+        FurnitureCategory category = null;
+        if (categoryId != null) {
+            category = em.find(FurnitureCategory.class, categoryId);
+            if (category != null) {
+                item.setCategory(category);
+                if (!category.getActive()) {
+                    category.setActive(Boolean.TRUE);
+                    em.merge(category);
+                }
+            }
+        }
+        if (subcategoryId != null) {
+            FurnitureCategory subCategory = em.find(FurnitureCategory.class, subcategoryId);
+            if (subCategory != null) {
+                if (!subCategory.getActive()) {
+                    subCategory.setActive(Boolean.TRUE);
+                    em.merge(subCategory);
+                }
+                if (category != null && subCategory.getParent() == null) {
+                    subCategory.setParent(category);
+                    em.merge(subCategory);
+                }
+                item.setCategory(subCategory);
+            }
+        }
+        if (recipeId != null) {
+            Recipe recipe = em.find(Recipe.class, recipeId);
+            if (recipe == null) {
+                recipe = new Recipe();
+                recipe.setId(recipeId);
+                recipe.setRecipeIngredients(new HashSet<>());
+                em.persist(recipe);
+                em.flush();
+            } else {
+                for (RecipeIngredient i : recipe.getRecipeIngredients()) {
+                    em.remove(i);
+                }
+                recipe.getRecipeIngredients().clear();
+                em.merge(recipe);
+                em.flush();
+            }
+            item.setRecipe(recipe);
+            if (recipeIcon != null) {
+                recipe.setIcon(recipeIcon);
+            }
+            if (recipeLink != null) {
+                recipe.setItemLink(recipeLink);
+            }
+            for (Long[] inredientInfo : ingredients) {
+                Ingredient ingredient = em.find(Ingredient.class, inredientInfo[0]);
+                if (ingredient == null) {
+                    ingredient = new Ingredient();
+                    ingredient.setId(inredientInfo[0]);
+                    em.persist(ingredient);
+                    em.flush();
+                }
+                RecipeIngredient recipeIngredient = new RecipeIngredient();
+                recipeIngredient.setCount(inredientInfo[1].intValue());
+                recipeIngredient.setIngredient(ingredient);
+                recipeIngredient.setRecipe(recipe);
+                em.persist(recipeIngredient);
+                em.flush();
+                recipe.getRecipeIngredients().add(recipeIngredient);
+            }
+            em.merge(recipe);
+        }
+        em.merge(item);
+
     }
 
     @Transactional
@@ -494,6 +614,7 @@ public class DBService {
         } else {
             em.persist(entity);
         }
+        em.flush();
     }
 
     @Transactional
@@ -512,6 +633,20 @@ public class DBService {
             em.remove(s);
         }
 
+    }
+
+    @Transactional
+    public void transferFullScreenShots() {
+        Query createQuery = em.createQuery("select s from ItemScreenshot s where s.full is null");
+        List<ItemScreenshot> resultList = createQuery.getResultList();
+        for (ItemScreenshot s : resultList) {
+            if (s.getFull() == null) {
+                ItemScreenshotFull f = new ItemScreenshotFull();
+                //f.setScreenshot(s.getScreenshot());
+                s.setFull(f);
+                em.merge(s);
+            }
+        }
     }
 
     @Transactional

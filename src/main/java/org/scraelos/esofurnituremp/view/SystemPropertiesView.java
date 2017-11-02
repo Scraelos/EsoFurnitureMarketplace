@@ -8,8 +8,8 @@ import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.CustomComponent;
-import com.vaadin.ui.TextField;
-import com.vaadin.ui.VerticalLayout;
+import com.vaadin.v7.ui.TextField;
+import com.vaadin.v7.ui.VerticalLayout;
 import org.scraelos.esofurnituremp.data.SystemPropertyRepository;
 import org.scraelos.esofurnituremp.model.SystemProperty;
 import static org.scraelos.esofurnituremp.view.KnownRecipesView.PAGESIZE;
@@ -19,7 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
-import org.vaadin.viritin.grid.MGrid;
+import org.vaadin.viritin.v7.grid.MGrid;
 
 /**
  *
@@ -45,7 +45,7 @@ public class SystemPropertiesView extends CustomComponent implements View {
     public SystemPropertiesView() {
         this.setSizeFull();
         header = new Header();
-        mGrid = new MGrid<>();
+        mGrid = new MGrid<>(SystemProperty.class);
         mGrid.setSizeFull();
         VerticalLayout vl = new VerticalLayout(header, mGrid);
         vl.setExpandRatio(mGrid, 1f);

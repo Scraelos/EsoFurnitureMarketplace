@@ -6,6 +6,7 @@
 package org.scraelos.esofurnituremp.config;
 
 import org.scraelos.esofurnituremp.service.DBService;
+import org.scraelos.esofurnituremp.service.InsertExecutor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,5 +21,10 @@ public class DataContext {
     public DBService dBService() {
         return new DBService();
     }
-    
+
+    @Bean
+    public InsertExecutor insertExecutor() {
+        return new InsertExecutor();
+    }
+
 }

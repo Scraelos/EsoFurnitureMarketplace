@@ -13,11 +13,10 @@
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring.version>4.3.5.RELEASE</spring.version>
-        <spring.security.version>4.2.1.RELEASE</spring.security.version>
-        <vaadin.version>7.7.11</vaadin.version>
-        <vaadin.plugin.version>7.7.11</vaadin.plugin.version>
-        <spring.vaadin.version>3.2</spring.vaadin.version>
-        <hibernate.version>5.2.6.Final</hibernate.version>
+        <spring.security.version>4.2.3.RELEASE</spring.security.version>
+        <vaadin.version>8.1.6</vaadin.version>
+        <vaadin.plugin.version>8.1.6</vaadin.plugin.version>
+        <hibernate.version>5.2.12.Final</hibernate.version>
     </properties>
     <repositories>
         <repository>
@@ -59,7 +58,7 @@
         <!-- Vaadin -->
         <dependency>
             <groupId>com.vaadin</groupId>
-            <artifactId>vaadin-server</artifactId>
+            <artifactId>vaadin-compatibility-server</artifactId>
             <version>${vaadin.version}</version>
         </dependency>
         <dependency>
@@ -69,7 +68,7 @@
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
-            <artifactId>vaadin-client</artifactId>
+            <artifactId>vaadin-compatibility-client</artifactId>
             <version>${vaadin.version}</version>
         </dependency>
         <dependency>
@@ -245,11 +244,6 @@
             <version>3.15</version>
         </dependency>
         <dependency>
-            <groupId>org.vaadin.addons</groupId>
-            <artifactId>tableexport</artifactId>
-            <version>1.4.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>3.15</version>
@@ -257,7 +251,7 @@
         <dependency>
             <groupId>de.datenhahn.vaadin</groupId>
             <artifactId>componentrenderer</artifactId>
-            <version>1.0.3</version>
+            <version>2.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.github.vaadin4qbanos</groupId>
@@ -301,20 +295,25 @@
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-jpa</artifactId>
-            <version>1.9.2.RELEASE</version>
+            <version>1.11.8.RELEASE</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.vaadin</groupId>
             <artifactId>viritin</artifactId>
-            <version>1.61</version>
+            <version>2.0</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-spring</artifactId>
-            <version>1.2.0</version>
+            <version>2.0.1</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.vaadin.artur</groupId>
+            <artifactId>spring-data-provider</artifactId>
+            <version>1.0.0</version>
         </dependency>
     </dependencies>
 
@@ -368,7 +367,7 @@
                 <artifactId>vaadin-maven-plugin</artifactId>
                 <version>${vaadin.plugin.version}</version>
                 <configuration>
-                    <extraJvmArgs>-Xmx512M -Xss1024k</extraJvmArgs>
+                    <extraJvmArgs>-Xmx1024M -Xss1024k</extraJvmArgs>
                     <!-- <runTarget>mobilemail</runTarget> -->
                     <!-- We are doing "inplace" but into subdir VAADIN/widgetsets. This 
                     way compatible with Vaadin eclipse plugin. -->

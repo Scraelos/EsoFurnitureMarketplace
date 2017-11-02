@@ -8,20 +8,20 @@ package org.scraelos.esofurnituremp.view;
 import com.github.peholmst.i18n4vaadin.LocaleChangedEvent;
 import com.github.peholmst.i18n4vaadin.LocaleChangedListener;
 import com.github.peholmst.i18n4vaadin.util.I18NHolder;
-import com.vaadin.data.Item;
-import com.vaadin.data.Property;
-import com.vaadin.data.util.PropertyValueGenerator;
-import com.vaadin.data.util.converter.Converter;
-import com.vaadin.event.FieldEvents;
-import com.vaadin.event.ItemClickEvent;
+import com.vaadin.data.HasValue;
+import com.vaadin.data.TreeData;
+import com.vaadin.data.ValueProvider;
 import com.vaadin.event.MouseEvents;
+import com.vaadin.event.selection.SelectionEvent;
+import com.vaadin.event.selection.SelectionListener;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.ExternalResource;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.StreamResource;
+import com.vaadin.shared.data.sort.SortDirection;
+import com.vaadin.shared.ui.MarginInfo;
 import com.vaadin.spring.annotation.SpringView;
-import com.vaadin.ui.AbstractTextField;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
@@ -30,17 +30,21 @@ import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Image;
+import com.vaadin.ui.ItemCaptionGenerator;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Link;
 import com.vaadin.ui.Panel;
+import com.vaadin.ui.StyleGenerator;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.Tree;
 import com.vaadin.ui.Upload;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
+import com.vaadin.ui.components.grid.ItemClickListener;
+import com.vaadin.ui.renderers.TextRenderer;
 import com.vaadin.ui.themes.ValoTheme;
-import de.datenhahn.vaadin.componentrenderer.ComponentRenderer;
+import elemental.json.JsonValue;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -49,13 +53,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -64,11 +66,13 @@ import org.scraelos.esofurnituremp.Bundle;
 import org.scraelos.esofurnituremp.data.FurnitureItemRepository;
 import org.scraelos.esofurnituremp.data.FurnitureItemSpecification;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
+import org.scraelos.esofurnituremp.model.FURNITURE_THEME;
+import org.scraelos.esofurnituremp.model.FurnitureCategory;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
 import org.scraelos.esofurnituremp.model.Ingredient;
 import org.scraelos.esofurnituremp.model.ItemScreenshot;
-import org.scraelos.esofurnituremp.model.ItemSubCategory;
+import org.scraelos.esofurnituremp.model.ItemScreenshotFull;
 import org.scraelos.esofurnituremp.model.KnownRecipe;
 import org.scraelos.esofurnituremp.model.RecipeIngredient;
 import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
@@ -80,8 +84,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.HtmlUtils;
 import org.vaadin.liveimageeditor.LiveImageEditor;
-import org.vaadin.viritin.SortableLazyList;
-import org.vaadin.viritin.grid.GeneratedPropertyListContainer;
+import org.vaadin.viritin.grid.MGrid;
 
 /**
  *
@@ -103,26 +106,21 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
     FurnitureItemRepository repo;
 
     private Tree tree;
-    private Grid grid;
-    private GeneratedPropertyListContainer<FurnitureItem> listContainer;
-    private Grid craftersGrid;
+    private Grid<FurnitureItem> grid;
+    private Grid<KnownRecipe> craftersGrid;
     private TabSheet.Tab materialsTab;
     private TabSheet.Tab craftersTab;
-
-    private SortableLazyList<FurnitureItem> furnitureList;
-
-    private GeneratedPropertyListContainer craftersContainer;
 
     private HorizontalLayout filters;
     private CheckBox onlyCraftable;
     private CheckBox hasCrafters;
-    private ComboBox itemQuality;
-    private ComboBox server;
+    private ComboBox<ITEM_QUALITY> itemQuality;
+    private ComboBox<FURNITURE_THEME> theme;
+    private ComboBox<ESO_SERVER> server;
     private TextField searchField;
     private TextField crafterField;
     private CheckBox searchFieldIgnoresOtherFilters;
     private CheckBox unknownRecipes;
-    private ItemSubCategory currentCategory;
     private String searchValue;
     private String crafterIdValue;
     private ScreenshotClickListener screenshotClickListener;
@@ -134,7 +132,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
     static final int PAGESIZE = 15;
 
-    private String itemNameColumn;
+    private String itemNameColumn = "nameEn";
 
     private TabSheet itemTabs;
     private VerticalLayout itemInfoLayout;
@@ -144,78 +142,112 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
     private Link itemTTClink;
     private Link recipeTTClink;
 
-    private Grid materialsGrid;
-    private GeneratedPropertyListContainer materialsContainer;
+    private Grid<RecipeIngredient> materialsGrid;
 
     FurnitureItem selectedFurnitureItem;
 
     public FurnitureItemsView() {
         this.setSizeFull();
         VerticalLayout vl = new VerticalLayout();
+        vl.setMargin(false);
         vl.setSizeFull();
         header = new Header();
         specification = new FurnitureItemSpecification();
         vl.addComponent(header);
         filters = new HorizontalLayout();
         server = new ComboBox(null, Arrays.asList(ESO_SERVER.values()));
-        server.setNullSelectionAllowed(false);
-        server.addValueChangeListener(new Property.ValueChangeListener() {
-
+        server.setEmptySelectionAllowed(false);
+        server.addValueChangeListener(new HasValue.ValueChangeListener() {
             @Override
-            public void valueChange(Property.ValueChangeEvent event) {
+            public void valueChange(HasValue.ValueChangeEvent event) {
                 loadItems();
             }
         });
 
         filters.addComponent(server);
         itemQuality = new ComboBox(null, Arrays.asList(ITEM_QUALITY.values()));
-        itemQuality.setNullSelectionAllowed(true);
+        itemQuality.setEmptySelectionAllowed(true);
+        itemQuality.setItemCaptionGenerator(new ItemCaptionGenerator<ITEM_QUALITY>() {
+            @Override
+            public String apply(ITEM_QUALITY item) {
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (getLocale().getLanguage()) {
+                        case "en":
+                            return item.getNameEn();
+                        case "de":
+                            return item.getNameDe();
+                        case "fr":
+                            return item.getNameFr();
+                        case "ru":
+                            return item.getNameRu();
+                    }
+                } else {
+                    return item.getNameEn();
+                }
+                return null;
+            }
+        });
 
         filters.addComponent(itemQuality);
+        theme = new ComboBox(null, Arrays.asList(FURNITURE_THEME.values()));
+        theme.setPageLength(25);
+        theme.setEmptySelectionAllowed(true);
+        theme.setItemCaptionGenerator(new ItemCaptionGenerator<FURNITURE_THEME>() {
+            @Override
+            public String apply(FURNITURE_THEME item) {
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (getLocale().getLanguage()) {
+                        case "en":
+                            return item.getNameEn();
+                        case "de":
+                            return item.getNameDe();
+                        case "fr":
+                            return item.getNameFr();
+                        case "ru":
+                            return item.getNameRu();
+                    }
+                } else {
+                    return item.getNameEn();
+                }
+                return null;
+            }
+        });
+
+        filters.addComponent(theme);
 
         onlyCraftable = new CheckBox(null, false);
-        onlyCraftable.addValueChangeListener(new Property.ValueChangeListener() {
-
-            @Override
-            public void valueChange(Property.ValueChangeEvent event) {
-                loadItems();
-            }
+        onlyCraftable.addValueChangeListener((HasValue.ValueChangeEvent<Boolean> event) -> {
+            loadItems();
+        });
+        onlyCraftable.addValueChangeListener((HasValue.ValueChangeEvent<Boolean> event) -> {
+            loadItems();
         });
         filters.addComponent(onlyCraftable);
         filters.setComponentAlignment(onlyCraftable, Alignment.BOTTOM_LEFT);
         hasCrafters = new CheckBox(null, false);
-        hasCrafters.addValueChangeListener(new Property.ValueChangeListener() {
-
-            @Override
-            public void valueChange(Property.ValueChangeEvent event) {
-                loadItems();
-            }
+        hasCrafters.addValueChangeListener((HasValue.ValueChangeEvent<Boolean> event) -> {
+            loadItems();
         });
         filters.addComponent(hasCrafters);
         filters.setComponentAlignment(hasCrafters, Alignment.BOTTOM_LEFT);
         unknownRecipes = new CheckBox(null, false);
-        unknownRecipes.addValueChangeListener(new Property.ValueChangeListener() {
-
-            @Override
-            public void valueChange(Property.ValueChangeEvent event) {
-                loadItems();
-            }
+        unknownRecipes.addValueChangeListener((HasValue.ValueChangeEvent<Boolean> event) -> {
+            loadItems();
         });
         if (SpringSecurityHelper.getUser() != null) {
             filters.addComponent(unknownRecipes);
             filters.setComponentAlignment(unknownRecipes, Alignment.BOTTOM_LEFT);
         }
         crafterField = new TextField(null, "");
-        crafterField.addTextChangeListener(new FieldEvents.TextChangeListener() {
-
+        crafterField.addValueChangeListener(new HasValue.ValueChangeListener<String>() {
             @Override
-            public void textChange(FieldEvents.TextChangeEvent event) {
-                crafterIdValue = event.getText();
+            public void valueChange(HasValue.ValueChangeEvent<String> event) {
+                crafterIdValue = event.getValue();
                 loadItems();
             }
         });
-        crafterField.setTextChangeEventMode(AbstractTextField.TextChangeEventMode.TIMEOUT);
-        crafterField.setTextChangeTimeout(2000);
         filters.addComponent(crafterField);
         filters.setComponentAlignment(crafterField, Alignment.BOTTOM_LEFT);
         filters.setSpacing(true);
@@ -224,23 +256,16 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         textfilter.setSpacing(true);
         searchField = new TextField();
         searchField.setWidth(300f, Unit.PIXELS);
-        searchField.addTextChangeListener(new FieldEvents.TextChangeListener() {
-
+        searchField.addValueChangeListener(new HasValue.ValueChangeListener<String>() {
             @Override
-            public void textChange(FieldEvents.TextChangeEvent event) {
-                searchValue = event.getText();
+            public void valueChange(HasValue.ValueChangeEvent<String> event) {
+                searchValue = event.getValue();
                 loadItems();
             }
         });
-        searchField.setTextChangeEventMode(AbstractTextField.TextChangeEventMode.TIMEOUT);
-        searchField.setTextChangeTimeout(2000);
         searchFieldIgnoresOtherFilters = new CheckBox(null, true);
-        searchFieldIgnoresOtherFilters.addValueChangeListener(new Property.ValueChangeListener() {
-
-            @Override
-            public void valueChange(Property.ValueChangeEvent event) {
-                loadItems();
-            }
+        searchFieldIgnoresOtherFilters.addValueChangeListener((HasValue.ValueChangeEvent<Boolean> event) -> {
+            loadItems();
         });
         textfilter.addComponent(searchField);
         textfilter.addComponent(searchFieldIgnoresOtherFilters);
@@ -249,100 +274,56 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         vl.addComponent(textfilter);
         HorizontalLayout hl = new HorizontalLayout();
         hl.setSizeFull();
-        tree = new Tree(null);
+        tree = new Tree();
         tree.setSizeFull();
         tree.setWidth(250f, Unit.PIXELS);
-        tree.setMultiSelect(true);
-        tree.addValueChangeListener(new Property.ValueChangeListener() {
+        tree.setSelectionMode(Grid.SelectionMode.SINGLE);
+        tree.addSelectionListener(new SelectionListener() {
             @Override
-            public void valueChange(Property.ValueChangeEvent event) {
+            public void selectionChange(SelectionEvent event) {
                 loadItems();
             }
         });
         tree.addStyleName("v-scrollable");
         hl.addComponent(tree);
-        grid = new Grid();
-        grid.setStyleName("my-grid");
+        grid = new MGrid<>(FurnitureItem.class);
+        grid.setHeaderVisible(false);
+        setSpecification();
+        grid.setDataProvider(
+                (sortOrder, offset, limit) -> {
+                    final List<FurnitureItem> page = repo.findAll(specification,
+                            new PageRequest(
+                                    offset / limit,
+                                    limit,
+                                    sortOrder.isEmpty() || sortOrder.get(0).getDirection() == SortDirection.ASCENDING ? Sort.Direction.ASC : Sort.Direction.DESC,
+                                    sortOrder.isEmpty() ? "id" : sortOrder.get(0).getSorted()
+                            )
+                    ).getContent();
+                    return page.subList(offset % limit, page.size()).stream();
+                },
+                () -> (int) repo.count(specification)
+        );
+        grid.setRowHeight(100f);
+        grid.getColumn("nameEn").setStyleGenerator(new CustomCellStyleGenerator());
+        grid.getColumn("nameDe").setStyleGenerator(new CustomCellStyleGenerator());
+        grid.getColumn("nameFr").setStyleGenerator(new CustomCellStyleGenerator());
+        grid.getColumn("nameRu").setStyleGenerator(new CustomCellStyleGenerator());
+        grid.addComponentColumn(new ScreenshotValueProvider()).setId("screenshots");
+        grid.addComponentColumn(new IconValueProvider()).setId("iconColumn").setMaximumWidth(90);
+        grid.setColumns("iconColumn", itemNameColumn, "screenshots");
         grid.setSizeFull();
-        grid.addItemClickListener(new ItemClickEvent.ItemClickListener() {
-
-            @Override
-            public void itemClick(ItemClickEvent event) {
-                selectedFurnitureItem = (FurnitureItem) event.getItemId();
-                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
-                if (useEnglishNames == null || !useEnglishNames) {
-                    itemNameLabel.setCaption(selectedFurnitureItem.getLocalizedName(getUI().getLocale()));
-                } else {
-                    itemNameLabel.setCaption(selectedFurnitureItem.getNameEn());
-                }
-
-                for (ITEM_QUALITY q : ITEM_QUALITY.values()) {
-                    itemNameLabel.removeStyleName(q.name().toLowerCase());
-                }
-                if (selectedFurnitureItem.getItemQuality() != null) {
-                    itemNameLabel.addStyleName(selectedFurnitureItem.getItemQuality().name().toLowerCase());
-                }
-
-                itemLinkField.setReadOnly(false);
-                itemLinkField.setValue(selectedFurnitureItem.getItemLink());
-                itemLinkField.setReadOnly(true);
-                StringBuilder itemStoreLinkBuilder = new StringBuilder();
-                ESO_SERVER serverValue = (ESO_SERVER) server.getValue();
-                if (serverValue == ESO_SERVER.NA) {
-                    itemStoreLinkBuilder.append("https://na.");
-                } else {
-                    itemStoreLinkBuilder.append("https://eu.");
-                }
-                itemStoreLinkBuilder.append("tamrieltradecentre.com/pc/Trade/SearchResult?ItemID=&ItemCategory1ID=6");
-                itemStoreLinkBuilder.append("&ItemCategory2ID=");
-                if (selectedFurnitureItem.getSubCategory().getTtcSubcategory() != null) {
-                    if (selectedFurnitureItem.getSubCategory().getTtcSubcategory() == 33) {
-                        itemStoreLinkBuilder.append("");
-                    } else {
-                        itemStoreLinkBuilder.append(selectedFurnitureItem.getSubCategory().getTtcSubcategory().toString());
-                    }
-
-                } else {
-                    itemStoreLinkBuilder.append("35");
-                }
-                itemStoreLinkBuilder.append("&ItemNamePattern=");
-                itemStoreLinkBuilder.append(HtmlUtils.htmlEscape(selectedFurnitureItem.getNameEn()));
-                ExternalResource itemStoreLink = new ExternalResource(itemStoreLinkBuilder.toString());
-                itemTTClink.setResource(itemStoreLink);
-                if (selectedFurnitureItem.getRecipe() != null) {
-                    StringBuilder recipeStoreLinkBuilder = new StringBuilder();
-                    if (serverValue == ESO_SERVER.NA) {
-                        recipeStoreLinkBuilder.append("https://na.");
-                    } else {
-                        recipeStoreLinkBuilder.append("https://eu.");
-                    }
-                    recipeStoreLinkBuilder.append("tamrieltradecentre.com/pc/Trade/SearchResult?ItemID=&ItemCategory1ID=6&ItemCategory2ID=38");
-                    recipeStoreLinkBuilder.append("&ItemNamePattern=");
-                    recipeStoreLinkBuilder.append(HtmlUtils.htmlEscape(selectedFurnitureItem.getRecipe().getNameEn()));
-                    ExternalResource recipeStoreLink = new ExternalResource(recipeStoreLinkBuilder.toString());
-                    recipeTTClink.setResource(recipeStoreLink);
-                    recipeTTClink.setVisible(true);
-                } else {
-                    recipeTTClink.setVisible(false);
-                }
-                itemInfoLayout.setVisible(true);
-                if (selectedFurnitureItem.getRecipe() != null) {
-                    materialsContainer.setCollection(selectedFurnitureItem.getRecipe().getRecipeIngredients());
-                    itemTabs.setVisible(true);
-                    craftersContainer.setCollection(dBService.getCrafters(selectedFurnitureItem.getRecipe(), (ESO_SERVER) server.getValue()));
-                } else {
-                    itemTabs.setVisible(false);
-                }
-            }
-        });
-        listContainer = new GeneratedPropertyListContainer<>(FurnitureItem.class);
+        grid.addItemClickListener(new FurnitureItemClickListener());
         hl.addComponent(grid);
         hl.setExpandRatio(grid, 1f);
+        Panel p = new Panel();
+        p.setSizeFull();
+        p.setStyleName(ValoTheme.PANEL_BORDERLESS);
         itemTabs = new TabSheet();
         itemTabs.setSizeFull();
         itemInfoLayout = new VerticalLayout();
+        itemInfoLayout.setSizeFull();
         itemInfoLayout.setDefaultComponentAlignment(Alignment.TOP_LEFT);
-        itemInfoLayout.setMargin(true);
+        itemInfoLayout.setMargin(new MarginInfo(false, false, false, true));
         itemNameLabel = new Label();
         itemInfoLayout.addComponent(itemNameLabel);
         itemLinkField = new TextField();
@@ -356,24 +337,19 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         recipeTTClink = new Link();
         recipeTTClink.setTargetName("_blank");
         itemInfoLayout.addComponent(recipeTTClink);
-        materialsGrid = new Grid();
+        materialsGrid = new Grid(RecipeIngredient.class);
         materialsGrid.setSizeFull();
-        materialsContainer = new GeneratedPropertyListContainer(RecipeIngredient.class);
-        materialsGrid.setContainerDataSource(materialsContainer);
+
         materialsGrid.setColumns("ingredient", "count");
-        materialsGrid.getColumn("ingredient").setConverter(new Converter<String, Ingredient>() {
 
+        materialsGrid.getColumn("ingredient").setRenderer(new TextRenderer() {
             @Override
-            public Ingredient convertToModel(String value, Class<? extends Ingredient> targetType, Locale locale) throws Converter.ConversionException {
-                return null;
-            }
-
-            @Override
-            public String convertToPresentation(Ingredient value, Class<? extends String> targetType, Locale locale) throws Converter.ConversionException {
+            public JsonValue encode(Object val) {
+                Ingredient value = (Ingredient) val;
                 String result = null;
                 Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
                 if (useEnglishNames == null || !useEnglishNames) {
-                    switch (locale.getLanguage()) {
+                    switch (getLocale().getLanguage()) {
                         case "en":
                             result = value.getNameEn();
                             break;
@@ -391,121 +367,49 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
                     result = value.getNameEn();
                 }
 
-                return result;
-            }
-
-            @Override
-            public Class<Ingredient> getModelType() {
-                return Ingredient.class;
-            }
-
-            @Override
-            public Class<String> getPresentationType() {
-                return String.class;
+                return super.encode(result);
             }
 
         });
         materialsTab = itemTabs.addTab(materialsGrid);
 
-        craftersGrid = new Grid();
+        craftersGrid = new Grid<>(KnownRecipe.class);
         craftersGrid.setSizeFull();
-        craftersContainer = new GeneratedPropertyListContainer(KnownRecipe.class);
-        craftersContainer.addGeneratedProperty("esoId", new PropertyValueGenerator() {
-
+        craftersGrid.addColumn(new ValueProvider<KnownRecipe, String>() {
             @Override
-            public Object getValue(Item item, Object itemId, Object propertyId) {
-                String result = "@" + ((KnownRecipe) itemId).getAccount().getEsoId();
-                return result;
+            public String apply(KnownRecipe source) {
+                return "@" + source.getAccount().getEsoId();
             }
-
+        }).setId("esoId").setMinimumWidth(300).setExpandRatio(2);
+        craftersGrid.addColumn(KnownRecipe::getCraftPrice).setRenderer(new TextRenderer("") {
             @Override
-            public Class getType() {
-                return String.class;
-            }
-        }
-        );
-        craftersGrid.setContainerDataSource(craftersContainer);
-        craftersGrid.setColumns(new Object[]{"esoId", "craftPrice", "craftPriceWithMats"});
-        craftersGrid.getColumn("esoId").setMinimumWidth(300).setExpandRatio(2);
-        craftersGrid.getColumn("craftPrice").setConverter(new Converter<String, BigDecimal>() {
-
-            @Override
-            public BigDecimal convertToModel(String value, Class<? extends BigDecimal> targetType, Locale locale) throws Converter.ConversionException {
+            public JsonValue encode(Object value) {
                 if (value != null) {
-                    try {
-                        Number parse = NumberFormat.getInstance(locale).parse(value);
-                        BigDecimal result = BigDecimal.valueOf(parse.doubleValue()).setScale(0, RoundingMode.HALF_UP);
-                        return result;
-                    } catch (ParseException ex) {
-                        return null;
-                    }
+                    return super.encode(NumberFormat.getInstance(getLocale()).format(((BigDecimal) value).doubleValue()));
                 } else {
-                    return null;
+                    return super.encode(i18n.nullPrice());
                 }
-            }
-
-            @Override
-            public String convertToPresentation(BigDecimal value, Class<? extends String> targetType, Locale locale) throws Converter.ConversionException {
-                if (value != null) {
-                    return NumberFormat.getInstance(locale).format(value.doubleValue());
-                } else {
-                    return i18n.nullPrice();
-                }
-            }
-
-            @Override
-            public Class<BigDecimal> getModelType() {
-                return BigDecimal.class;
-            }
-
-            @Override
-            public Class<String> getPresentationType() {
-                return String.class;
             }
 
         });
-        craftersGrid.getColumn("craftPriceWithMats").setConverter(new Converter<String, BigDecimal>() {
-
+        craftersGrid.addColumn(KnownRecipe::getCraftPriceWithMats).setRenderer(new TextRenderer("") {
             @Override
-            public BigDecimal convertToModel(String value, Class<? extends BigDecimal> targetType, Locale locale) throws Converter.ConversionException {
+            public JsonValue encode(Object value) {
                 if (value != null) {
-                    try {
-                        Number parse = NumberFormat.getInstance(locale).parse(value);
-                        BigDecimal result = BigDecimal.valueOf(parse.doubleValue()).setScale(0, RoundingMode.HALF_UP);
-                        return result;
-                    } catch (ParseException ex) {
-                        return null;
-                    }
+                    return super.encode(NumberFormat.getInstance(getLocale()).format(((BigDecimal) value).doubleValue()));
                 } else {
-                    return null;
+                    return super.encode(i18n.nullPrice());
                 }
             }
-
-            @Override
-            public String convertToPresentation(BigDecimal value, Class<? extends String> targetType, Locale locale) throws Converter.ConversionException {
-                if (value != null) {
-                    return NumberFormat.getInstance(locale).format(value.doubleValue());
-                } else {
-                    return i18n.nullPrice();
-                }
-            }
-
-            @Override
-            public Class<BigDecimal> getModelType() {
-                return BigDecimal.class;
-            }
-
-            @Override
-            public Class<String> getPresentationType() {
-                return String.class;
-            }
-
         });
+        craftersGrid.setColumns("esoId", "craftPrice", "craftPriceWithMats");
         itemInfoLayout.setVisible(false);
         craftersTab = itemTabs.addTab(craftersGrid);
         craftersTab.setClosable(false);
         itemTabs.setVisible(false);
-        itemInfoLayout.addComponent(itemTabs);
+        p.setContent(itemTabs);
+        itemInfoLayout.addComponent(p);
+        itemInfoLayout.setExpandRatio(p, 1f);
         hl.addComponent(itemInfoLayout);
         hl.setExpandRatio(itemInfoLayout, 0.6f);
         vl.addComponent(hl);
@@ -513,32 +417,33 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         setCompositionRoot(vl);
     }
 
-    private void loadItems() {
-        specification.setCategories((Set<Object>) tree.getValue());
+    private void setSpecification() {
+        specification.setCategories(tree.getSelectedItems());
         specification.setOnlyCraftable(onlyCraftable.getValue());
         specification.setHasCrafters(hasCrafters.getValue());
         specification.setSearchString(searchValue);
-        specification.setEsoServer((ESO_SERVER) server.getValue());
+        specification.setEsoServer(server.getValue());
         specification.setCrafterId(crafterIdValue);
         if (itemQuality.getValue() != null) {
-            specification.setItemQuality((ITEM_QUALITY) itemQuality.getValue());
+            specification.setItemQuality(itemQuality.getValue());
         } else {
             specification.setItemQuality(null);
+        }
+        if (theme.getValue() != null) {
+            specification.setTheme(theme.getValue());
+        } else {
+            specification.setTheme(null);
         }
         specification.setSearchStringIgnoresAll(searchFieldIgnoresOtherFilters.getValue());
         if (SpringSecurityHelper.getUser() != null) {
             specification.setAccount(SpringSecurityHelper.getUser());
         }
         specification.setUnknownRecipes(unknownRecipes.getValue());
-        furnitureList = new SortableLazyList<>((int firstRow, boolean sortAscending, String property) -> repo.findAll(specification, new PageRequest(
-                firstRow / PAGESIZE,
-                PAGESIZE,
-                sortAscending ? Sort.Direction.ASC : Sort.Direction.DESC,
-                property == null ? "id" : property
-        )).getContent(),
-                () -> (int) repo.count(specification),
-                PAGESIZE);
-        listContainer.setCollection(furnitureList);
+    }
+
+    private void loadItems() {
+        setSpecification();
+        grid.getDataProvider().refreshAll();
     }
 
     @Override
@@ -547,28 +452,16 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
         screenshotClickListener = new ScreenshotClickListener();
         deleteImageClickListener = new DeleteImageClickListener();
-        tree.setContainerDataSource(dBService.getItemCategories());
-        grid.setCellStyleGenerator(new CustomCellStyleGenerator());
 
-        listContainer.addGeneratedProperty("category", new PropertyValueGenerator<String>() {
+        List<FurnitureCategory> itemCategoriesList = dBService.getItemCategoriesList();
+        TreeData treeData = new TreeData();
+        treeData.addRootItems(itemCategoriesList);
+        for (FurnitureCategory c : itemCategoriesList) {
+            treeData.addItems(c, c.getChilds());
+        }
+        tree.setTreeData(treeData);
+        grid.setStyleGenerator(new CustomCellStyleGenerator());
 
-            @Override
-            public String getValue(Item item, Object itemId, Object propertyId) {
-                FurnitureItem furnitureItem = (FurnitureItem) itemId;
-                String result = furnitureItem.getSubCategory().getCategory().toString() + ", " + furnitureItem.getSubCategory().toString();
-                return result;
-            }
-
-            @Override
-            public Class<String> getType() {
-                return String.class;
-            }
-
-        });
-        listContainer.addGeneratedProperty("screenshots", new ScreenShotsColumnGenerator());
-        grid.setContainerDataSource(listContainer);
-        grid.getColumn("screenshots").setRenderer(new ComponentRenderer()).setExpandRatio(1);
-        grid.getColumn("category").setSortable(false);
         if (SpringSecurityHelper.getUser() != null) {
             server.setValue(SpringSecurityHelper.getUser().getEsoServer());
         } else {
@@ -576,10 +469,15 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         }
         localize(getUI().getLocale());
         loadItems();
-        itemQuality.addValueChangeListener(new Property.ValueChangeListener() {
-
+        itemQuality.addValueChangeListener(new HasValue.ValueChangeListener() {
             @Override
-            public void valueChange(Property.ValueChangeEvent event) {
+            public void valueChange(HasValue.ValueChangeEvent event) {
+                loadItems();
+            }
+        });
+        theme.addValueChangeListener(new HasValue.ValueChangeListener() {
+            @Override
+            public void valueChange(HasValue.ValueChangeEvent event) {
                 loadItems();
             }
         });
@@ -600,8 +498,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
     @Override
     public void localeChanged(LocaleChangedEvent lce) {
         localize(lce.getNewLocale());
-        grid.refreshAllRows();
-        materialsGrid.refreshAllRows();
+        materialsGrid.getDataProvider().refreshAll();
     }
 
     private void localize(Locale locale) {
@@ -616,37 +513,46 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         filters.setCaption(i18n.filters());
         server.setCaption(i18n.serverForCraftersSearch());
         itemQuality.setCaption(i18n.itemQualityCaption());
-        for (ITEM_QUALITY q : ITEM_QUALITY.values()) {
-            if (useEnglishNames == null || !useEnglishNames) {
-                switch (locale.getLanguage()) {
-                    case "en":
-                        itemQuality.setItemCaption(q, q.getNameEn());
-                        break;
-                    case "de":
-                        itemQuality.setItemCaption(q, q.getNameDe());
-                        break;
-                    case "fr":
-                        itemQuality.setItemCaption(q, q.getNameFr());
-                        break;
-                    case "ru":
-                        itemQuality.setItemCaption(q, q.getNameRu());
-                        break;
-                }
-            } else {
-                itemQuality.setItemCaption(q, q.getNameEn());
-            }
-        }
         itemQuality.markAsDirtyRecursive();
+        theme.setCaption(i18n.theme());
+        theme.markAsDirtyRecursive();
         onlyCraftable.setCaption(i18n.displayOnlyCraftable());
         hasCrafters.setCaption(i18n.hasCrafters());
         searchField.setCaption(i18n.searchField());
         searchFieldIgnoresOtherFilters.setCaption(i18n.searchFieldIgnoreFilters());
         tree.setCaption(i18n.categories());
+        tree.setItemCaptionGenerator(new ItemCaptionGenerator() {
+            @Override
+            public String apply(Object item) {
+
+                FurnitureCategory value = (FurnitureCategory) item;
+                String result = null;
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (getLocale().getLanguage()) {
+                        case "en":
+                            result = value.getTextEn();
+                            break;
+                        case "de":
+                            result = value.getTextDe();
+                            break;
+                        case "fr":
+                            result = value.getTextFr();
+                            break;
+                        case "ru":
+                            result = value.getTextRu();
+                            break;
+                    }
+                } else {
+                    result = value.getTextEn();
+                }
+                return result;
+            }
+        });
+        grid.setColumns("iconColumn", itemNameColumn, "screenshots");
         grid.setCaption(i18n.furnitureListItemTableCaption());
-        grid.setColumns(new Object[]{itemNameColumn, "screenshots", "category"});
-        grid.getColumn(itemNameColumn).setWidth(400).setHeaderCaption(i18n.item());
-        grid.getColumn("category").setHeaderCaption(i18n.category());
-        grid.getColumn("screenshots").setHeaderCaption(i18n.screenshots());
+        grid.getColumn(itemNameColumn).setWidth(400).setCaption(i18n.item());
+        grid.getColumn("screenshots").setCaption(i18n.screenshots());
         if (selectedFurnitureItem != null) {
             if (useEnglishNames == null || !useEnglishNames) {
                 itemNameLabel.setCaption(selectedFurnitureItem.getLocalizedName(locale));
@@ -658,43 +564,39 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         recipeTTClink.setCaption(i18n.ttcRecipeSearchItem());
         unknownRecipes.setCaption(i18n.unknownRecipes());
         crafterField.setCaption(i18n.crafterId());
-        craftersGrid.getColumn("craftPrice").setHeaderCaption(i18n.craftPrice());
-        craftersGrid.getColumn("craftPriceWithMats").setHeaderCaption(i18n.craftPriceWithMats());
+        craftersGrid.getColumn("craftPrice").setCaption(i18n.craftPrice());
+        craftersGrid.getColumn("craftPriceWithMats").setCaption(i18n.craftPriceWithMats());
 
     }
 
-    private class CustomCellStyleGenerator implements Grid.CellStyleGenerator {
+    private class CustomCellStyleGenerator implements StyleGenerator<FurnitureItem> {
 
         @Override
-        public String getStyle(Grid.CellReference cell) {
-            Object propertyId = cell.getPropertyId();
-            if (propertyId != null && propertyId.equals(itemNameColumn)) {
-                FurnitureItem furnitureItem = (FurnitureItem) cell.getItemId();
-                return furnitureItem.getItemQuality().name().toLowerCase();
+        public String apply(FurnitureItem item) {
+            if (item != null) {
+                return item.getItemQuality().name().toLowerCase();
             }
-
             return null;
         }
 
     }
 
-    private class ScreenShotsColumnGenerator extends PropertyValueGenerator<HorizontalLayout> {
+    private class ScreenshotValueProvider implements ValueProvider<FurnitureItem, HorizontalLayout> {
 
         @Override
-        public HorizontalLayout getValue(Item item, Object itemId, Object propertyId) {
+        public HorizontalLayout apply(FurnitureItem source) {
             HorizontalLayout hl = new HorizontalLayout();
-            hl.setSizeFull();
+            hl.setDefaultComponentAlignment(Alignment.TOP_LEFT);
             hl.setSpacing(true);
-            final FurnitureItem furnitureItem = (FurnitureItem) itemId;
             int counter = 0;
             if (SpringSecurityHelper.hasRole("ROLE_UPLOAD_SCREENSHOTS")) {
                 Button uploadScreenShot = new Button(FontAwesome.UPLOAD);
-                uploadScreenShot.setData(furnitureItem);
+                uploadScreenShot.setData(source);
                 uploadScreenShot.addClickListener(new Button.ClickListener() {
 
                     @Override
                     public void buttonClick(Button.ClickEvent event) {
-                        UploadScreenshotWindow window = new UploadScreenshotWindow(furnitureItem);
+                        UploadScreenshotWindow window = new UploadScreenshotWindow(source);
                         getUI().addWindow(window);
 
                     }
@@ -702,7 +604,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
                 hl.addComponent(uploadScreenShot);
 
             }
-            for (final ItemScreenshot s : furnitureItem.getItemScreenshots()) {
+            for (final ItemScreenshot s : source.getItemScreenshots()) {
                 StreamResource.StreamSource streamSource = new StreamResource.StreamSource() {
 
                     @Override
@@ -714,15 +616,12 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
                 Image screenshotThumb = new Image(null, new StreamResource(streamSource, "thumb_" + s.getFileName()));
                 screenshotThumb.setSizeFull();
-                screenshotThumb.setImmediate(true);
                 screenshotThumb.setData(s);
                 screenshotThumb.addClickListener(screenshotClickListener);
                 Panel screenshotThumbPanel = new Panel(screenshotThumb);
                 hl.addComponent(screenshotThumbPanel);
                 screenshotThumbPanel.setHeight(102f, Unit.PIXELS);
                 screenshotThumbPanel.setWidth(176f, Unit.PIXELS);
-                hl.setComponentAlignment(screenshotThumbPanel, Alignment.TOP_LEFT);
-                hl.setExpandRatio(screenshotThumbPanel, 1f);
                 counter++;
                 if (counter > 1) {
                     break;
@@ -732,16 +631,24 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
             return hl;
         }
 
+    }
+
+    private class IconValueProvider implements ValueProvider<FurnitureItem, Image> {
+
         @Override
-        public Class<HorizontalLayout> getType() {
-            return HorizontalLayout.class;
+        public Image apply(FurnitureItem source) {
+            if (source.getIcon() != null) {
+                Image image = new Image(null, new ExternalResource("http://esoicons.uesp.net" + source.getIcon().replaceAll(".dds", ".png")));
+                return image;
+            }
+            return null;
         }
 
     }
 
     public void refreshFurnitureItem(FurnitureItem item) {
         try {
-            grid.refreshRows(item);
+            grid.getDataProvider().refreshItem(item);
         } catch (Exception ex) {
 
         }
@@ -804,7 +711,6 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
                 imagePanel.setHeight(100f, Unit.PIXELS);
                 Image screenshotThumb = new Image(null, new StreamResource(streamSource, "thumb_" + s.getFileName()));
                 screenshotThumb.setSizeFull();
-                screenshotThumb.setImmediate(true);
                 screenshotThumb.setData(s);
                 screenshotThumb.addClickListener(new MouseEvents.ClickListener() {
 
@@ -834,7 +740,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
                 @Override
                 public InputStream getStream() {
-                    ByteArrayInputStream bais = new ByteArrayInputStream(s.getScreenshot());
+                    ByteArrayInputStream bais = new ByteArrayInputStream(s.getFull().getScreenshot());
                     return bais;
                 }
             };
@@ -895,7 +801,6 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
             upload = new Upload(i18n.uploadScreenshotUploadCaption(), this);
 
             upload.addSucceededListener(this);
-            upload.setImmediate(true);
 
             vl.addComponent(upload);
             editorPanel = new Panel();
@@ -961,8 +866,12 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
                 screenshot.setAuthor(SpringSecurityHelper.getUser());
                 screenshot.setFurnitureItem(item);
                 screenshot.setFileName(filename);
-                screenshot.setScreenshot(image);
+                ItemScreenshotFull itemScreenshotFull = new ItemScreenshotFull();
+                itemScreenshotFull.setScreenshot(image);
+                itemScreenshotFull.setThumb(screenshot);
+                screenshot.setFull(itemScreenshotFull);
                 screenshot.setThumbnail(resize(image, 100));
+                dBService.saveEntity(screenshot);
                 if (item.getItemScreenshots() == null) {
                     item.setItemScreenshots(new ArrayList<>());
                 }
@@ -981,6 +890,78 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
             saveImage.setEnabled(false);
         }
 
+    }
+
+    private class FurnitureItemClickListener implements ItemClickListener {
+
+        @Override
+        public void itemClick(Grid.ItemClick event) {
+            selectedFurnitureItem = (FurnitureItem) event.getItem();
+            Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+            if (useEnglishNames == null || !useEnglishNames) {
+                itemNameLabel.setCaption(selectedFurnitureItem.getLocalizedName(getUI().getLocale()));
+            } else {
+                itemNameLabel.setCaption(selectedFurnitureItem.getNameEn());
+            }
+
+            for (ITEM_QUALITY q : ITEM_QUALITY.values()) {
+                itemNameLabel.removeStyleName(q.name().toLowerCase());
+            }
+            if (selectedFurnitureItem.getItemQuality() != null) {
+                itemNameLabel.addStyleName(selectedFurnitureItem.getItemQuality().name().toLowerCase());
+            }
+
+            itemLinkField.setReadOnly(false);
+            itemLinkField.setValue(selectedFurnitureItem.getItemLink());
+            itemLinkField.setReadOnly(true);
+            StringBuilder itemStoreLinkBuilder = new StringBuilder();
+            ESO_SERVER serverValue = (ESO_SERVER) server.getValue();
+            if (serverValue == ESO_SERVER.NA) {
+                itemStoreLinkBuilder.append("https://na.");
+            } else {
+                itemStoreLinkBuilder.append("https://eu.");
+            }
+            itemStoreLinkBuilder.append("tamrieltradecentre.com/pc/Trade/SearchResult?ItemID=&ItemCategory1ID=6");
+            itemStoreLinkBuilder.append("&ItemCategory2ID=");
+            /*if (selectedFurnitureItem.getSubCategory().getTtcSubcategory() != null) {
+                if (selectedFurnitureItem.getSubCategory().getTtcSubcategory() == 33) {
+                    itemStoreLinkBuilder.append("");
+                } else {
+                    itemStoreLinkBuilder.append(selectedFurnitureItem.getSubCategory().getTtcSubcategory().toString());
+                }
+
+            } else {
+                itemStoreLinkBuilder.append("35");
+            }*/
+            itemStoreLinkBuilder.append("&ItemNamePattern=");
+            itemStoreLinkBuilder.append(HtmlUtils.htmlEscape(selectedFurnitureItem.getNameEn()));
+            ExternalResource itemStoreLink = new ExternalResource(itemStoreLinkBuilder.toString());
+            itemTTClink.setResource(itemStoreLink);
+            if (selectedFurnitureItem.getRecipe() != null) {
+                StringBuilder recipeStoreLinkBuilder = new StringBuilder();
+                if (serverValue == ESO_SERVER.NA) {
+                    recipeStoreLinkBuilder.append("https://na.");
+                } else {
+                    recipeStoreLinkBuilder.append("https://eu.");
+                }
+                recipeStoreLinkBuilder.append("tamrieltradecentre.com/pc/Trade/SearchResult?ItemID=&ItemCategory1ID=6&ItemCategory2ID=38");
+                recipeStoreLinkBuilder.append("&ItemNamePattern=");
+                recipeStoreLinkBuilder.append(HtmlUtils.htmlEscape(selectedFurnitureItem.getRecipe().getNameEn()));
+                ExternalResource recipeStoreLink = new ExternalResource(recipeStoreLinkBuilder.toString());
+                recipeTTClink.setResource(recipeStoreLink);
+                recipeTTClink.setVisible(true);
+            } else {
+                recipeTTClink.setVisible(false);
+            }
+            itemInfoLayout.setVisible(true);
+            if (selectedFurnitureItem.getRecipe() != null) {
+                materialsGrid.setItems(selectedFurnitureItem.getRecipe().getRecipeIngredients());
+                itemTabs.setVisible(true);
+                craftersGrid.setItems(dBService.getCrafters(selectedFurnitureItem.getRecipe(), (ESO_SERVER) server.getValue()));
+            } else {
+                itemTabs.setVisible(false);
+            }
+        }
     }
 
 }

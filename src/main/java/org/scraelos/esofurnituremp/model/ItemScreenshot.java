@@ -6,11 +6,14 @@
 package org.scraelos.esofurnituremp.model;
 
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import org.scraelos.esofurnituremp.model.lib.DAO;
 
 /**
@@ -25,12 +28,14 @@ public class ItemScreenshot extends DAO {
     @Basic(optional = false)
     private Long id;
     private String fileName;
-    private byte[] screenshot;
+    //private byte[] screenshot;
     private byte[] thumbnail;
     @ManyToOne
     private FurnitureItem furnitureItem;
     @ManyToOne
     private SysAccount author;
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private ItemScreenshotFull full;
 
     @Override
     public Long getId() {
@@ -42,13 +47,13 @@ public class ItemScreenshot extends DAO {
         this.id = id;
     }
 
-    public byte[] getScreenshot() {
+    /*public byte[] getScreenshot() {
         return screenshot;
     }
 
     public void setScreenshot(byte[] screenshot) {
         this.screenshot = screenshot;
-    }
+    }*/
 
     public byte[] getThumbnail() {
         return thumbnail;
@@ -80,6 +85,14 @@ public class ItemScreenshot extends DAO {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public ItemScreenshotFull getFull() {
+        return full;
+    }
+
+    public void setFull(ItemScreenshotFull full) {
+        this.full = full;
     }
 
 }

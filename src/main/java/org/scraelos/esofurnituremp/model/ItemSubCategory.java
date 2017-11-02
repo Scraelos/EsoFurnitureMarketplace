@@ -8,6 +8,7 @@ package org.scraelos.esofurnituremp.model;
 import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -22,8 +23,8 @@ import org.scraelos.esofurnituremp.model.lib.DAO;
 @Entity
 public class ItemSubCategory extends DAO {
 
-    @OneToMany(mappedBy = "subCategory")
-    private List<FurnitureItem> furnitureItems;
+    //@OneToMany(mappedBy = "subCategory")
+    //private List<FurnitureItem> furnitureItems;
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -34,7 +35,7 @@ public class ItemSubCategory extends DAO {
     private String nameDe;
     private String nameRu;
     private Integer ttcSubcategory;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private ItemCategory category;
 
     @Override
@@ -85,14 +86,6 @@ public class ItemSubCategory extends DAO {
 
     public void setNameRu(String nameRu) {
         this.nameRu = nameRu;
-    }
-
-    public List<FurnitureItem> getFurnitureItems() {
-        return furnitureItems;
-    }
-
-    public void setFurnitureItems(List<FurnitureItem> furnitureItems) {
-        this.furnitureItems = furnitureItems;
     }
 
     public Integer getTtcSubcategory() {

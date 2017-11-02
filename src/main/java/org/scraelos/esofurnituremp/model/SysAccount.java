@@ -12,6 +12,7 @@ import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -44,7 +45,7 @@ public class SysAccount extends DAO implements UserDetails {
     private Boolean enabled;
     @ManyToMany
     private Set<SysAccountRole> roles;
-    @OneToMany(mappedBy = "account")
+    @OneToMany(mappedBy = "account", fetch = FetchType.LAZY)
     private Set<KnownRecipe> knownRecipes;
     @Transient
     private Set<Recipe> knownRecipesRaw;
@@ -106,10 +107,6 @@ public class SysAccount extends DAO implements UserDetails {
 
     public void setEsoId(String esoId) {
         this.esoId = esoId;
-    }
-
-    public Boolean getEnabled() {
-        return enabled;
     }
 
     public void setEnabled(Boolean enabled) {

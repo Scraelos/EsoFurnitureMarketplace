@@ -8,20 +8,20 @@ package org.scraelos.esofurnituremp.view;
 import com.github.peholmst.i18n4vaadin.LocaleChangedEvent;
 import com.github.peholmst.i18n4vaadin.LocaleChangedListener;
 import com.github.peholmst.i18n4vaadin.util.I18NHolder;
-import com.vaadin.data.Item;
-import com.vaadin.data.util.HierarchicalContainer;
+import com.vaadin.v7.data.Item;
+import com.vaadin.v7.data.util.HierarchicalContainer;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
-import com.vaadin.ui.ComboBox;
+import com.vaadin.v7.ui.ComboBox;
 import com.vaadin.ui.CustomComponent;
-import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.v7.ui.HorizontalLayout;
 import com.vaadin.ui.Notification;
-import com.vaadin.ui.Table;
-import com.vaadin.ui.Upload;
-import com.vaadin.ui.VerticalLayout;
+import com.vaadin.v7.ui.Table;
+import com.vaadin.v7.ui.Upload;
+import com.vaadin.v7.ui.VerticalLayout;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
@@ -179,7 +179,7 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
                         Boolean known = characterRecipes.getBoolean(recipeIdString);
                         if (known) {
                             Recipe recipe = dBService.getRecipe(Long.valueOf(recipeIdString));
-                            if (!dBService.isRecipeKnown(recipe, characterName, (ESO_SERVER) server.getValue(), SpringSecurityHelper.getUser())) {
+                            if (recipe != null && !dBService.isRecipeKnown(recipe, characterName, (ESO_SERVER) server.getValue(), SpringSecurityHelper.getUser())) {
                                 Item item = container.addItem(characterName + recipeIdString);
                                 item.getItemProperty("characterName").setValue(characterName);
                                 item.getItemProperty("recipe").setValue(recipe);

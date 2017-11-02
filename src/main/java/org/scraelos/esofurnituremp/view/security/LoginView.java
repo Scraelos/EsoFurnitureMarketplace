@@ -5,7 +5,6 @@
  */
 package org.scraelos.esofurnituremp.view.security;
 
-import com.vaadin.data.validator.EmailValidator;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.FontAwesome;
@@ -18,11 +17,12 @@ import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Notification;
-import com.vaadin.ui.PasswordField;
+import com.vaadin.v7.ui.PasswordField;
 import com.vaadin.ui.TabSheet;
-import com.vaadin.ui.TextField;
+import com.vaadin.v7.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
+import com.vaadin.v7.data.validator.EmailValidator;
 import com.wcs.wcslib.vaadin.widget.recaptcha.ReCaptcha;
 import com.wcs.wcslib.vaadin.widget.recaptcha.shared.ReCaptchaOptions;
 import java.util.Arrays;
@@ -97,7 +97,7 @@ public class LoginView extends CustomComponent implements View,
         user.setInputPrompt(i18n.emailPromt());
         user.addValidator(new EmailValidator(i18n.invalidUsername()));
         user.setInvalidAllowed(false);
-
+        
         password = new PasswordField(i18n.password());
         password.setWidth(100f, Unit.PERCENTAGE);
         password.setRequired(true);
@@ -132,7 +132,6 @@ public class LoginView extends CustomComponent implements View,
         newUserRepeat.setInvalidAllowed(false);
 
         activeServer = new ComboBox(i18n.activeServer(), Arrays.asList(ESO_SERVER.values()));
-        activeServer.setNullSelectionAllowed(false);
         activeServer.setValue(ESO_SERVER.EU);
         activeServerlabel = new Label(i18n.activeServerNotice());
 

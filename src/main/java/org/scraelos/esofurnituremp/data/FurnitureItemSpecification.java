@@ -15,10 +15,10 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
+import org.scraelos.esofurnituremp.model.FURNITURE_THEME;
+import org.scraelos.esofurnituremp.model.FurnitureCategory;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
-import org.scraelos.esofurnituremp.model.ItemCategory;
-import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.scraelos.esofurnituremp.model.Recipe;
 import org.scraelos.esofurnituremp.model.SysAccount;
 import org.springframework.data.jpa.domain.Specification;
@@ -33,9 +33,9 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
     private Boolean searchStringIgnoresAll;
     private Boolean onlyCraftable;
     private Boolean hasCrafters;
-    private List<ItemCategory> categories = new ArrayList<>();
-    private List<ItemSubCategory> subCategories = new ArrayList<>();
+    private Set<FurnitureCategory> categories;
     private ITEM_QUALITY itemQuality;
+    private FURNITURE_THEME theme;
     private ESO_SERVER esoServer;
     private Boolean unknownRecipes;
     private SysAccount account;
@@ -57,16 +57,12 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
         this.onlyCraftable = onlyCraftable;
     }
 
-    public void setCategories(Set<Object> list) {
-        subCategories.clear();
-        categories.clear();
-        for (Object o : list) {
-            if (o instanceof ItemSubCategory) {
-                subCategories.add((ItemSubCategory) o);
-            } else if (o instanceof ItemCategory) {
-                categories.add((ItemCategory) o);
-            }
-        }
+    public void setTheme(FURNITURE_THEME theme) {
+        this.theme = theme;
+    }
+
+    public void setCategories(Set<FurnitureCategory> list) {
+        this.categories = list;
     }
 
     public void setHasCrafters(Boolean hasCrafters) {
@@ -106,12 +102,8 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
             result = textSearch;
         } else {
             List<Predicate> predicates = new ArrayList<>();
-            if (!categories.isEmpty() && !subCategories.isEmpty()) {
-                predicates.add(cb.or(root.get("subCategory").in(subCategories), root.get("subCategory").get("category").in(categories)));
-            } else if (!categories.isEmpty()) {
-                predicates.add(root.get("subCategory").get("category").in(categories));
-            } else if (!subCategories.isEmpty()) {
-                predicates.add(root.get("subCategory").in(subCategories));
+            if (categories != null && !categories.isEmpty()) {
+                predicates.add(cb.or(root.get("category").in(categories), root.get("category").get("parent").in(categories)));
             }
             if ((onlyCraftable != null && onlyCraftable) || (unknownRecipes != null && unknownRecipes)) {
                 predicates.add(cb.isNotNull(root.get("recipe")));
@@ -125,6 +117,9 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
             }
             if (itemQuality != null) {
                 predicates.add(cb.equal(root.get("itemQuality"), itemQuality));
+            }
+            if (theme != null) {
+                predicates.add(cb.equal(root.get("theme"), theme));
             }
             if (unknownRecipes != null && unknownRecipes && account != null) {
                 Subquery<Recipe> subquery = cq.subquery(Recipe.class);

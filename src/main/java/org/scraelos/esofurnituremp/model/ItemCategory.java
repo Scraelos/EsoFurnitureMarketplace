@@ -34,6 +34,7 @@ public class ItemCategory extends DAO {
     private String nameFr;
     private String nameDe;
     private String nameRu;
+    private Boolean active;
 
     @Override
     public Long getId() {
@@ -88,6 +89,14 @@ public class ItemCategory extends DAO {
 
     public void setNameRu(String nameRu) {
         this.nameRu = nameRu;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 
 }
