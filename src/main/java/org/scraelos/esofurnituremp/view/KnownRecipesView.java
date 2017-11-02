@@ -181,27 +181,6 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         theme = new com.vaadin.ui.ComboBox(null, Arrays.asList(FURNITURE_THEME.values()));
         theme.setPageLength(25);
         theme.setEmptySelectionAllowed(true);
-        theme.setItemCaptionGenerator(new ItemCaptionGenerator<FURNITURE_THEME>() {
-            @Override
-            public String apply(FURNITURE_THEME item) {
-                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
-                if (useEnglishNames == null || !useEnglishNames) {
-                    switch (getLocale().getLanguage()) {
-                        case "en":
-                            return item.getNameEn();
-                        case "de":
-                            return item.getNameDe();
-                        case "fr":
-                            return item.getNameFr();
-                        case "ru":
-                            return item.getNameRu();
-                    }
-                } else {
-                    return item.getNameEn();
-                }
-                return null;
-            }
-        });
 
         filters.addComponent(theme);
         vl.addComponent(filters);
@@ -490,7 +469,27 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         }
         itemQuality.markAsDirtyRecursive();
         theme.setCaption(i18n.theme());
-        theme.markAsDirtyRecursive();
+        theme.setItemCaptionGenerator(new ItemCaptionGenerator<FURNITURE_THEME>() {
+            @Override
+            public String apply(FURNITURE_THEME item) {
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (getLocale().getLanguage()) {
+                        case "en":
+                            return item.getNameEn();
+                        case "de":
+                            return item.getNameDe();
+                        case "fr":
+                            return item.getNameFr();
+                        case "ru":
+                            return item.getNameRu();
+                    }
+                } else {
+                    return item.getNameEn();
+                }
+                return null;
+            }
+        });
         searchField.setCaption(i18n.searchField());
         searchFieldIgnoresOtherFilters.setCaption(i18n.searchFieldIgnoreFilters());
         grid.getColumn("recipe").setHeaderCaption(i18n.recipe());

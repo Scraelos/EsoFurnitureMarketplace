@@ -167,53 +167,11 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         filters.addComponent(server);
         itemQuality = new ComboBox(null, Arrays.asList(ITEM_QUALITY.values()));
         itemQuality.setEmptySelectionAllowed(true);
-        itemQuality.setItemCaptionGenerator(new ItemCaptionGenerator<ITEM_QUALITY>() {
-            @Override
-            public String apply(ITEM_QUALITY item) {
-                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
-                if (useEnglishNames == null || !useEnglishNames) {
-                    switch (getLocale().getLanguage()) {
-                        case "en":
-                            return item.getNameEn();
-                        case "de":
-                            return item.getNameDe();
-                        case "fr":
-                            return item.getNameFr();
-                        case "ru":
-                            return item.getNameRu();
-                    }
-                } else {
-                    return item.getNameEn();
-                }
-                return null;
-            }
-        });
 
         filters.addComponent(itemQuality);
         theme = new ComboBox(null, Arrays.asList(FURNITURE_THEME.values()));
         theme.setPageLength(25);
         theme.setEmptySelectionAllowed(true);
-        theme.setItemCaptionGenerator(new ItemCaptionGenerator<FURNITURE_THEME>() {
-            @Override
-            public String apply(FURNITURE_THEME item) {
-                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
-                if (useEnglishNames == null || !useEnglishNames) {
-                    switch (getLocale().getLanguage()) {
-                        case "en":
-                            return item.getNameEn();
-                        case "de":
-                            return item.getNameDe();
-                        case "fr":
-                            return item.getNameFr();
-                        case "ru":
-                            return item.getNameRu();
-                    }
-                } else {
-                    return item.getNameEn();
-                }
-                return null;
-            }
-        });
 
         filters.addComponent(theme);
 
@@ -513,9 +471,49 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         filters.setCaption(i18n.filters());
         server.setCaption(i18n.serverForCraftersSearch());
         itemQuality.setCaption(i18n.itemQualityCaption());
-        itemQuality.markAsDirtyRecursive();
+        itemQuality.setItemCaptionGenerator(new ItemCaptionGenerator<ITEM_QUALITY>() {
+            @Override
+            public String apply(ITEM_QUALITY item) {
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (getLocale().getLanguage()) {
+                        case "en":
+                            return item.getNameEn();
+                        case "de":
+                            return item.getNameDe();
+                        case "fr":
+                            return item.getNameFr();
+                        case "ru":
+                            return item.getNameRu();
+                    }
+                } else {
+                    return item.getNameEn();
+                }
+                return null;
+            }
+        });
         theme.setCaption(i18n.theme());
-        theme.markAsDirtyRecursive();
+        theme.setItemCaptionGenerator(new ItemCaptionGenerator<FURNITURE_THEME>() {
+            @Override
+            public String apply(FURNITURE_THEME item) {
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (getLocale().getLanguage()) {
+                        case "en":
+                            return item.getNameEn();
+                        case "de":
+                            return item.getNameDe();
+                        case "fr":
+                            return item.getNameFr();
+                        case "ru":
+                            return item.getNameRu();
+                    }
+                } else {
+                    return item.getNameEn();
+                }
+                return null;
+            }
+        });
         onlyCraftable.setCaption(i18n.displayOnlyCraftable());
         hasCrafters.setCaption(i18n.hasCrafters());
         searchField.setCaption(i18n.searchField());
