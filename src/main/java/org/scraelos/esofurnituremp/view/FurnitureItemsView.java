@@ -14,6 +14,7 @@ import com.vaadin.data.ValueProvider;
 import com.vaadin.event.MouseEvents;
 import com.vaadin.event.selection.SelectionEvent;
 import com.vaadin.event.selection.SelectionListener;
+import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.ExternalResource;
@@ -58,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -75,6 +77,7 @@ import org.scraelos.esofurnituremp.model.ItemScreenshot;
 import org.scraelos.esofurnituremp.model.ItemScreenshotFull;
 import org.scraelos.esofurnituremp.model.KnownRecipe;
 import org.scraelos.esofurnituremp.model.RecipeIngredient;
+import org.scraelos.esofurnituremp.model.SelectedFurniture;
 import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
 import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -143,6 +146,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
     private Link recipeTTClink;
 
     private Grid<RecipeIngredient> materialsGrid;
+    private Button addToCartButton;
 
     FurnitureItem selectedFurnitureItem;
 
@@ -270,7 +274,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         grid.addComponentColumn(new IconValueProvider()).setId("iconColumn").setMaximumWidth(90);
         grid.setColumns("iconColumn", itemNameColumn, "screenshots");
         grid.setSizeFull();
-        grid.addItemClickListener(new FurnitureItemClickListener());
+        grid.addSelectionListener(new FurnitureItemClickListener());
         hl.addComponent(grid);
         hl.setExpandRatio(grid, 1f);
         Panel p = new Panel();
@@ -295,6 +299,14 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         recipeTTClink = new Link();
         recipeTTClink.setTargetName("_blank");
         itemInfoLayout.addComponent(recipeTTClink);
+        addToCartButton = new Button("", VaadinIcons.CART);
+        addToCartButton.addClickListener(new Button.ClickListener() {
+            @Override
+            public void buttonClick(Button.ClickEvent event) {
+                addToCart((FurnitureItem) event.getButton().getData());
+            }
+        });
+        itemInfoLayout.addComponent(addToCartButton);
         materialsGrid = new Grid(RecipeIngredient.class);
         materialsGrid.setSizeFull();
 
@@ -400,6 +412,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
     }
 
     private void loadItems() {
+        setUrlParameters();
         setSpecification();
         grid.getDataProvider().refreshAll();
     }
@@ -425,6 +438,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         } else {
             server.setValue(ESO_SERVER.EU);
         }
+        handleUrlParameters(event);
         localize(getUI().getLocale());
         loadItems();
         itemQuality.addValueChangeListener(new HasValue.ValueChangeListener() {
@@ -439,6 +453,103 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
                 loadItems();
             }
         });
+    }
+
+    private void setUrlParameters() {
+        StringBuilder sb = new StringBuilder("!" + NAME);
+        if (server.getValue() != null) {
+            sb.append("/server=").append(server.getValue().name());
+        }
+        if (itemQuality.getValue() != null) {
+            sb.append("/quality=").append(itemQuality.getValue().name());
+        }
+        if (theme.getValue() != null) {
+            sb.append("/theme=").append(theme.getValue().name());
+        }
+        if (crafterField.getValue() != null && !crafterField.getValue().isEmpty()) {
+            sb.append("/crafter=").append(crafterField.getValue());
+        }
+        if (onlyCraftable.getValue() != null) {
+            sb.append("/onlyCraftable=").append(onlyCraftable.getValue().toString());
+        }
+        if (hasCrafters.getValue() != null) {
+            sb.append("/hasCrafters=").append(hasCrafters.getValue().toString());
+        }
+        if (searchFieldIgnoresOtherFilters.getValue() != null) {
+            sb.append("/searchFieldIgnoresOtherFilters=").append(searchFieldIgnoresOtherFilters.getValue().toString());
+        }
+        if (searchField.getValue() != null && !searchField.getValue().isEmpty()) {
+            sb.append("/search=").append(searchField.getValue());
+        }
+        if (tree.getSelectedItems() != null && !tree.getSelectedItems().isEmpty()) {
+            sb.append("/cat=").append(((FurnitureCategory) tree.getSelectedItems().iterator().next()).getId());
+        }
+        if (selectedFurnitureItem != null) {
+            sb.append("/item=").append(selectedFurnitureItem.getId().toString());
+        }
+
+        getUI().getPage().setUriFragment(sb.toString(), false);
+    }
+
+    private void handleUrlParameters(ViewChangeListener.ViewChangeEvent event) {
+        Map<String, String> parameterMap = event.getParameterMap("/");
+        String serverParameter = parameterMap.get("server");
+        String qualityParameter = parameterMap.get("quality");
+        String themeParameter = parameterMap.get("theme");
+        String crafterParameter = parameterMap.get("crafter");
+        String onlyCraftableParameter = parameterMap.get("onlyCraftable");
+        String hasCraftersParameter = parameterMap.get("hasCrafters");
+        String searchFieldIgnoresOtherFiltersParameter = parameterMap.get("searchFieldIgnoresOtherFilters");
+        String searchParameter = parameterMap.get("search");
+        String catParameter = parameterMap.get("cat");
+        String selectedItemPatameter = parameterMap.get("item");
+        if (serverParameter != null) {
+            server.setValue(ESO_SERVER.valueOf(serverParameter));
+        }
+        if (qualityParameter != null) {
+            itemQuality.setValue(ITEM_QUALITY.valueOf(qualityParameter));
+        }
+        if (themeParameter != null) {
+            theme.setValue(FURNITURE_THEME.valueOf(themeParameter));
+        }
+        if (crafterParameter != null) {
+            crafterField.setValue(crafterParameter);
+        }
+        if (onlyCraftableParameter != null) {
+            onlyCraftable.setValue(Boolean.valueOf(onlyCraftableParameter));
+        }
+        if (hasCraftersParameter != null) {
+            hasCrafters.setValue(Boolean.valueOf(hasCraftersParameter));
+        }
+        if (searchFieldIgnoresOtherFiltersParameter != null) {
+            searchFieldIgnoresOtherFilters.setValue(Boolean.valueOf(searchFieldIgnoresOtherFiltersParameter));
+        }
+        if (searchParameter != null) {
+            searchField.setValue(searchParameter);
+        }
+        if (catParameter != null) {
+            try {
+                FurnitureCategory c = new FurnitureCategory();
+                c.setId(Long.valueOf(catParameter));
+                tree.select(c);
+                if (tree.getTreeData().getParent(c) != null) {
+                    tree.expand(tree.getTreeData().getParent(c));
+                }
+            } catch (NumberFormatException ex) {
+
+            }
+        }
+        if (selectedItemPatameter != null) {
+            try {
+                FurnitureItem item = dBService.getFurnitureItem(Long.valueOf(selectedItemPatameter));
+                if (item != null) {
+                    grid.select(item);
+                }
+            } catch (NumberFormatException ex) {
+
+            }
+        }
+
     }
 
     @Override
@@ -559,6 +670,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
             }
         }
         itemTTClink.setCaption(i18n.ttcSearchItem());
+        addToCartButton.setCaption(i18n.addToCart());
         recipeTTClink.setCaption(i18n.ttcRecipeSearchItem());
         unknownRecipes.setCaption(i18n.unknownRecipes());
         crafterField.setCaption(i18n.crafterId());
@@ -658,6 +770,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         public void click(MouseEvents.ClickEvent event) {
             Image i = (Image) event.getComponent();
             final ItemScreenshot sc = (ItemScreenshot) i.getData();
+            grid.select(sc.getFurnitureItem());
             screenShotViewWindwow = new ScreenShotViewWindwow(sc);
             getUI().addWindow(screenShotViewWindwow);
         }
@@ -890,38 +1003,71 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
     }
 
-    private class FurnitureItemClickListener implements ItemClickListener {
+    private void addToCart(FurnitureItem item) {
+        List<SelectedFurniture> cart = (List<SelectedFurniture>) getUI().getSession().getAttribute("itemCart");
+        if (cart == null) {
+            cart = new ArrayList<>();
+        }
+        boolean found = false;
+        for (SelectedFurniture f : cart) {
+            if (f.getItem().equals(item)) {
+                found = true;
+                f.add();
+                break;
+            }
+        }
+        if (!found) {
+            SelectedFurniture f = new SelectedFurniture();
+            f.setItem(item);
+            f.add();
+            cart.add(f);
+        }
+        getUI().getSession().setAttribute("itemCart", cart);
+        openCart();
+
+    }
+
+    private void openCart() {
+        CartWindow w = new CartWindow();
+        getUI().addWindow(w);
+        w.LoadCart();
+    }
+
+    private class FurnitureItemClickListener implements SelectionListener<FurnitureItem> {
 
         @Override
-        public void itemClick(Grid.ItemClick event) {
-            selectedFurnitureItem = (FurnitureItem) event.getItem();
-            Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
-            if (useEnglishNames == null || !useEnglishNames) {
-                itemNameLabel.setCaption(selectedFurnitureItem.getLocalizedName(getUI().getLocale()));
-            } else {
-                itemNameLabel.setCaption(selectedFurnitureItem.getNameEn());
-            }
+        public void selectionChange(SelectionEvent<FurnitureItem> event) {
+            if (event.getAllSelectedItems() != null && !event.getAllSelectedItems().isEmpty()) {
 
-            for (ITEM_QUALITY q : ITEM_QUALITY.values()) {
-                itemNameLabel.removeStyleName(q.name().toLowerCase());
-            }
-            if (selectedFurnitureItem.getItemQuality() != null) {
-                itemNameLabel.addStyleName(selectedFurnitureItem.getItemQuality().name().toLowerCase());
-            }
+                selectedFurnitureItem = (FurnitureItem) event.getFirstSelectedItem().get();
+                setUrlParameters();
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    itemNameLabel.setCaption(selectedFurnitureItem.getLocalizedName(getUI().getLocale()));
+                } else {
+                    itemNameLabel.setCaption(selectedFurnitureItem.getNameEn());
+                }
 
-            itemLinkField.setReadOnly(false);
-            itemLinkField.setValue(selectedFurnitureItem.getItemLink());
-            itemLinkField.setReadOnly(true);
-            StringBuilder itemStoreLinkBuilder = new StringBuilder();
-            ESO_SERVER serverValue = (ESO_SERVER) server.getValue();
-            if (serverValue == ESO_SERVER.NA) {
-                itemStoreLinkBuilder.append("https://na.");
-            } else {
-                itemStoreLinkBuilder.append("https://eu.");
-            }
-            itemStoreLinkBuilder.append("tamrieltradecentre.com/pc/Trade/SearchResult?ItemID=&ItemCategory1ID=6");
-            itemStoreLinkBuilder.append("&ItemCategory2ID=");
-            /*if (selectedFurnitureItem.getSubCategory().getTtcSubcategory() != null) {
+                for (ITEM_QUALITY q : ITEM_QUALITY.values()) {
+                    itemNameLabel.removeStyleName(q.name().toLowerCase());
+                }
+                if (selectedFurnitureItem.getItemQuality() != null) {
+                    itemNameLabel.addStyleName(selectedFurnitureItem.getItemQuality().name().toLowerCase());
+                }
+
+                itemLinkField.setReadOnly(false);
+                itemLinkField.setValue(selectedFurnitureItem.getItemLink());
+                itemLinkField.setReadOnly(true);
+                StringBuilder itemStoreLinkBuilder = new StringBuilder();
+                ESO_SERVER serverValue = server.getValue();
+                if (serverValue == ESO_SERVER.NA) {
+                    itemStoreLinkBuilder.append("https://na.");
+                } else {
+                    itemStoreLinkBuilder.append("https://eu.");
+                }
+                itemStoreLinkBuilder.append("tamrieltradecentre.com/pc/Trade/SearchResult?ItemID=&ItemCategory1ID=6");
+                itemStoreLinkBuilder.append("&ItemCategory2ID=");
+                /*if (selectedFurnitureItem.getSubCategory().getTtcSubcategory() != null) {
                 if (selectedFurnitureItem.getSubCategory().getTtcSubcategory() == 33) {
                     itemStoreLinkBuilder.append("");
                 } else {
@@ -931,33 +1077,38 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
             } else {
                 itemStoreLinkBuilder.append("35");
             }*/
-            itemStoreLinkBuilder.append("&ItemNamePattern=");
-            itemStoreLinkBuilder.append(HtmlUtils.htmlEscape(selectedFurnitureItem.getNameEn()));
-            ExternalResource itemStoreLink = new ExternalResource(itemStoreLinkBuilder.toString());
-            itemTTClink.setResource(itemStoreLink);
-            if (selectedFurnitureItem.getRecipe() != null) {
-                StringBuilder recipeStoreLinkBuilder = new StringBuilder();
-                if (serverValue == ESO_SERVER.NA) {
-                    recipeStoreLinkBuilder.append("https://na.");
+                itemStoreLinkBuilder.append("&ItemNamePattern=");
+                itemStoreLinkBuilder.append(HtmlUtils.htmlEscape(selectedFurnitureItem.getNameEn()));
+                ExternalResource itemStoreLink = new ExternalResource(itemStoreLinkBuilder.toString());
+                itemTTClink.setResource(itemStoreLink);
+                if (selectedFurnitureItem.getRecipe() != null) {
+                    StringBuilder recipeStoreLinkBuilder = new StringBuilder();
+                    if (serverValue == ESO_SERVER.NA) {
+                        recipeStoreLinkBuilder.append("https://na.");
+                    } else {
+                        recipeStoreLinkBuilder.append("https://eu.");
+                    }
+                    recipeStoreLinkBuilder.append("tamrieltradecentre.com/pc/Trade/SearchResult?ItemID=&ItemCategory1ID=6&ItemCategory2ID=38");
+                    recipeStoreLinkBuilder.append("&ItemNamePattern=");
+                    recipeStoreLinkBuilder.append(HtmlUtils.htmlEscape(selectedFurnitureItem.getRecipe().getNameEn()));
+                    ExternalResource recipeStoreLink = new ExternalResource(recipeStoreLinkBuilder.toString());
+                    recipeTTClink.setResource(recipeStoreLink);
+                    recipeTTClink.setVisible(true);
                 } else {
-                    recipeStoreLinkBuilder.append("https://eu.");
+                    recipeTTClink.setVisible(false);
                 }
-                recipeStoreLinkBuilder.append("tamrieltradecentre.com/pc/Trade/SearchResult?ItemID=&ItemCategory1ID=6&ItemCategory2ID=38");
-                recipeStoreLinkBuilder.append("&ItemNamePattern=");
-                recipeStoreLinkBuilder.append(HtmlUtils.htmlEscape(selectedFurnitureItem.getRecipe().getNameEn()));
-                ExternalResource recipeStoreLink = new ExternalResource(recipeStoreLinkBuilder.toString());
-                recipeTTClink.setResource(recipeStoreLink);
-                recipeTTClink.setVisible(true);
-            } else {
-                recipeTTClink.setVisible(false);
-            }
-            itemInfoLayout.setVisible(true);
-            if (selectedFurnitureItem.getRecipe() != null) {
-                materialsGrid.setItems(selectedFurnitureItem.getRecipe().getRecipeIngredients());
-                itemTabs.setVisible(true);
-                craftersGrid.setItems(dBService.getCrafters(selectedFurnitureItem.getRecipe(), (ESO_SERVER) server.getValue()));
-            } else {
-                itemTabs.setVisible(false);
+                itemInfoLayout.setVisible(true);
+                if (selectedFurnitureItem.getRecipe() != null) {
+                    addToCartButton.setVisible(true);
+                    addToCartButton.setData(selectedFurnitureItem);
+                    materialsGrid.setItems(selectedFurnitureItem.getRecipe().getRecipeIngredients());
+                    itemTabs.setVisible(true);
+                    craftersGrid.setItems(dBService.getCrafters(selectedFurnitureItem.getRecipe(), (ESO_SERVER) server.getValue()));
+                } else {
+                    addToCartButton.setVisible(false);
+                    addToCartButton.setData(null);
+                    itemTabs.setVisible(false);
+                }
             }
         }
     }

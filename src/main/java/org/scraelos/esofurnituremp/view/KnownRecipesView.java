@@ -8,6 +8,7 @@ package org.scraelos.esofurnituremp.view;
 import com.github.peholmst.i18n4vaadin.LocaleChangedEvent;
 import com.github.peholmst.i18n4vaadin.LocaleChangedListener;
 import com.github.peholmst.i18n4vaadin.util.I18NHolder;
+import com.vaadin.data.HasValue;
 import com.vaadin.data.TreeData;
 import com.vaadin.v7.data.Item;
 import com.vaadin.v7.data.Property;
@@ -181,6 +182,12 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         theme = new com.vaadin.ui.ComboBox(null, Arrays.asList(FURNITURE_THEME.values()));
         theme.setPageLength(25);
         theme.setEmptySelectionAllowed(true);
+        theme.addValueChangeListener(new HasValue.ValueChangeListener<FURNITURE_THEME>() {
+            @Override
+            public void valueChange(HasValue.ValueChangeEvent<FURNITURE_THEME> event) {
+                loadItems();
+            }
+        });
 
         filters.addComponent(theme);
         vl.addComponent(filters);

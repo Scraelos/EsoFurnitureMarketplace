@@ -22,10 +22,12 @@ import com.vaadin.server.VaadinSession;
 import com.vaadin.spring.annotation.EnableVaadin;
 import com.vaadin.spring.annotation.EnableVaadinNavigation;
 import com.vaadin.spring.annotation.SpringUI;
+import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.spring.server.SpringVaadinServlet;
 import com.vaadin.ui.UI;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.logging.Logger;
 import javax.servlet.annotation.WebListener;
 import javax.servlet.annotation.WebServlet;
 import org.scraelos.esofurnituremp.security.SecurityErrorHandler;
@@ -34,9 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.context.ContextLoaderListener;
 
 /**
@@ -45,7 +45,7 @@ import org.springframework.web.context.ContextLoaderListener;
  */
 @Component
 @Theme("valo")
-@Scope("prototype")
+@UIScope
 @SpringUI
 public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
 
@@ -53,6 +53,7 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
     private transient ApplicationContext applicationContext;
 
     private I18N i18n = new SimpleI18N(Arrays.asList(new Locale("en"), new Locale("ru"), new Locale("fr"), new Locale("de")));
+    private static final Logger LOG = Logger.getLogger(EsoFurnitureMarketplaceUI.class.getName());
 
     static {
         I18NHolder.setStrategy(new I18NProvidingUIStrategy());
@@ -232,6 +233,16 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         @Message(key = "crafterId", value = "Crafter's id(without @)")
         ,
         @Message(key = "theme", value = "Theme")
+        ,
+        @Message(key = "cart", value = "Cart")
+        ,
+        @Message(key = "addToCart", value = "Add to Cart")
+        ,
+        @Message(key = "topList", value = "Top Crafters")
+        ,
+        @Message(key = "knownCount", value = "Known Recipes")
+            ,
+        @Message(key = "rank", value = "Rank")
     })
 
     @WebListener
@@ -240,8 +251,6 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
 
     @Configuration
     @EnableVaadin
-    //@EnableJpaRepositories
-    //@EnableTransactionManagement
     @EnableVaadinNavigation
     public static class MyConfiguration {
     }
@@ -295,7 +304,11 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
                 + "    line-height: 100px;"
                 + "}"
                 + ".my-grid .v-grid-body .v-grid-cell { height: 100px; }");
-        Locale lc = new Locale(getLocale().getLanguage());
+        String language = getLocale().getLanguage();
+        if (!language.equals("en") && !language.equals("de") && !language.equals("fr") && !language.equals("ru")) {
+            language = "en";
+        }
+        Locale lc = new Locale(language);
         if (SpringSecurityHelper.getUser() != null && SpringSecurityHelper.getUser().getUserLanguage() != null) {
             lc = SpringSecurityHelper.getUser().getUserLanguage().getLocale();
             setLocale(lc);

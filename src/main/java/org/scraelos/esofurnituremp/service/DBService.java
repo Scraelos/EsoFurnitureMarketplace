@@ -9,6 +9,7 @@ import com.vaadin.v7.data.Item;
 import com.vaadin.v7.data.util.BeanItemContainer;
 import com.vaadin.v7.data.util.HierarchicalContainer;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -39,6 +40,7 @@ import org.scraelos.esofurnituremp.model.RecipeIngredient;
 import org.scraelos.esofurnituremp.model.SysAccount;
 import org.scraelos.esofurnituremp.model.SysAccountRole;
 import org.scraelos.esofurnituremp.model.SystemProperty;
+import org.scraelos.esofurnituremp.model.TopListItem;
 import org.scraelos.esofurnituremp.model.lib.DAO;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -198,7 +200,7 @@ public class DBService {
         }
 
     }
-    
+
     @Transactional
     public void setCatTranslation(Long id, String textEn, String textDe, String textFr, String textRu) {
         FurnitureCategory r = em.find(FurnitureCategory.class, id);
@@ -647,6 +649,32 @@ public class DBService {
                 em.merge(s);
             }
         }
+    }
+
+    @Transactional
+    public void loadTopList(List<TopListItem> result, ESO_SERVER server, String esoid) {
+        result.clear();
+        Query q;
+        if (esoid != null && !esoid.isEmpty()) {
+            q = em.createNativeQuery("select * from (select row_number() over (ORDER BY count(*) DESC) as rownum,esoid,count(*) as cnt from (select s.esoid,k.recipe_id from sysaccount s join knownrecipe k on k.account_id=s.id where k.esoserver=:server group by s.esoid,k.recipe_id) as rr group by esoid order by cnt desc) as rrr where rownum<11 or esoid=:esoid");
+            q.setParameter("esoid", esoid);
+        } else {
+            q = em.createNativeQuery("select * from (select row_number() over (ORDER BY count(*) DESC) as rownum,esoid,count(*) as cnt from (select s.esoid,k.recipe_id from sysaccount s join knownrecipe k on k.account_id=s.id where k.esoserver=:server group by s.esoid,k.recipe_id) as rr group by esoid order by cnt desc) as rrr where rownum<11");
+        }
+        q.setParameter("server", server.name());
+        List<Object[]> resultList = q.getResultList();
+        for (Object[] o : resultList) {
+            TopListItem i = new TopListItem();
+            i.setOrder(((BigInteger) o[0]).intValue());
+            i.setEsoId("@" + (String) o[1]);
+            i.setCount(((BigInteger) o[2]).intValue());
+            result.add(i);
+        }
+    }
+
+    @Transactional
+    public FurnitureItem getFurnitureItem(Long id) {
+        return em.find(FurnitureItem.class, id);
     }
 
     @Transactional

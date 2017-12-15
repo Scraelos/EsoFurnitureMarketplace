@@ -18,5 +18,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface FurnitureItemRepository extends JpaRepository<FurnitureItem, Long>, JpaSpecificationExecutor<FurnitureItem> {
 
     List<FurnitureItem> findAllBy(Pageable pageable);
-
+    
 }
