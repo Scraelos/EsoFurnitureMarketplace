@@ -62,7 +62,7 @@ public class DBService {
         CriteriaQuery<SysAccount> criteria = builder.createQuery(SysAccount.class);
         Root<SysAccount> root = criteria.from(SysAccount.class);
         criteria.select(root);
-        criteria.where(builder.equal(root.get("username"), login));
+        criteria.where(builder.like(builder.lower(root.get("username")), login.toLowerCase()));
         criteria.distinct(true);
         List<SysAccount> resultList = em.createQuery(criteria).getResultList();
         if (resultList != null && !resultList.isEmpty()) {
