@@ -53,7 +53,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -479,7 +482,11 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
             sb.append("/searchFieldIgnoresOtherFilters=").append(searchFieldIgnoresOtherFilters.getValue().toString());
         }
         if (searchField.getValue() != null && !searchField.getValue().isEmpty()) {
-            sb.append("/search=").append(searchField.getValue());
+            try {
+                sb.append("/search=").append(URLEncoder.encode(searchField.getValue(), "UTF-8"));
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(FurnitureItemsView.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         if (tree.getSelectedItems() != null && !tree.getSelectedItems().isEmpty()) {
             sb.append("/cat=").append(((FurnitureCategory) tree.getSelectedItems().iterator().next()).getId());
@@ -525,7 +532,11 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
             searchFieldIgnoresOtherFilters.setValue(Boolean.valueOf(searchFieldIgnoresOtherFiltersParameter));
         }
         if (searchParameter != null) {
-            searchField.setValue(searchParameter);
+            try {
+                searchField.setValue(URLDecoder.decode(searchParameter, "UTF-8"));
+            } catch (UnsupportedEncodingException ex) {
+                Logger.getLogger(FurnitureItemsView.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         if (catParameter != null) {
             try {
