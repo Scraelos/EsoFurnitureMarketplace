@@ -163,9 +163,16 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
             String text = new String(toByteArray);
             JSONObject jsonFromLua = LuaDecoder.getJsonFromLua(text);
             String userId = "@" + SpringSecurityHelper.getUser().getEsoId();
+            String serverString =((ESO_SERVER) server.getValue()).name()+" Megaserver";
             JSONObject getDefault = jsonFromLua.getJSONObject("Default");
             try {
-                JSONObject furnisherknowledge = getDefault.getJSONObject(userId).getJSONObject("$AccountWide").getJSONObject("furnisher").getJSONObject("knowledge");
+                JSONObject userObject=getDefault.getJSONObject(userId);
+                JSONObject furnisherknowledge = null;
+                try{
+                furnisherknowledge = userObject.getJSONObject("$AccountWide").getJSONObject("furnisher").getJSONObject("knowledge");
+                } catch (JSONException ex) {
+                    furnisherknowledge = userObject.getJSONObject("$AccountWide").getJSONObject(serverString).getJSONObject("furnisher").getJSONObject("knowledge");
+                }
                 for (String characterName : furnisherknowledge.keySet()) {
                     JSONObject characterRecipes = furnisherknowledge.getJSONObject(characterName);
                     for (String recipeIdString : characterRecipes.keySet()) {
