@@ -138,9 +138,6 @@ public class Recipe extends DAO {
 
     @Override
     public String toString() {
-        if (recipeType != null) {
-            return recipeType.name() + ": " + nameEn;
-        }
         return nameEn;
     }
 

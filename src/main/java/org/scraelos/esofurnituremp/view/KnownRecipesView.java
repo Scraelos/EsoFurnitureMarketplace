@@ -139,7 +139,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         header = new Header();
         vl.addComponent(header);
         actions = new HorizontalLayout();
-        importButton = new Button(null, new Button.ClickListener() {
+        importButton = new Button("", new Button.ClickListener() {
 
             @Override
             public void buttonClick(Button.ClickEvent event) {
@@ -147,7 +147,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             }
         });
         actions.addComponent(importButton);
-        massPriceSetupButton = new Button(null, new Button.ClickListener() {
+        massPriceSetupButton = new Button("", new Button.ClickListener() {
 
             @Override
             public void buttonClick(Button.ClickEvent event) {
@@ -301,36 +301,20 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
                     switch (locale.getLanguage()) {
                         case "en":
                             result = value.getNameEn();
-                            if (value.getRecipeType() != null) {
-                                result = value.getRecipeType().getNameEn() + ": " + result;
-                            }
                             break;
                         case "de":
                             result = value.getNameDe();
-                            if (value.getRecipeType() != null) {
-                                result = value.getRecipeType().getNameDe() + ": " + result;
-                            }
                             break;
                         case "fr":
                             result = value.getNameFr();
-                            if (value.getRecipeType() != null) {
-                                result = value.getRecipeType().getNameFr() + " : " + result;
-                            }
                             break;
                         case "ru":
                             result = value.getNameRu();
-                            if (value.getRecipeType() != null) {
-                                result = value.getRecipeType().getNameRu() + ": " + result;
-                            }
                             break;
                     }
                 } else {
                     result = value.getNameEn();
-                    if (value.getRecipeType() != null) {
-                        result = value.getRecipeType().getNameEn() + ": " + result;
-                    }
                 }
-
                 return result;
             }
 

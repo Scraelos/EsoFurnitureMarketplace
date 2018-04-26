@@ -124,7 +124,9 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         ,
         @Message(key = "importNewRecipes", value = "Import new recipes")
         ,
-        @Message(key = "newKnownRecipes", value = "New known recipes")
+        @Message(key = "newKnownRecipes", value = "Following recipes were added:")
+        ,
+        @Message(key = "noNewKnownRecipes", value = "No new recipes were found")
         ,
         @Message(key = "recipe", value = "Recipe")
         ,
@@ -238,7 +240,7 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         ,
         @Message(key = "addToCart", value = "Add to Cart")
         ,
-        @Message(key = "topList", value = "Top Crafters")
+        @Message(key = "topList", value = "Top 20")
         ,
         @Message(key = "knownCount", value = "Known Recipes")
             ,

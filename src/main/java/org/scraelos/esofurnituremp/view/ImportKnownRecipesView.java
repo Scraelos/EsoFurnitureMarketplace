@@ -14,9 +14,9 @@ import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.Alignment;
-import com.vaadin.ui.Button;
 import com.vaadin.v7.ui.ComboBox;
 import com.vaadin.ui.CustomComponent;
+import com.vaadin.ui.Label;
 import com.vaadin.v7.ui.HorizontalLayout;
 import com.vaadin.ui.Notification;
 import com.vaadin.v7.ui.Table;
@@ -57,7 +57,7 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
     private Upload upload;
     private Table table;
     private HierarchicalContainer container;
-    private Button importButton;
+    private Label noRecipes;
 
     @Autowired
     private DBService dBService;
@@ -74,19 +74,8 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
         upload = new Upload(null, handler);
         upload.addSucceededListener(handler);
         upload.setImmediate(true);
-        importButton = new Button(null, new Button.ClickListener() {
-
-            @Override
-            public void buttonClick(Button.ClickEvent event) {
-                importButton.setEnabled(false);
-                dBService.addKnownRecipes(container, (ESO_SERVER) server.getValue(), SpringSecurityHelper.getUser());
-                container.removeAllItems();
-                getUI().getNavigator().navigateTo(KnownRecipesView.NAME);
-            }
-        });
-        importButton.setEnabled(false);
-        HorizontalLayout hl = new HorizontalLayout(server, upload, importButton);
-        hl.setComponentAlignment(importButton, Alignment.BOTTOM_LEFT);
+        HorizontalLayout hl = new HorizontalLayout(server, upload);
+        hl.setSizeUndefined();
         table = new Table();
         table.setSizeFull();
         container = new HierarchicalContainer();
@@ -96,9 +85,13 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
         table.setContainerDataSource(container);
         table.setVisibleColumns(new Object[]{"recipe", "characterName"});
         table.setCellStyleGenerator(new CustomCellStyleGenerator());
-        VerticalLayout vl = new VerticalLayout(header, hl, table);
+        noRecipes = new Label();
+        VerticalLayout contentLayout = new VerticalLayout(hl, table, noRecipes);
+        VerticalLayout vl = new VerticalLayout(header, contentLayout);
+        noRecipes.setVisible(false);
+        table.setVisible(false);
         vl.setSizeFull();
-        vl.setExpandRatio(table, 1f);
+        vl.setExpandRatio(contentLayout, 1f);
         setCompositionRoot(vl);
     }
 
@@ -111,8 +104,8 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
     private void localize() {
         server.setCaption(i18n.server());
         upload.setCaption(i18n.uploadCraftStoreFile());
-        importButton.setCaption(i18n.importNewRecipes());
         table.setCaption(i18n.newKnownRecipes());
+        noRecipes.setCaption(i18n.noNewKnownRecipes());
         table.setColumnHeaders(new String[]{i18n.recipe(), i18n.characterName()});
     }
 
@@ -189,7 +182,12 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
                     }
                 }
                 if (container.size() > 0) {
-                    importButton.setEnabled(true);
+                    noRecipes.setVisible(false);
+                    table.setVisible(true);
+                    dBService.addKnownRecipes(container, (ESO_SERVER) server.getValue(), SpringSecurityHelper.getUser());
+                } else {
+                    noRecipes.setVisible(true);
+                    table.setVisible(false);
                 }
             } catch (JSONException ex) {
                 Notification.show(i18n.uploadErrorTitle(), i18n.uploadErrorIDNotFound(userId), Notification.Type.ERROR_MESSAGE);

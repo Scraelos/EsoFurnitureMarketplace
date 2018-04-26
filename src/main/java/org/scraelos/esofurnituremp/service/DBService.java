@@ -54,6 +54,9 @@ public class DBService {
 
     @PersistenceContext
     private EntityManager em;
+    private static final Logger LOG = Logger.getLogger(DBService.class.getName());
+    
+    
 
     @Transactional
     public SysAccount getAccount(String login) throws UsernameNotFoundException {
@@ -418,9 +421,13 @@ public class DBService {
             em.flush();
         }
         if (furnitureTheme != null) {
+            try{
             FURNITURE_THEME theme = FURNITURE_THEME.valueOf("SI_FURNITURETHEMETYPE" + furnitureTheme.toString());
             if (theme != null) {
                 item.setTheme(theme);
+            }
+            }catch(java.lang.IllegalArgumentException ex) {
+                LOG.info("Not found theme "+furnitureTheme.toString());
             }
         }
         if (icon != null) {
@@ -479,6 +486,12 @@ public class DBService {
             item.setRecipe(recipe);
             if (recipeIcon != null) {
                 recipe.setIcon(recipeIcon);
+            }
+            if (quality != null) {
+                ITEM_QUALITY itemQuality = ITEM_QUALITY.valueOf(quality.intValue());
+                if (itemQuality != null) {
+                    recipe.setItemQuality(itemQuality);
+                }
             }
             if (recipeLink != null) {
                 recipe.setItemLink(recipeLink);
@@ -656,10 +669,10 @@ public class DBService {
         result.clear();
         Query q;
         if (esoid != null && !esoid.isEmpty()) {
-            q = em.createNativeQuery("select * from (select row_number() over (ORDER BY count(*) DESC) as rownum,esoid,count(*) as cnt from (select s.esoid,k.recipe_id from sysaccount s join knownrecipe k on k.account_id=s.id where k.esoserver=:server group by s.esoid,k.recipe_id) as rr group by esoid order by cnt desc) as rrr where rownum<11 or esoid=:esoid");
+            q = em.createNativeQuery("select * from (select row_number() over (ORDER BY count(*) DESC) as rownum,esoid,count(*) as cnt from (select s.esoid,k.recipe_id from sysaccount s join knownrecipe k on k.account_id=s.id where k.esoserver=:server group by s.esoid,k.recipe_id) as rr group by esoid order by cnt desc) as rrr where rownum<21 or esoid=:esoid");
             q.setParameter("esoid", esoid);
         } else {
-            q = em.createNativeQuery("select * from (select row_number() over (ORDER BY count(*) DESC) as rownum,esoid,count(*) as cnt from (select s.esoid,k.recipe_id from sysaccount s join knownrecipe k on k.account_id=s.id where k.esoserver=:server group by s.esoid,k.recipe_id) as rr group by esoid order by cnt desc) as rrr where rownum<11");
+            q = em.createNativeQuery("select * from (select row_number() over (ORDER BY count(*) DESC) as rownum,esoid,count(*) as cnt from (select s.esoid,k.recipe_id from sysaccount s join knownrecipe k on k.account_id=s.id where k.esoserver=:server group by s.esoid,k.recipe_id) as rr group by esoid order by cnt desc) as rrr where rownum<21");
         }
         q.setParameter("server", server.name());
         List<Object[]> resultList = q.getResultList();
