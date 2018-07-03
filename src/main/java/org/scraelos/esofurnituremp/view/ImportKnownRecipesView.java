@@ -169,9 +169,9 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
                 JSONObject userObject=getDefault.getJSONObject(userId);
                 JSONObject furnisherknowledge = null;
                 try{
-                furnisherknowledge = userObject.getJSONObject("$AccountWide").getJSONObject("furnisher").getJSONObject("knowledge");
-                } catch (JSONException ex) {
                     furnisherknowledge = userObject.getJSONObject("$AccountWide").getJSONObject(serverString).getJSONObject("furnisher").getJSONObject("knowledge");
+                } catch (JSONException ex) {
+                    furnisherknowledge = userObject.getJSONObject("$AccountWide").getJSONObject("furnisher").getJSONObject("knowledge");
                 }
                 for (String characterName : furnisherknowledge.keySet()) {
                     JSONObject characterRecipes = furnisherknowledge.getJSONObject(characterName);

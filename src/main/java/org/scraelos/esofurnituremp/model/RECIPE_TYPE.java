@@ -16,7 +16,8 @@ public enum RECIPE_TYPE {
     Pattern("Pattern", "Vorlage", "Préparation", "шаблон"),
     Blueprint("Blueprint", "Blaupause", "Plan", "чертеж"),
     Praxis("Praxis", "Anleitung", "Praxis", "схема"),
-    Formula("Formula", "Formel", "Formule", "формула");
+    Formula("Formula", "Formel", "Formule", "формула"),
+    Sketch("Sketch", "Riss", "Croquis", "формула");
 
     private RECIPE_TYPE(String nameEn_, String nameDe_, String nameFr_, String nameRu_) {
         nameEn = nameEn_;

@@ -190,8 +190,8 @@ public class DBService {
                 f.setNameFr(textFr);
                 f.setNameRu(textRu);
                 em.merge(f);
-            } else {
-                Ingredient i = em.find(Ingredient.class, id);
+            } 
+            Ingredient i = em.find(Ingredient.class, id);
                 if (i != null) {
                     i.setNameEn(textEn);
                     i.setNameDe(textDe);
@@ -199,7 +199,6 @@ public class DBService {
                     i.setNameRu(textRu);
                     em.merge(i);
                 }
-            }
         }
 
     }
