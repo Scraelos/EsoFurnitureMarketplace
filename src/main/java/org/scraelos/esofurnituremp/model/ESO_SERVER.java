@@ -11,5 +11,5 @@ package org.scraelos.esofurnituremp.model;
  */
 public enum ESO_SERVER {
 
-    NA, EU;
+    NA, EU, XBOX_NA, XBOX_EU, PS_NA, PS_EU;
 }

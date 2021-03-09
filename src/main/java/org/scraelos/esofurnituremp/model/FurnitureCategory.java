@@ -9,8 +9,10 @@ import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import org.scraelos.esofurnituremp.model.lib.DAO;
 
 /**
@@ -18,6 +20,9 @@ import org.scraelos.esofurnituremp.model.lib.DAO;
  * @author scraelos
  */
 @Entity
+@Table(indexes = {
+    @Index(columnList = "parent_id", unique = false)
+})
 public class FurnitureCategory extends DAO {
 
     @Id

@@ -10,7 +10,9 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 import org.scraelos.esofurnituremp.model.lib.DAO;
 
 /**
@@ -18,6 +20,10 @@ import org.scraelos.esofurnituremp.model.lib.DAO;
  * @author scraelos
  */
 @Entity
+@Table(indexes = {
+    @Index(columnList = "recipe_id", unique = false),
+    @Index(columnList = "ingredient_id", unique = false)
+})
 public class RecipeIngredient extends DAO {
 
     @Id
@@ -66,9 +72,7 @@ public class RecipeIngredient extends DAO {
 
     @Override
     public String toString() {
-        return  ingredient.toString() + "(" + count.toString() + ')';
+        return ingredient.toString() + "(" + count.toString() + ')';
     }
-    
-    
 
 }

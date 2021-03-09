@@ -23,7 +23,6 @@ public class CustomInitializingBean implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
         service.createRoles();
         service.createDefaultAdminUser();
-        service.createSystemProperties();
     }
 
 }

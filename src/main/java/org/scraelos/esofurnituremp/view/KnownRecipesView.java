@@ -8,43 +8,41 @@ package org.scraelos.esofurnituremp.view;
 import com.github.peholmst.i18n4vaadin.LocaleChangedEvent;
 import com.github.peholmst.i18n4vaadin.LocaleChangedListener;
 import com.github.peholmst.i18n4vaadin.util.I18NHolder;
+import com.vaadin.data.Binder;
 import com.vaadin.data.HasValue;
 import com.vaadin.data.TreeData;
-import com.vaadin.v7.data.Item;
-import com.vaadin.v7.data.Property;
-import com.vaadin.v7.data.fieldgroup.FieldGroup;
-import com.vaadin.v7.data.util.PropertyValueGenerator;
-import com.vaadin.v7.data.util.converter.Converter;
-import com.vaadin.v7.data.validator.BigDecimalRangeValidator;
-import com.vaadin.v7.event.FieldEvents;
-import com.vaadin.v7.event.ItemClickEvent;
+import com.vaadin.data.ValueProvider;
+import com.vaadin.data.converter.StringToBigDecimalConverter;
+import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.event.MouseEvents;
 import com.vaadin.event.selection.SelectionEvent;
 import com.vaadin.event.selection.SelectionListener;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.FontAwesome;
-import com.vaadin.server.Sizeable;
 import com.vaadin.server.StreamResource;
+import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.spring.annotation.SpringView;
-import com.vaadin.v7.ui.AbstractTextField;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
-import com.vaadin.v7.ui.CheckBox;
-import com.vaadin.v7.ui.ComboBox;
+import com.vaadin.ui.CheckBox;
+import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.CustomComponent;
-import com.vaadin.v7.ui.Grid;
-import com.vaadin.v7.ui.HorizontalLayout;
+import com.vaadin.ui.Grid;
+import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Image;
 import com.vaadin.ui.ItemCaptionGenerator;
 import com.vaadin.ui.Panel;
-import com.vaadin.v7.ui.TextField;
+import com.vaadin.ui.StyleGenerator;
+import com.vaadin.ui.TextField;
 import com.vaadin.ui.Tree;
-import com.vaadin.ui.UI;
-import com.vaadin.v7.ui.Upload;
-import com.vaadin.v7.ui.VerticalLayout;
+import com.vaadin.ui.Upload;
+import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
-import de.datenhahn.vaadin.componentrenderer.ComponentRenderer;
+import com.vaadin.ui.components.grid.EditorSaveEvent;
+import com.vaadin.ui.components.grid.EditorSaveListener;
+import com.vaadin.ui.renderers.TextRenderer;
+import elemental.json.JsonValue;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -53,9 +51,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -71,7 +66,6 @@ import org.scraelos.esofurnituremp.model.FURNITURE_THEME;
 import org.scraelos.esofurnituremp.model.FurnitureCategory;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
-import org.scraelos.esofurnituremp.model.ItemCategory;
 import org.scraelos.esofurnituremp.model.ItemScreenshot;
 import org.scraelos.esofurnituremp.model.ItemScreenshotFull;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
@@ -87,8 +81,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
 import org.vaadin.liveimageeditor.LiveImageEditor;
-import org.vaadin.viritin.v7.SortableLazyList;
-import org.vaadin.viritin.v7.grid.GeneratedPropertyListContainer;
 
 /**
  *
@@ -100,7 +92,7 @@ import org.vaadin.viritin.v7.grid.GeneratedPropertyListContainer;
 @Secured({"ROLE_USER"})
 public class KnownRecipesView extends CustomComponent implements View, LocaleChangedListener {
 
-    public static final String NAME = "knownrecipes";
+    public static final String NAME = "knownplans";
     private Header header;
     @Autowired
     private DBService dBService;
@@ -109,7 +101,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     private Bundle i18n = new Bundle();
 
     private Tree tree;
-    private Grid grid;
+    private Grid<KnownRecipe> grid;
     private HorizontalLayout actions;
     private HorizontalLayout filters;
     private HorizontalLayout textFilter;
@@ -124,8 +116,6 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     private Button massPriceSetupButton;
     private ScreenShotViewWindwow screenShotViewWindwow;
 
-    private SortableLazyList<KnownRecipe> itemList;
-    private GeneratedPropertyListContainer<KnownRecipe> listContainer = new GeneratedPropertyListContainer(KnownRecipe.class);
     private KnownRecipeSpecification specification;
     private ScreenshotClickListener screenshotClickListener;
     private DeleteImageClickListener deleteImageClickListener;
@@ -136,6 +126,8 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         this.setSizeFull();
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
+        vl.setMargin(false);
+        vl.setSpacing(false);
         header = new Header();
         vl.addComponent(header);
         actions = new HorizontalLayout();
@@ -160,21 +152,19 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         vl.addComponent(actions);
         filters = new HorizontalLayout();
         recipeType = new ComboBox(null, Arrays.asList(RECIPE_TYPE.values()));
-        recipeType.setNullSelectionAllowed(true);
-        recipeType.addValueChangeListener(new Property.ValueChangeListener() {
-
+        recipeType.setEmptySelectionAllowed(true);
+        recipeType.addValueChangeListener(new HasValue.ValueChangeListener() {
             @Override
-            public void valueChange(Property.ValueChangeEvent event) {
+            public void valueChange(HasValue.ValueChangeEvent event) {
                 loadItems();
             }
         });
         filters.addComponent(recipeType);
         itemQuality = new ComboBox(null, Arrays.asList(ITEM_QUALITY.values()));
-        itemQuality.setNullSelectionAllowed(true);
-        itemQuality.addValueChangeListener(new Property.ValueChangeListener() {
-
+        itemQuality.setEmptySelectionAllowed(true);
+        itemQuality.addValueChangeListener(new HasValue.ValueChangeListener() {
             @Override
-            public void valueChange(Property.ValueChangeEvent event) {
+            public void valueChange(HasValue.ValueChangeEvent event) {
                 loadItems();
             }
         });
@@ -194,21 +184,19 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         textFilter = new HorizontalLayout();
         searchField = new TextField();
         searchField.setWidth(300f, Unit.PIXELS);
-        searchField.addTextChangeListener(new FieldEvents.TextChangeListener() {
 
+        searchField.addValueChangeListener(new HasValue.ValueChangeListener<String>() {
             @Override
-            public void textChange(FieldEvents.TextChangeEvent event) {
-                searchValue = event.getText();
+            public void valueChange(HasValue.ValueChangeEvent<String> event) {
+
+                searchValue = event.getValue();
                 loadItems();
             }
         });
-        searchField.setTextChangeEventMode(AbstractTextField.TextChangeEventMode.TIMEOUT);
-        searchField.setTextChangeTimeout(2000);
         searchFieldIgnoresOtherFilters = new CheckBox(null, true);
-        searchFieldIgnoresOtherFilters.addValueChangeListener(new Property.ValueChangeListener() {
-
+        searchFieldIgnoresOtherFilters.addValueChangeListener(new HasValue.ValueChangeListener() {
             @Override
-            public void valueChange(Property.ValueChangeEvent event) {
+            public void valueChange(HasValue.ValueChangeEvent event) {
                 loadItems();
             }
         });
@@ -230,10 +218,9 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         });
         tree.addStyleName("v-scrollable");
         hl.addComponent(tree);
-        grid = new Grid();
-        grid.setStyleName("my-grid");
+        grid = new Grid<>(KnownRecipe.class);
         grid.setSizeFull();
-        grid.setCellStyleGenerator(new CustomCellStyleGenerator());
+        grid.setBodyRowHeight(100);
         hl.addComponent(grid);
         hl.setExpandRatio(grid, 1f);
 
@@ -244,6 +231,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
+        getUI().getPage().setTitle(i18n.knownRecipesMenuItemCaption() + " | " + i18n.siteTitle());
         header.build();
         screenshotClickListener = new ScreenshotClickListener();
         deleteImageClickListener = new DeleteImageClickListener();
@@ -255,50 +243,45 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             treeData.addItems(c, c.getChilds());
         }
         tree.setTreeData(treeData);
-        listContainer.addGeneratedProperty("screenshots", new ScreenShotsColumnGenerator());
-        listContainer.addGeneratedProperty("links", new ItemLinkCoumnGenerator());
+        grid.setDataProvider((sortOrder, offset, limit) -> {
+            final List<KnownRecipe> page = repo.findAll(specification,
+                    new PageRequest(
+                            offset / limit,
+                            limit,
+                            sortOrder.isEmpty() || sortOrder.get(0).getDirection() == SortDirection.ASCENDING ? Sort.Direction.ASC : Sort.Direction.DESC,
+                            sortOrder.isEmpty() ? "id" : sortOrder.get(0).getSorted()
+                    )
+            ).getContent();
+            return page.subList(offset % limit, page.size()).stream();
+        },
+                () -> (int) repo.count(specification));
 
-        grid.setContainerDataSource(listContainer);
-        grid.setColumns(new Object[]{"recipe", "links", "screenshots", "characterName", "esoServer", "craftPrice", "craftPriceWithMats"});
-        grid.setEditorEnabled(true);
-        grid.getEditorFieldGroup().addCommitHandler(new FieldGroup.CommitHandler() {
-
+        grid.getEditor().setEnabled(true);
+        grid.getEditor().addSaveListener(new EditorSaveListener<KnownRecipe>() {
             @Override
-            public void preCommit(FieldGroup.CommitEvent commitEvent) throws FieldGroup.CommitException {
-
-            }
-
-            @Override
-            public void postCommit(FieldGroup.CommitEvent commitEvent) throws FieldGroup.CommitException {
-                for (Object itemId : listContainer.getItemIds()) {
-                    if (commitEvent.getFieldBinder().getItemDataSource().equals(listContainer.getItem(itemId))) {
-                        KnownRecipe recipe = (KnownRecipe) itemId;
-                        dBService.saveEntity(recipe);
-                        refreshGridItem(itemId);
-                    }
-                }
-
+            public void onEditorSave(EditorSaveEvent<KnownRecipe> event) {
+                KnownRecipe recipe = event.getBean();
+                dBService.saveEntity(recipe);
+                refreshGridItem(recipe);
             }
         });
-        grid.getColumn("characterName").setEditable(false);
-        grid.getColumn("esoServer").setEditable(false);
-        grid.getColumn("craftPrice").setEditable(true);
+        TextField craftPrice = new TextField();
+        Binder.Binding craftPriceBind = grid.getEditor().getBinder().forField(craftPrice).withNullRepresentation("").withConverter(new StringToBigDecimalConverter("")).bind("craftPrice");
+        grid.getColumn("craftPrice").setEditorBinding(craftPriceBind).setEditable(true);
+        TextField craftPriceWithMats = new TextField();
+        Binder.Binding craftPriceWithMatsBind = grid.getEditor().getBinder().forField(craftPriceWithMats).withNullRepresentation("").withConverter(new StringToBigDecimalConverter("")).bind("craftPriceWithMats");
+        grid.getColumn("craftPriceWithMats").setEditorBinding(craftPriceWithMatsBind).setEditable(true);
         grid.getColumn("craftPriceWithMats").setEditable(true);
-        grid.getColumn("links").setEditable(false).setRenderer(new ComponentRenderer());
-        grid.getColumn("screenshots").setEditable(false).setRenderer(new ComponentRenderer()).setExpandRatio(1);
-        grid.getColumn("recipe").setWidth(450).setEditable(false).setConverter(new Converter<String, Recipe>() {
-
+        grid.addComponentColumn(new ItemLinkCoumnGenerator()).setId("links");
+        grid.addComponentColumn(new ScreenShotsColumnGenerator()).setId("screenshots").setExpandRatio(1);
+        grid.getColumn("recipe").setWidth(450).setRenderer(new TextRenderer() {
             @Override
-            public Recipe convertToModel(String value, Class<? extends Recipe> targetType, Locale locale) throws Converter.ConversionException {
-                return null;
-            }
-
-            @Override
-            public String convertToPresentation(Recipe value, Class<? extends String> targetType, Locale locale) throws Converter.ConversionException {
+            public JsonValue encode(Object val) {
+                Recipe value = (Recipe) val;
                 String result = null;
                 Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
                 if (useEnglishNames == null || !useEnglishNames) {
-                    switch (locale.getLanguage()) {
+                    switch (getLocale().getLanguage()) {
                         case "en":
                             result = value.getNameEn();
                             break;
@@ -315,20 +298,10 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
                 } else {
                     result = value.getNameEn();
                 }
-                return result;
+                return super.encode(result);
             }
-
-            @Override
-            public Class<Recipe> getModelType() {
-                return Recipe.class;
-            }
-
-            @Override
-            public Class<String> getPresentationType() {
-                return String.class;
-            }
-
-        });
+        }).setStyleGenerator(new CustomCellStyleGenerator());
+        grid.setColumns("recipe", "links", "screenshots", "characterName", "esoServer", "craftPrice", "craftPriceWithMats");
         localize(getUI().getLocale());
         loadItems();
 
@@ -353,15 +326,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         } else {
             specification.setTheme(null);
         }
-        itemList = new SortableLazyList<>((int firstRow, boolean sortAscending, String property) -> repo.findAll(specification, new PageRequest(
-                firstRow / PAGESIZE,
-                PAGESIZE,
-                sortAscending ? Sort.Direction.ASC : Sort.Direction.DESC,
-                property == null ? "id" : property
-        )).getContent(),
-                () -> (int) repo.count(specification),
-                PAGESIZE);
-        listContainer.setCollection(itemList);
+        grid.getDataProvider().refreshAll();
     }
 
     @Override
@@ -379,7 +344,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     @Override
     public void localeChanged(LocaleChangedEvent lce) {
         localize(lce.getNewLocale());
-        grid.refreshAllRows();
+        grid.getDataProvider().refreshAll();
     }
 
     private void localize(Locale locale) {
@@ -417,47 +382,49 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         });
         grid.setCaption(i18n.knownRecipesTableCaption());
         recipeType.setCaption(i18n.recipeTypeCaption());
-        for (RECIPE_TYPE t : RECIPE_TYPE.values()) {
-            if (useEnglishNames == null || !useEnglishNames) {
-                switch (locale.getLanguage()) {
-                    case "en":
-                        recipeType.setItemCaption(t, t.getNameEn());
-                        break;
-                    case "de":
-                        recipeType.setItemCaption(t, t.getNameDe());
-                        break;
-                    case "fr":
-                        recipeType.setItemCaption(t, t.getNameFr());
-                        break;
-                    case "ru":
-                        recipeType.setItemCaption(t, t.getNameRu());
-                        break;
+        recipeType.setItemCaptionGenerator(new ItemCaptionGenerator<RECIPE_TYPE>() {
+            @Override
+            public String apply(RECIPE_TYPE item) {
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (getLocale().getLanguage()) {
+                        case "en":
+                            return item.getNameEn();
+                        case "de":
+                            return item.getNameDe();
+                        case "fr":
+                            return item.getNameFr();
+                        case "ru":
+                            return item.getNameRu();
+                    }
+                } else {
+                    return item.getNameEn();
                 }
-            } else {
-                recipeType.setItemCaption(t, t.getNameEn());
+                return null;
             }
-        }
+        });
         itemQuality.setCaption(i18n.itemQualityCaption());
-        for (ITEM_QUALITY q : ITEM_QUALITY.values()) {
-            if (useEnglishNames == null || !useEnglishNames) {
-                switch (locale.getLanguage()) {
-                    case "en":
-                        itemQuality.setItemCaption(q, q.getNameEn());
-                        break;
-                    case "de":
-                        itemQuality.setItemCaption(q, q.getNameDe());
-                        break;
-                    case "fr":
-                        itemQuality.setItemCaption(q, q.getNameFr());
-                        break;
-                    case "ru":
-                        itemQuality.setItemCaption(q, q.getNameRu());
-                        break;
+        itemQuality.setItemCaptionGenerator(new ItemCaptionGenerator<ITEM_QUALITY>() {
+            @Override
+            public String apply(ITEM_QUALITY item) {
+                Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                if (useEnglishNames == null || !useEnglishNames) {
+                    switch (getLocale().getLanguage()) {
+                        case "en":
+                            return item.getNameEn();
+                        case "de":
+                            return item.getNameDe();
+                        case "fr":
+                            return item.getNameFr();
+                        case "ru":
+                            return item.getNameRu();
+                    }
+                } else {
+                    return item.getNameEn();
                 }
-            } else {
-                itemQuality.setItemCaption(q, q.getNameEn());
+                return null;
             }
-        }
+        });
         itemQuality.markAsDirtyRecursive();
         theme.setCaption(i18n.theme());
         theme.setItemCaptionGenerator(new ItemCaptionGenerator<FURNITURE_THEME>() {
@@ -483,49 +450,46 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         });
         searchField.setCaption(i18n.searchField());
         searchFieldIgnoresOtherFilters.setCaption(i18n.searchFieldIgnoreFilters());
-        grid.getColumn("recipe").setHeaderCaption(i18n.recipe());
-        grid.getColumn("characterName").setHeaderCaption(i18n.characterName());
-        grid.getColumn("esoServer").setHeaderCaption(i18n.server());
-        grid.getColumn("screenshots").setHeaderCaption(i18n.screenshots());
-        grid.getColumn("links").setHeaderCaption(i18n.itemLink());
-        grid.getColumn("craftPrice").setHeaderCaption(i18n.craftPrice());
-        grid.getColumn("craftPriceWithMats").setHeaderCaption(i18n.craftPriceWithMats());
-        grid.setEditorCancelCaption(i18n.gridItemCancelCaption());
-        grid.setEditorSaveCaption(i18n.gridItemSaveCaption());
+        grid.getColumn("recipe").setCaption(i18n.recipe());
+        grid.getColumn("characterName").setCaption(i18n.characterName());
+        grid.getColumn("esoServer").setCaption(i18n.server());
+        grid.getColumn("screenshots").setCaption(i18n.screenshots());
+        grid.getColumn("links").setCaption(i18n.itemLink());
+        grid.getColumn("craftPrice").setCaption(i18n.craftPrice());
+        grid.getColumn("craftPriceWithMats").setCaption(i18n.craftPriceWithMats());
+        grid.getEditor().setCancelCaption(i18n.gridItemCancelCaption());
+        grid.getEditor().setSaveCaption(i18n.gridItemSaveCaption());
     }
 
-    public void refreshGridItem(Object itemId) {
-        grid.refreshRows(itemId);
+    public void refreshGridItem(KnownRecipe itemId) {
+        grid.getDataProvider().refreshItem(itemId);
     }
 
-    private class CustomCellStyleGenerator implements Grid.CellStyleGenerator {
+    private class CustomCellStyleGenerator implements StyleGenerator<KnownRecipe> {
 
         @Override
-        public String getStyle(Grid.CellReference cell) {
-            Object propertyId = cell.getPropertyId();
-            if (propertyId != null && propertyId.equals("recipe")) {
-                KnownRecipe recipe = (KnownRecipe) cell.getItemId();
-                if (recipe.getRecipe().getItemQuality() != null) {
-                    return recipe.getRecipe().getItemQuality().name().toLowerCase();
-                }
+        public String apply(KnownRecipe item) {
+            if (item.getRecipe().getItemQuality() != null) {
+                return item.getRecipe().getItemQuality().name().toLowerCase();
             }
-
             return null;
         }
 
     }
 
-    private class ItemLinkCoumnGenerator extends PropertyValueGenerator<VerticalLayout> {
+    private class ItemLinkCoumnGenerator implements ValueProvider<KnownRecipe, VerticalLayout> {
 
         @Override
-        public VerticalLayout getValue(Item item, Object itemId, Object propertyId) {
+        public VerticalLayout apply(KnownRecipe source) {
             VerticalLayout result = new VerticalLayout();
-            final KnownRecipe knownRecipe = (KnownRecipe) itemId;
-            if (knownRecipe.getRecipe().getFurnitureItem() != null) {
+            result.setMargin(false);
+            result.setSpacing(false);
+
+            if (source.getRecipe().getFurnitureItem() != null) {
                 TextField linkField = new TextField();
-                linkField.setValue(knownRecipe.getRecipe().getItemLink());
+                linkField.setValue(source.getRecipe().getItemLink());
                 linkField.setReadOnly(true);
-                String linkeId = "itemLink" + knownRecipe.getId();
+                String linkeId = "itemLink" + source.getId();
                 linkField.setId(linkeId);
                 result.addComponent(linkField);
             }
@@ -533,21 +497,16 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             return result;
         }
 
-        @Override
-        public Class<VerticalLayout> getType() {
-            return VerticalLayout.class;
-        }
-
     }
 
-    private class ScreenShotsColumnGenerator extends PropertyValueGenerator<HorizontalLayout> {
+    private class ScreenShotsColumnGenerator implements ValueProvider<KnownRecipe, HorizontalLayout> {
 
         @Override
-        public HorizontalLayout getValue(Item item, Object itemId, Object propertyId) {
+        public HorizontalLayout apply(KnownRecipe source) {
             HorizontalLayout hl = new HorizontalLayout();
             hl.setSizeFull();
             hl.setSpacing(true);
-            KnownRecipe knownRecipe = (KnownRecipe) itemId;
+            KnownRecipe knownRecipe = source;
             if (knownRecipe.getRecipe().getFurnitureItem() != null) {
                 final FurnitureItem furnitureItem = knownRecipe.getRecipe().getFurnitureItem();
                 int counter = 0;
@@ -595,11 +554,6 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             return hl;
         }
 
-        @Override
-        public Class<HorizontalLayout> getType() {
-            return HorizontalLayout.class;
-        }
-
     }
 
     private class UploadScreenshotWindow extends Window implements Upload.Receiver, Upload.SucceededListener, LiveImageEditor.ImageReceiver, Button.ClickListener {
@@ -615,6 +569,8 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         public UploadScreenshotWindow(KnownRecipe item_) {
 
             VerticalLayout vl = new VerticalLayout();
+            vl.setMargin(false);
+            vl.setSpacing(false);
             this.item = item_;
             this.setModal(true);
             this.setResizable(false);
@@ -623,10 +579,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             center();
             this.setCaption(i18n.uploadScreenshotWindowCaption());
             upload = new Upload(i18n.uploadScreenshotUploadCaption(), this);
-
             upload.addSucceededListener(this);
-            upload.setImmediate(true);
-
             vl.addComponent(upload);
             editorPanel = new Panel();
             liveImageEditor = new LiveImageEditor(this);
@@ -748,6 +701,8 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             center();
             this.screenshot = screenshot_;
             vl = new VerticalLayout();
+            vl.setMargin(false);
+            vl.setSpacing(false);
             vl.setSizeFull();
 
             panel = new Panel();
@@ -811,6 +766,8 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             screenshotImage.setWidth(1048f, Unit.PIXELS);
             screenshotImage.setAlternateText(i18n.screenshotAlternativeText(s.getFileName(), s.getAuthor().getEsoId()));
             VerticalLayout imageLayout = new VerticalLayout();
+            imageLayout.setMargin(false);
+            imageLayout.setSpacing(false);
             imageLayout.setSizeFull();
             imageLayout.addComponent(screenshotImage);
             if (SpringSecurityHelper.getUser() != null && SpringSecurityHelper.hasRole("ROLE_UPLOAD_SCREENSHOTS") && SpringSecurityHelper.getUser().equals(s.getAuthor())) {
@@ -835,13 +792,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             FurnitureItem furnitureItem = itemScreenshot.getFurnitureItem();
             furnitureItem.getItemScreenshots().remove(itemScreenshot);
             dBService.deleteScreenShot(itemScreenshot);
-            for (Object itemId : listContainer.getItemIds()) {
-                KnownRecipe r = (KnownRecipe) itemId;
-                if (r.getRecipe().getFurnitureItem() != null && r.getRecipe().getFurnitureItem().equals(furnitureItem)) {
-                    refreshGridItem(r);
-                    break;
-                }
-            }
+            grid.getDataProvider().refreshAll();
             screenShotViewWindwow.close();
         }
 
@@ -865,28 +816,32 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             HorizontalLayout hl = new HorizontalLayout();
             hl.setDefaultComponentAlignment(Alignment.BOTTOM_LEFT);
             itemQualityBox = new ComboBox(i18n.itemQualityCaption(), Arrays.asList(ITEM_QUALITY.values()));
-            itemQualityBox.setNullSelectionAllowed(false);
+            itemQualityBox.setEmptySelectionAllowed(false);
             itemQualityBox.setCaption(i18n.itemQualityCaption());
 
             hl.addComponent(itemQualityBox);
             isPriceNull = new CheckBox(i18n.massPriceSetupNullCraftPrice(), true);
             hl.addComponent(isPriceNull);
             priceField = new TextField(i18n.craftPrice());
-            priceField.setNullRepresentation("");
-            priceField.addValidator(new BigDecimalRangeValidator(i18n.wrongPriceMessage(), BigDecimal.ONE, BigDecimal.valueOf(1000000000L).setScale(2, RoundingMode.HALF_UP)));
             hl.addComponent(priceField);
             isPriceWithMatsNull = new CheckBox(i18n.massPriceSetupNullCraftPriceWithMats(), true);
             hl.addComponent(isPriceWithMatsNull);
             priceWithMatsField = new TextField(i18n.craftPriceWithMats());
-            priceWithMatsField.setNullRepresentation("");
-            priceWithMatsField.addValidator(new BigDecimalRangeValidator(i18n.wrongPriceMessage(), BigDecimal.ONE, BigDecimal.valueOf(1000000000L).setScale(0, RoundingMode.HALF_UP)));
             hl.addComponent(priceWithMatsField);
             setupPriceButton = new Button(i18n.applyPricesButton(), new Button.ClickListener() {
 
                 @Override
                 public void buttonClick(Button.ClickEvent event) {
-                    if (itemQualityBox.isValid() && priceField.isValid() && priceWithMatsField.isValid()) {
-                        dBService.applyPrices(SpringSecurityHelper.getUser(), (ITEM_QUALITY) itemQualityBox.getValue(), (BigDecimal) priceField.getConvertedValue(), (BigDecimal) priceWithMatsField.getConvertedValue(), isPriceNull.getValue(), isPriceWithMatsNull.getValue());
+                    if (itemQualityBox.getValue() != null) {
+                        BigDecimal price = null;
+                        if (!priceField.getValue().isEmpty()) {
+                            price = new BigDecimal(priceField.getValue());
+                        }
+                        BigDecimal priceWithMats = null;
+                        if (!priceWithMatsField.getValue().isEmpty()) {
+                            priceWithMats = new BigDecimal(priceWithMatsField.getValue());
+                        }
+                        dBService.applyPrices(SpringSecurityHelper.getUser(), (ITEM_QUALITY) itemQualityBox.getValue(), price, priceWithMats, isPriceNull.getValue(), isPriceWithMatsNull.getValue());
                         loadItems();
                     }
                 }
@@ -897,97 +852,28 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         }
 
         public void localize() {
-            priceField.setConverter(new Converter<String, BigDecimal>() {
-
-                @Override
-                public BigDecimal convertToModel(String value, Class<? extends BigDecimal> targetType, Locale locale) throws Converter.ConversionException {
-                    if (value == null) {
-                        return null;
-                    }
-                    try {
-                        Number parse = NumberFormat.getInstance(locale).parse(value);
-                        BigDecimal result = BigDecimal.valueOf(parse.doubleValue()).setScale(0, RoundingMode.HALF_UP);
-                        return result;
-                    } catch (ParseException ex) {
-                        return null;
-                    }
-                }
-
-                @Override
-                public String convertToPresentation(BigDecimal value, Class<? extends String> targetType, Locale locale) throws Converter.ConversionException {
-                    if (value != null) {
-                        return NumberFormat.getInstance(locale).format(value.doubleValue());
-                    } else {
-                        return "";
-                    }
-                }
-
-                @Override
-                public Class<BigDecimal> getModelType() {
-                    return BigDecimal.class;
-                }
-
-                @Override
-                public Class<String> getPresentationType() {
-                    return String.class;
-                }
-            });
-            priceWithMatsField.setConverter(new Converter<String, BigDecimal>() {
-
-                @Override
-                public BigDecimal convertToModel(String value, Class<? extends BigDecimal> targetType, Locale locale) throws Converter.ConversionException {
-                    if (value == null) {
-                        return null;
-                    }
-                    try {
-                        Number parse = NumberFormat.getInstance(locale).parse(value);
-                        BigDecimal result = BigDecimal.valueOf(parse.doubleValue()).setScale(0, RoundingMode.HALF_UP);
-                        return result;
-                    } catch (ParseException ex) {
-                        return null;
-                    }
-                }
-
-                @Override
-                public String convertToPresentation(BigDecimal value, Class<? extends String> targetType, Locale locale) throws Converter.ConversionException {
-                    if (value != null) {
-                        return NumberFormat.getInstance(locale).format(value.doubleValue());
-                    } else {
-                        return "";
-                    }
-                }
-
-                @Override
-                public Class<BigDecimal> getModelType() {
-                    return BigDecimal.class;
-                }
-
-                @Override
-                public Class<String> getPresentationType() {
-                    return String.class;
-                }
-            });
             Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
-            for (ITEM_QUALITY q : ITEM_QUALITY.values()) {
-                if (useEnglishNames == null || !useEnglishNames) {
-                    switch (getUI().getLocale().getLanguage()) {
-                        case "en":
-                            itemQualityBox.setItemCaption(q, q.getNameEn());
-                            break;
-                        case "de":
-                            itemQualityBox.setItemCaption(q, q.getNameDe());
-                            break;
-                        case "fr":
-                            itemQualityBox.setItemCaption(q, q.getNameFr());
-                            break;
-                        case "ru":
-                            itemQualityBox.setItemCaption(q, q.getNameRu());
-                            break;
+            itemQualityBox.setItemCaptionGenerator(new ItemCaptionGenerator<ITEM_QUALITY>() {
+                @Override
+                public String apply(ITEM_QUALITY item) {
+                    Boolean useEnglishNames = (Boolean) getUI().getSession().getAttribute("useEnglishNames");
+                    if (useEnglishNames == null || !useEnglishNames) {
+                        switch (getLocale().getLanguage()) {
+                            case "en":
+                                return item.getNameEn();
+                            case "de":
+                                return item.getNameDe();
+                            case "fr":
+                                return item.getNameFr();
+                            case "ru":
+                                return item.getNameRu();
+                        }
+                    } else {
+                        return item.getNameEn();
                     }
-                } else {
-                    itemQualityBox.setItemCaption(q, q.getNameEn());
+                    return null;
                 }
-            }
+            });
         }
 
     }

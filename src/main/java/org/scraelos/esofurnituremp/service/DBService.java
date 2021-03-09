@@ -5,9 +5,6 @@
  */
 package org.scraelos.esofurnituremp.service;
 
-import com.vaadin.v7.data.Item;
-import com.vaadin.v7.data.util.BeanItemContainer;
-import com.vaadin.v7.data.util.HierarchicalContainer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -55,8 +52,6 @@ public class DBService {
     @PersistenceContext
     private EntityManager em;
     private static final Logger LOG = Logger.getLogger(DBService.class.getName());
-    
-    
 
     @Transactional
     public SysAccount getAccount(String login) throws UsernameNotFoundException {
@@ -118,22 +113,6 @@ public class DBService {
     }
 
     @Transactional
-    public void createSystemProperties() {
-        List<SystemProperty> propertys = new ArrayList<>();
-        propertys.add(new SystemProperty(1L, "smtpServer", null));
-        propertys.add(new SystemProperty(2L, "smtpUser", null));
-        propertys.add(new SystemProperty(3L, "smtpPassword", null));
-        propertys.add(new SystemProperty(4L, "emailFrom", null));
-        propertys.add(new SystemProperty(5L, "smtpPort", null));
-        propertys.stream().forEach((s) -> {
-            SystemProperty find = em.find(SystemProperty.class, s.getId());
-            if (find == null) {
-                em.persist(s);
-            }
-        });
-    }
-
-    @Transactional
     public void createDefaultAdminUser() {
         try {
             SysAccount account = getAccount("admin@admin.ru");
@@ -190,15 +169,15 @@ public class DBService {
                 f.setNameFr(textFr);
                 f.setNameRu(textRu);
                 em.merge(f);
-            } 
+            }
             Ingredient i = em.find(Ingredient.class, id);
-                if (i != null) {
-                    i.setNameEn(textEn);
-                    i.setNameDe(textDe);
-                    i.setNameFr(textFr);
-                    i.setNameRu(textRu);
-                    em.merge(i);
-                }
+            if (i != null) {
+                i.setNameEn(textEn);
+                i.setNameDe(textDe);
+                i.setNameFr(textFr);
+                i.setNameRu(textRu);
+                em.merge(i);
+            }
         }
 
     }
@@ -328,23 +307,6 @@ public class DBService {
     }
 
     @Transactional
-    public HierarchicalContainer getItemCategories() {
-        HierarchicalContainer hc = new HierarchicalContainer();
-        TypedQuery<ItemCategory> catQ = em.createQuery("select a from ItemCategory a", ItemCategory.class);
-        List<ItemCategory> resultList = catQ.getResultList();
-        for (ItemCategory cat : resultList) {
-            hc.addItem(cat);
-            hc.setChildrenAllowed(cat, true);
-            for (ItemSubCategory subCat : cat.getItemSubCategorys()) {
-                hc.addItem(subCat);
-                hc.setParent(subCat, cat);
-                hc.setChildrenAllowed(subCat, false);
-            }
-        }
-        return hc;
-    }
-
-    @Transactional
     public List<FurnitureCategory> getItemCategoriesList() {
         TypedQuery<FurnitureCategory> catQ = em.createQuery("select a from FurnitureCategory a where active=TRUE and parent is null", FurnitureCategory.class);
         List<FurnitureCategory> resultList = catQ.getResultList();
@@ -420,13 +382,13 @@ public class DBService {
             em.flush();
         }
         if (furnitureTheme != null) {
-            try{
-            FURNITURE_THEME theme = FURNITURE_THEME.valueOf("SI_FURNITURETHEMETYPE" + furnitureTheme.toString());
-            if (theme != null) {
-                item.setTheme(theme);
-            }
-            }catch(java.lang.IllegalArgumentException ex) {
-                LOG.info("Not found theme "+furnitureTheme.toString());
+            try {
+                FURNITURE_THEME theme = FURNITURE_THEME.valueOf("SI_FURNITURETHEMETYPE" + furnitureTheme.toString());
+                if (theme != null) {
+                    item.setTheme(theme);
+                }
+            } catch (java.lang.IllegalArgumentException ex) {
+                LOG.info("Not found theme " + furnitureTheme.toString());
             }
         }
         if (icon != null) {
@@ -523,6 +485,16 @@ public class DBService {
     }
 
     @Transactional
+    public Recipe getItemRecipe(Long id) {
+        Recipe result = null;
+        FurnitureItem item = em.find(FurnitureItem.class, id);
+        if (item != null) {
+            result = item.getRecipe();
+        }
+        return result;
+    }
+
+    @Transactional
     public boolean isRecipeKnown(Recipe recipe, String characterName, ESO_SERVER server, SysAccount account) {
         boolean result = false;
         CriteriaBuilder builder = em.getCriteriaBuilder();
@@ -571,16 +543,10 @@ public class DBService {
     }
 
     @Transactional
-    public void addKnownRecipes(HierarchicalContainer hc, ESO_SERVER server, SysAccount account) {
-        for (Object itemId : hc.getItemIds()) {
-            Item item = hc.getItem(itemId);
-            String characterName = (String) item.getItemProperty("characterName").getValue();
-            Recipe recipe = (Recipe) item.getItemProperty("recipe").getValue();
-            KnownRecipe knownRecipe = new KnownRecipe();
+    public void addKnownRecipes(List<KnownRecipe> list, ESO_SERVER server, SysAccount account) {
+        for (KnownRecipe knownRecipe : list) {
             knownRecipe.setAccount(account);
-            knownRecipe.setCharacterName(characterName);
             knownRecipe.setEsoServer(server);
-            knownRecipe.setRecipe(recipe);
             em.persist(knownRecipe);
         }
     }
@@ -592,33 +558,6 @@ public class DBService {
         String hashedPassword = passwordEncoder.encode(newPassword);
         a.setPassword(hashedPassword);
         em.merge(a);
-    }
-
-    @Transactional
-    public BeanItemContainer loadBeanItems(BeanItemContainer container) {
-        container.removeAllItems();
-        CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaQuery q = builder.createQuery(container.getBeanType());
-        Root root = q.from(container.getBeanType());
-        q.select(root);
-        q.distinct(true);
-        container.addAll(em.createQuery(q).getResultList());
-        return container;
-    }
-
-    @Transactional
-    public BeanItemContainer<FurnitureItem> getFurnitureItems(BeanItemContainer<FurnitureItem> container, ItemSubCategory category) {
-        container.removeAllItems();
-        CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaQuery<FurnitureItem> q = builder.createQuery(FurnitureItem.class);
-        Root<FurnitureItem> root = q.from(FurnitureItem.class);
-        q.select(root);
-        q.where(
-                builder.equal(root.get("subCategory"), category)
-        );
-        q.distinct(true);
-        container.addAll(em.createQuery(q).getResultList());
-        return container;
     }
 
     @Transactional
@@ -661,6 +600,13 @@ public class DBService {
                 em.merge(s);
             }
         }
+    }
+
+    @Transactional
+    public void cleanUsersKnownRecipes(SysAccount account) {
+        Query q = em.createNativeQuery("delete from knownrecipe where account_id=:accountId");
+        q.setParameter("accountId", account.getId());
+        q.executeUpdate();
     }
 
     @Transactional

@@ -5,9 +5,9 @@
  */
 package org.scraelos.esofurnituremp.view.security;
 
+import com.vaadin.data.Binder;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
-import com.vaadin.server.FontAwesome;
 import com.vaadin.shared.ui.MarginInfo;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.Alignment;
@@ -17,12 +17,13 @@ import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Notification;
-import com.vaadin.v7.ui.PasswordField;
+import com.vaadin.ui.PasswordField;
 import com.vaadin.ui.TabSheet;
-import com.vaadin.v7.ui.TextField;
+import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
-import com.vaadin.v7.data.validator.EmailValidator;
+import com.vaadin.data.validator.EmailValidator;
+import com.vaadin.icons.VaadinIcons;
 import com.wcs.wcslib.vaadin.widget.recaptcha.ReCaptcha;
 import com.wcs.wcslib.vaadin.widget.recaptcha.shared.ReCaptchaOptions;
 import java.util.Arrays;
@@ -54,6 +55,9 @@ public class LoginView extends CustomComponent implements View,
 
     public static final String NAME = "login";
 
+    private Binder<SysAccount> loginBinder;
+    private Binder<SysAccount> registerBinder;
+
     private final TextField user;
 
     private final PasswordField password;
@@ -61,7 +65,6 @@ public class LoginView extends CustomComponent implements View,
     private final Button loginButton;
 
     private final TextField newUser;
-    private final TextField newUserRepeat;
     private final TextField newUserId;
 
     private final PasswordField newPassword;
@@ -90,19 +93,16 @@ public class LoginView extends CustomComponent implements View,
     public LoginView() {
         setSizeFull();
         i18n = new Bundle();
+        loginBinder = new Binder<>(SysAccount.class);
+        registerBinder = new Binder<>(SysAccount.class);
         user = new TextField(i18n.email());
+        user.setId("username");
         user.setWidth(100f, Unit.PERCENTAGE);
-        user.setRequired(true);
-        user.setImmediate(true);
-        user.setInputPrompt(i18n.emailPromt());
-        user.addValidator(new EmailValidator(i18n.invalidUsername()));
-        user.setInvalidAllowed(false);
-        
+        user.setPlaceholder(i18n.emailPromt());
+        loginBinder.forField(user).withValidator(new EmailValidator(i18n.invalidUsername())).bind(SysAccount::getUsername, SysAccount::setUsername);
         password = new PasswordField(i18n.password());
         password.setWidth(100f, Unit.PERCENTAGE);
-        password.setRequired(true);
-        password.setImmediate(true);
-        password.setNullRepresentation("");
+        password.setId("password");
 
         loginButton = new Button(i18n.loginMenuItemCaption(), this);
 
@@ -118,18 +118,8 @@ public class LoginView extends CustomComponent implements View,
 
         newUser = new TextField(i18n.email());
         newUser.setWidth(100f, Unit.PERCENTAGE);
-        newUser.setRequired(true);
-        newUser.setImmediate(true);
-        newUser.setInputPrompt(i18n.emailPromt());
-        newUser.addValidator(new EmailValidator(i18n.invalidUsername()));
-        newUser.setInvalidAllowed(false);
-
-        newUserRepeat = new TextField(i18n.emailRepeat());
-        newUserRepeat.setWidth(100f, Unit.PERCENTAGE);
-        newUserRepeat.setRequired(true);
-        newUserRepeat.setImmediate(true);
-        newUserRepeat.setInputPrompt(i18n.emailRepeatPromt());
-        newUserRepeat.setInvalidAllowed(false);
+        newUser.setPlaceholder(i18n.emailPromt());
+        registerBinder.forField(newUser).withValidator(new EmailValidator(i18n.invalidUsername())).bind(SysAccount::getUsername, SysAccount::setUsername);
 
         activeServer = new ComboBox(i18n.activeServer(), Arrays.asList(ESO_SERVER.values()));
         activeServer.setValue(ESO_SERVER.EU);
@@ -137,33 +127,24 @@ public class LoginView extends CustomComponent implements View,
 
         newUserId = new TextField(i18n.ingameId());
         newUserId.setWidth(100f, Unit.PERCENTAGE);
-        newUserId.setRequired(true);
-        newUserId.setImmediate(true);
-        newUserId.setInputPrompt(i18n.ingameIdPromt());
-        newUserId.setInvalidAllowed(false);
+        newUserId.setPlaceholder(i18n.ingameIdPromt());
 
         newPassword = new PasswordField(i18n.password());
         newPassword.setWidth(100f, Unit.PERCENTAGE);
-        newPassword.setRequired(true);
-        newPassword.setImmediate(true);
-        newPassword.setNullRepresentation("");
 
         newPasswordRepeat = new PasswordField(i18n.passwordRepeat());
         newPasswordRepeat.setWidth(100f, Unit.PERCENTAGE);
-        newPasswordRepeat.setRequired(true);
-        newPasswordRepeat.setImmediate(true);
-        newPasswordRepeat.setNullRepresentation("");
         captcha = new ReCaptcha(
                 "6LfQMRkUAAAAAHVI39ktj2xc1ZpTMYvLKKnjrZ_z",
                 new ReCaptchaOptions() {
-                    {
-                        theme = "light";
-                        sitekey = "6LfQMRkUAAAAAJG4zPW6yD4vJJLE1CjkCh53qGwH";
-                    }
-                }
+            {
+                theme = "light";
+                sitekey = "6LfQMRkUAAAAAJG4zPW6yD4vJJLE1CjkCh53qGwH";
+            }
+        }
         );
         registerButton = new Button(i18n.registerAndLogin(), this);
-        registerFields = new FormLayout(newUser, newUserRepeat, newUserId, activeServer, activeServerlabel, newPassword, newPasswordRepeat, captcha, registerButton);
+        registerFields = new FormLayout(newUser, newUserId, activeServer, activeServerlabel, newPassword, newPasswordRepeat, captcha, registerButton);
         registerFields.addStyleName(ValoTheme.FORMLAYOUT_LIGHT);
         registerFields.setSpacing(true);
         registerFields.setMargin(new MarginInfo(true, true, true, false));
@@ -174,8 +155,8 @@ public class LoginView extends CustomComponent implements View,
         sheet.setHeight(500f, Unit.PIXELS);
         sheet.addStyleName(ValoTheme.TABSHEET_CENTERED_TABS);
         sheet.addStyleName(ValoTheme.TABSHEET_PADDED_TABBAR);
-        sheet.addTab(loginFields, i18n.loginTab(), FontAwesome.SIGN_IN, 0);
-        sheet.addTab(registerFields, i18n.registerTab(), FontAwesome.USER_PLUS, 1);
+        sheet.addTab(loginFields, i18n.loginTab(), VaadinIcons.SIGN_IN, 0);
+        sheet.addTab(registerFields, i18n.registerTab(), VaadinIcons.USER_CARD, 1);
 
         // The view root layout
         VerticalLayout viewLayout = new VerticalLayout(sheet);
@@ -191,7 +172,7 @@ public class LoginView extends CustomComponent implements View,
 
     @Override
     public void buttonClick(Button.ClickEvent event) {
-        if (event.getButton() == loginButton && user.isValid() && password.isValid()) {
+        if (loginBinder.isValid()) {
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user.getValue(), password.getValue());
             try {
                 Authentication authenticate = authenticationManager.authenticate(authentication);
@@ -211,7 +192,7 @@ public class LoginView extends CustomComponent implements View,
 
         } else if (event.getButton() == registerButton) {
             if (captcha.validate()) {
-                if (newUser.isValid() && newUserRepeat.isValid() && newPassword.isValid() && newPasswordRepeat.isValid() && newUserId.isValid()) {
+                if (registerBinder.isValid()) {
                     try {
                         dBService.registerUser(newUser.getValue(), newPassword.getValue(), newUserId.getValue(), (ESO_SERVER) activeServer.getValue());
                         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(newUser.getValue(), newPassword.getValue());

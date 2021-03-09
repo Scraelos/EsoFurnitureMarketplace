@@ -9,8 +9,8 @@ import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.CustomComponent;
-import com.vaadin.v7.ui.Upload;
-import com.vaadin.v7.ui.VerticalLayout;
+import com.vaadin.ui.Upload;
+import com.vaadin.ui.VerticalLayout;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -169,7 +169,7 @@ public class ImportView extends CustomComponent implements View {
                         String textEn = getStringFromCell(textEnCell).replace("^f", "").replace("^m", "").replace(":m", "").replace(":n", "").replace(":f", "").replace(":p", "").replace("^n", "");
                         String textDe = getStringFromCell(textDeCell).replace("^f", "").replace("^m", "").replace(":m", "").replace(":n", "").replace(":f", "").replace(":p", "").replace("^n", "");
                         String textFr = getStringFromCell(textFrCell).replace("^f", "").replace("^m", "");
-                        String textRu = getStringFromCell(textRuCell).replace("^f", "").replace("^m", "");
+                        String textRu = getStringFromCell(textRuCell).replace("^f", "").replace("^m", "").replace("^n", "");
                         TransImportTask task = new TransImportTask(id, textEn, textDe, textFr, textRu);
                         executor.execute(task);
                         //dBService.setItemTranslation(id, textEn, textDe, textFr, textRu);
@@ -246,7 +246,7 @@ public class ImportView extends CustomComponent implements View {
                         Cell textEnCell = r.getCell(4);
                         Cell textDeCell = r.getCell(5);
                         Cell textFrCell = r.getCell(6);
-                        Cell textRuCell = r.getCell(7);
+                        Cell textRuCell = r.getCell(10);
                         Long id = getLongFromCell(idCell);
                         String textEn = getStringFromCell(textEnCell).replace("^f", "").replace("^m", "").replace(":m", "").replace(":n", "").replace(":f", "").replace(":p", "").replace("^n", "");
                         String textDe = getStringFromCell(textDeCell).replace("^f", "").replace("^m", "").replace(":m", "").replace(":n", "").replace(":f", "").replace(":p", "").replace("^n", "");

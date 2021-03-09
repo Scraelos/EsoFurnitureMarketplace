@@ -82,6 +82,7 @@ public class TopListView extends CustomComponent implements View, LocaleChangedL
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
+        getUI().getPage().setTitle(i18n.topList() + " | " + i18n.siteTitle());
         header.build();
         if (SpringSecurityHelper.getUser() != null) {
             server.setValue(SpringSecurityHelper.getUser().getEsoServer());

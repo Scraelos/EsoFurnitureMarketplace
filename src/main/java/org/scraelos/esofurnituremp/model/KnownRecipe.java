@@ -14,7 +14,9 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 import org.scraelos.esofurnituremp.model.lib.DAO;
 
 /**
@@ -22,6 +24,10 @@ import org.scraelos.esofurnituremp.model.lib.DAO;
  * @author scraelos
  */
 @Entity
+@Table(indexes = {
+    @Index(columnList = "account_id", unique = false),
+    @Index(columnList = "recipe_id", unique = false)
+})
 public class KnownRecipe extends DAO {
 
     @Id

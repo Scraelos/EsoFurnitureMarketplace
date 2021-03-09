@@ -18,10 +18,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class SpringSecurityHelper {
 
     public static SysAccount getUser() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof SysAccount) {
-            return (SysAccount) principal;
-        } else {
+        try {
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principal instanceof SysAccount) {
+                return (SysAccount) principal;
+            } else {
+                return null;
+            }
+        } catch (NullPointerException ex) {
             return null;
         }
     }

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
@@ -40,6 +41,11 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
     private Boolean unknownRecipes;
     private SysAccount account;
     private String crafterId;
+    private Long minId;
+
+    public void setMinId(Long minId) {
+        this.minId = minId;
+    }
 
     public void setItemQuality(ITEM_QUALITY itemQuality) {
         this.itemQuality = itemQuality;
@@ -102,6 +108,9 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
             result = textSearch;
         } else {
             List<Predicate> predicates = new ArrayList<>();
+            if (minId != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("id"), minId));
+            }
             if (categories != null && !categories.isEmpty()) {
                 predicates.add(cb.or(root.get("category").in(categories), root.get("category").get("parent").in(categories)));
             }

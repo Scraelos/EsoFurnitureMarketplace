@@ -12,8 +12,10 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
+import javax.persistence.Table;
 import org.scraelos.esofurnituremp.model.lib.DAO;
 
 /**
@@ -21,6 +23,9 @@ import org.scraelos.esofurnituremp.model.lib.DAO;
  * @author scraelos
  */
 @Entity
+@Table(indexes = {
+    @Index(columnList = "furnitureItem_id", unique = false)
+})
 public class ItemScreenshot extends DAO {
 
     @Id
@@ -54,7 +59,6 @@ public class ItemScreenshot extends DAO {
     public void setScreenshot(byte[] screenshot) {
         this.screenshot = screenshot;
     }*/
-
     public byte[] getThumbnail() {
         return thumbnail;
     }

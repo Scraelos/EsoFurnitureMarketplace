@@ -18,11 +18,11 @@ import org.springframework.stereotype.Component;
 @Scope("prototype")
 @SpringView(name = AccessDeniedView.NAME)
 public class AccessDeniedView extends CustomComponent implements View {
-
+    
     public static final String NAME = "accessDenied";
-
+    
     private Bundle bundle = new Bundle();
-
+    
     public AccessDeniedView() {
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
@@ -33,9 +33,10 @@ public class AccessDeniedView extends CustomComponent implements View {
         vl.addComponent(homeLink);
         setCompositionRoot(vl);
     }
-
+    
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
+        getUI().getPage().setTitle(bundle.accessDenied() + " | " + bundle.siteTitle());
     }
-
+    
 }

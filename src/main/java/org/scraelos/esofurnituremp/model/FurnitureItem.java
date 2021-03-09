@@ -13,11 +13,12 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.Table;
 import org.scraelos.esofurnituremp.model.lib.DAO;
 
 /**
@@ -25,6 +26,9 @@ import org.scraelos.esofurnituremp.model.lib.DAO;
  * @author scraelos
  */
 @Entity
+@Table(indexes = {
+    @Index(columnList = "recipe_id", unique = true)
+})
 public class FurnitureItem extends DAO {
 
     @Id

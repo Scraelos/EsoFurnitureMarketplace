@@ -14,8 +14,6 @@ import com.vaadin.ui.Grid;
 import com.vaadin.ui.StyleGenerator;
 import com.vaadin.ui.Window;
 import com.vaadin.ui.VerticalLayout;
-import com.vaadin.ui.renderers.TextRenderer;
-import elemental.json.JsonValue;
 import java.util.ArrayList;
 import java.util.List;
 import org.scraelos.esofurnituremp.Bundle;

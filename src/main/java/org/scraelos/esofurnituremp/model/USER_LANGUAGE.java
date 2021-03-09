@@ -15,7 +15,7 @@ public enum USER_LANGUAGE {
 
     EN(new Locale("en"), "English"),
     DE(new Locale("de"), "Deutsch"),
-    FR(new Locale("fr"), "Französisch"),
+    FR(new Locale("fr"), "Français"),
     RU(new Locale("ru"), "Русский");
 
     private USER_LANGUAGE(Locale locale_, String description_) {

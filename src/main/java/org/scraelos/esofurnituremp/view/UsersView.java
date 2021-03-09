@@ -5,36 +5,40 @@
  */
 package org.scraelos.esofurnituremp.view;
 
-import com.vaadin.v7.data.Validator;
-import com.vaadin.v7.data.fieldgroup.FieldGroup;
-import com.vaadin.v7.data.util.BeanItem;
-import com.vaadin.v7.data.util.BeanItemContainer;
-import com.vaadin.v7.event.ItemClickEvent;
+import com.vaadin.data.Binder;
+import com.vaadin.data.ValidationResult;
+import com.vaadin.data.Validator;
+import com.vaadin.data.ValueContext;
+import com.vaadin.data.validator.EmailValidator;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.Page;
+import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.Button;
-import com.vaadin.v7.ui.CheckBox;
-import com.vaadin.v7.ui.ComboBox;
+import com.vaadin.ui.CheckBox;
+import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.FormLayout;
-import com.vaadin.v7.ui.HorizontalLayout;
-import com.vaadin.v7.ui.PasswordField;
-import com.vaadin.v7.ui.Table;
-import com.vaadin.v7.ui.TextField;
-import com.vaadin.v7.ui.TwinColSelect;
-import com.vaadin.v7.ui.VerticalLayout;
+import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.PasswordField;
+import com.vaadin.ui.Grid;
+import com.vaadin.ui.TextField;
+import com.vaadin.ui.TwinColSelect;
+import com.vaadin.ui.VerticalLayout;
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
 import org.scraelos.esofurnituremp.Bundle;
+import org.scraelos.esofurnituremp.data.SysAccountRepository;
+import org.scraelos.esofurnituremp.data.SysAccountRoleRepository;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
 import org.scraelos.esofurnituremp.model.SysAccount;
 import org.scraelos.esofurnituremp.model.SysAccountRole;
 import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -55,39 +59,39 @@ public class UsersView extends CustomComponent implements View {
     private Button refreshButton;
     private Button addButton;
     private HorizontalLayout tableAndForm;
-    private Table table;
-    private BeanItemContainer<SysAccount> container;
+    private Grid<SysAccount> grid;
     private FormLayout form;
-    private FieldGroup fieldGroup;
+    private Binder<SysAccount> binder;
+    private Binder<DoublePassword> passwordBinder;
     private TextField username;
     private TextField esoId;
-    private ComboBox esoServer;
+    private ComboBox<ESO_SERVER> esoServer;
     private PasswordField password;
     private PasswordField passwordRepeat;
-    private TwinColSelect roles;
+    private TwinColSelect<SysAccountRole> roles;
     private CheckBox enabled;
     private Button saveButton;
-
-    private BeanItem currentUserItem;
+    private SysAccount currentUser;
     private Header header;
 
     @Autowired
     private DBService service;
+    @Autowired
+    private SysAccountRoleRepository sysAccountRoleRepo;
+    @Autowired
+    private SysAccountRepository repo;
 
     public UsersView() {
+        setSizeFull();
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
+        vl.setSpacing(false);
+        vl.setMargin(false);
         header = new Header();
         vl.addComponent(header);
         actions = new HorizontalLayout();
         refreshButton = new Button("Refresh");
-        refreshButton.addClickListener(new Button.ClickListener() {
-
-            @Override
-            public void buttonClick(Button.ClickEvent event) {
-                LoadTable();
-            }
-        });
+        refreshButton.addClickListener(event -> grid.getDataProvider().refreshAll());
         actions.addComponent(refreshButton);
         addButton = new Button("New");
         addButton.addClickListener(new Button.ClickListener() {
@@ -101,32 +105,40 @@ public class UsersView extends CustomComponent implements View {
         vl.addComponent(actions);
         tableAndForm = new HorizontalLayout();
         tableAndForm.setSizeFull();
-        table = new Table();
-        table.setSizeFull();
-        container = new BeanItemContainer<>(SysAccount.class);
-        table.setContainerDataSource(container);
-        table.setVisibleColumns(new Object[]{"username", "esoId", "roles"});
-        table.addItemClickListener(new TableClickListener());
-
-        tableAndForm.addComponent(table);
-        tableAndForm.setExpandRatio(table, 0.5f);
+        grid = new Grid<>();
+        grid.setSizeFull();
+        grid.setDataProvider(
+                (sortOrder, offset, limit) -> {
+                    final List<SysAccount> page = repo.findAll(
+                            new PageRequest(
+                                    offset / limit,
+                                    limit,
+                                    sortOrder.isEmpty() || sortOrder.get(0).getDirection() == SortDirection.ASCENDING ? Sort.Direction.ASC : Sort.Direction.DESC,
+                                    sortOrder.isEmpty() ? "id" : sortOrder.get(0).getSorted()
+                            )
+                    ).getContent();
+                    return page.subList(offset % limit, page.size()).stream();
+                },
+                () -> (int) repo.count()
+        );
+        grid.addItemClickListener(event -> selectUser(event.getItem()));
+        grid.addColumn(SysAccount::getUsername).setCaption("User");
+        grid.addColumn(SysAccount::getEsoId).setCaption("ESO Id");
+        grid.addColumn(SysAccount::getRoles).setCaption("Roles");
+        tableAndForm.addComponent(grid);
+        tableAndForm.setExpandRatio(grid, 0.5f);
         form = new FormLayout();
         form.setSizeFull();
         username = new TextField("Login");
-        username.setNullRepresentation("");
-        username.setRequired(true);
         form.addComponent(username);
         esoId = new TextField("esoId");
-        esoId.setNullRepresentation("");
-        esoId.setRequired(true);
         form.addComponent(esoId);
-        esoServer = new ComboBox(i18n.activeServer(), Arrays.asList(ESO_SERVER.values()));
-        esoServer.setNullSelectionAllowed(false);
+        esoServer = new ComboBox<>(i18n.activeServer(), Arrays.asList(ESO_SERVER.values()));
+        esoServer.setEmptySelectionAllowed(false);
         form.addComponent(esoServer);
         password = new PasswordField("Password");
         form.addComponent(password);
         passwordRepeat = new PasswordField("Repeat Password");
-        passwordRepeat.addValidator(new PasswordValidator(password, passwordRepeat));
         form.addComponent(passwordRepeat);
         roles = new TwinColSelect("Roles");
 
@@ -148,34 +160,33 @@ public class UsersView extends CustomComponent implements View {
             }
         });
         form.addComponent(saveButton);
+        binder = new Binder(SysAccount.class);
+        binder.forField(username).asRequired().withValidator(new EmailValidator(i18n.invalidUsername())).bind("username");
+        binder.forField(esoId).asRequired().bind("esoId");
+        binder.forField(esoServer).asRequired().bind("esoServer");
+        binder.forField(roles).bind("roles");
+        binder.forField(enabled).bind("enabled");
+        passwordBinder = new Binder<>(DoublePassword.class);
+        passwordBinder.forField(password).bind(DoublePassword::getPassword, DoublePassword::setPassword);
+        passwordBinder.forField(passwordRepeat).withValidator(new PasswordValidator(password, passwordRepeat)).bind(DoublePassword::getPasswordRepeat, DoublePassword::setPasswordRepeat);
         form.setVisible(false);
         tableAndForm.addComponent(form);
         tableAndForm.setExpandRatio(form, 0.5f);
         vl.addComponent(tableAndForm);
+        vl.setExpandRatio(tableAndForm, 1f);
         setCompositionRoot(vl);
     }
 
-    private void LoadTable() {
-        container = service.loadBeanItems(container);
-    }
-
     private void AddUser() {
-        SysAccount sysAccount = new SysAccount();
-        sysAccount.setEnabled(Boolean.TRUE);
-        BeanItem<SysAccount> beanItem = new BeanItem<>(sysAccount);
-        currentUserItem = beanItem;
+        currentUser = new SysAccount();
+        currentUser.setEnabled(Boolean.TRUE);
         OpenForm();
     }
 
     private void OpenForm() {
         form.setVisible(true);
-        fieldGroup = new FieldGroup(currentUserItem);
-        fieldGroup.bind(username, "username");
-        fieldGroup.bind(esoId, "esoId");
-        fieldGroup.bind(esoServer, "esoServer");
-        fieldGroup.bind(roles, "roles");
-        fieldGroup.bind(enabled, "enabled");
-
+        binder.setBean(currentUser);
+        passwordBinder.setBean(new DoublePassword());
     }
 
     private void CloseForm() {
@@ -183,10 +194,9 @@ public class UsersView extends CustomComponent implements View {
     }
 
     private void SaveForm() {
-        try {
-            fieldGroup.commit();
-            SysAccount sysAccount = (SysAccount) currentUserItem.getBean();
-            if (password.getValue() != null && !password.getValue().isEmpty() && passwordRepeat.isValid()) {
+        if (binder.isValid()) {
+            SysAccount sysAccount = binder.getBean();
+            if (password.getValue() != null && !password.getValue().isEmpty() && passwordBinder.isValid()) {
                 BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
                 String hashedPassword = passwordEncoder.encode(password.getValue());
                 sysAccount.setPassword(hashedPassword);
@@ -195,32 +205,22 @@ public class UsersView extends CustomComponent implements View {
                 service.saveEntity(sysAccount);
             }
             CloseForm();
-            LoadTable();
-        } catch (FieldGroup.CommitException ex) {
-            Logger.getLogger(UsersView.class.getName()).log(Level.SEVERE, null, ex);
+            grid.getDataProvider().refreshAll();
         }
     }
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         header.build();
-        BeanItemContainer<SysAccountRole> rolesContainer = new BeanItemContainer<>(SysAccountRole.class);
-        rolesContainer = service.loadBeanItems(rolesContainer);
-        roles.setContainerDataSource(rolesContainer);
-        LoadTable();
+        roles.setItems(sysAccountRoleRepo.findAll());
     }
 
-    private class TableClickListener implements ItemClickEvent.ItemClickListener {
-
-        @Override
-        public void itemClick(ItemClickEvent event) {
-            currentUserItem = (BeanItem) event.getItem();
-            OpenForm();
-        }
-
+    private void selectUser(SysAccount user) {
+        currentUser = user;
+        OpenForm();
     }
 
-    private class PasswordValidator implements Validator {
+    private class PasswordValidator implements Validator<String> {
 
         private final PasswordField password1;
         private final PasswordField password2;
@@ -231,10 +231,34 @@ public class UsersView extends CustomComponent implements View {
         }
 
         @Override
-        public void validate(Object value) throws InvalidValueException {
+        public ValidationResult apply(String value, ValueContext context) {
             if (!password1.getValue().equals(password2.getValue())) {
-                throw new InvalidValueException("Passwords does not match");
+                return ValidationResult.error("Passwords does not match");
             }
+            return ValidationResult.ok();
+        }
+
+    }
+
+    public class DoublePassword {
+
+        private String password;
+        private String passwordRepeat;
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public String getPasswordRepeat() {
+            return passwordRepeat;
+        }
+
+        public void setPasswordRepeat(String passwordRepeat) {
+            this.passwordRepeat = passwordRepeat;
         }
 
     }
