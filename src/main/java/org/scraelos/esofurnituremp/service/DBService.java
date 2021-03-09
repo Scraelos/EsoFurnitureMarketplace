@@ -543,10 +543,9 @@ public class DBService {
     }
 
     @Transactional
-    public void addKnownRecipes(List<KnownRecipe> list, ESO_SERVER server, SysAccount account) {
+    public void addKnownRecipes(List<KnownRecipe> list, SysAccount account) {
         for (KnownRecipe knownRecipe : list) {
             knownRecipe.setAccount(account);
-            knownRecipe.setEsoServer(server);
             em.persist(knownRecipe);
         }
     }

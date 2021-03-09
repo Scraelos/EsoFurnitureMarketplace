@@ -64,7 +64,6 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
     private static Pattern MEGASERVER_PATTERN = Pattern.compile("(EU|NA) Megaserver");
     private Header header;
 
-    private ComboBox<ESO_SERVER> server;
     private Upload upload;
     private Grid<KnownRecipe> grid;
     private List<KnownRecipe> container;
@@ -79,12 +78,9 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
         header = new Header();
         this.setSizeFull();
         UploadHandler handler = new UploadHandler();
-        server = new ComboBox<>(null, Arrays.asList(ESO_SERVER.values()));
-        server.setEmptySelectionAllowed(false);
-        server.setValue(SpringSecurityHelper.getUser().getEsoServer());
         upload = new Upload(null, handler);
         upload.addSucceededListener(handler);
-        HorizontalLayout hl = new HorizontalLayout(server, upload);
+        HorizontalLayout hl = new HorizontalLayout(upload);
         hl.setSizeUndefined();
         grid = new Grid<>();
         grid.setSizeFull();
@@ -146,7 +142,6 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
     }
 
     private void localize() {
-        server.setCaption(i18n.server());
         upload.setCaption(i18n.uploadCraftStoreFile());
         grid.setCaption(i18n.newKnownRecipes());
         noRecipes.setCaption(i18n.noNewKnownRecipes());
@@ -184,7 +179,6 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
         @Override
         public void uploadSucceeded(Upload.SucceededEvent event) {
             SysAccount account = SpringSecurityHelper.getUser();
-            ESO_SERVER esoserver = (ESO_SERVER) server.getValue();
             container.clear();
             byte[] toByteArray = baos.toByteArray();
             String text = new String(toByteArray);
@@ -222,7 +216,7 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
                         noRecipes.setVisible(false);
                         grid.setVisible(true);
                         grid.getDataProvider().refreshAll();
-                        dBService.addKnownRecipes(container, (ESO_SERVER) server.getValue(), SpringSecurityHelper.getUser());
+                        dBService.addKnownRecipes(container, SpringSecurityHelper.getUser());
                     } else {
                         noRecipes.setVisible(true);
                         grid.setVisible(false);
@@ -274,6 +268,8 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
             if (recipe != null && !dBService.isRecipeKnown(recipe, characterName, esoserver, account)) {
                 KnownRecipe item = new KnownRecipe();
                 item.setCharacterName(characterName);
+                item.setAccount(account);
+                item.setEsoServer(esoserver);
                 item.setRecipe(recipe);
                 container.add(item);
             }
