@@ -13,7 +13,6 @@ import com.vaadin.data.HasValue;
 import com.vaadin.data.TreeData;
 import com.vaadin.data.ValueProvider;
 import com.vaadin.data.converter.StringToBigDecimalConverter;
-import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.event.MouseEvents;
 import com.vaadin.event.selection.SelectionEvent;
 import com.vaadin.event.selection.SelectionListener;
@@ -220,7 +219,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         hl.addComponent(tree);
         grid = new Grid<>(KnownRecipe.class);
         grid.setSizeFull();
-        grid.setBodyRowHeight(100);
+        grid.setBodyRowHeight(80);
         hl.addComponent(grid);
         hl.setExpandRatio(grid, 1f);
 
