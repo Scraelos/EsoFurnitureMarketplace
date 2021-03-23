@@ -509,20 +509,20 @@ public class ImportView extends CustomComponent implements View {
         String result = null;
         if (c != null) {
             switch (c.getCellType()) {
-                case Cell.CELL_TYPE_STRING:
+                case STRING:
                     result = c.getStringCellValue();
                     break;
-                case Cell.CELL_TYPE_NUMERIC:
+                case NUMERIC:
                     Double numValue = c.getNumericCellValue();
                     result = Integer.toString(numValue.intValue());
                     break;
-                case Cell.CELL_TYPE_FORMULA:
+                case FORMULA:
                     switch (c.getCachedFormulaResultType()) {
-                        case Cell.CELL_TYPE_NUMERIC:
+                        case NUMERIC:
                             Double nnumValue = c.getNumericCellValue();
                             result = Integer.toString(nnumValue.intValue());
                             break;
-                        case Cell.CELL_TYPE_STRING:
+                        case STRING:
                             result = c.getStringCellValue();
                             break;
                     }
@@ -536,20 +536,20 @@ public class ImportView extends CustomComponent implements View {
         Long result = null;
         if (c != null) {
             switch (c.getCellType()) {
-                case Cell.CELL_TYPE_STRING:
+                case STRING:
                     result = Long.valueOf(c.getStringCellValue());
                     break;
-                case Cell.CELL_TYPE_NUMERIC:
+                case NUMERIC:
                     Double d = c.getNumericCellValue();
                     result = d.longValue();
                     break;
-                case Cell.CELL_TYPE_FORMULA:
+                case FORMULA:
                     switch (c.getCachedFormulaResultType()) {
-                        case Cell.CELL_TYPE_NUMERIC:
+                        case NUMERIC:
                             Double dd = c.getNumericCellValue();
                             result = dd.longValue();
                             break;
-                        case Cell.CELL_TYPE_STRING:
+                        case STRING:
                             result = Long.valueOf(c.getStringCellValue());
                             break;
                     }
