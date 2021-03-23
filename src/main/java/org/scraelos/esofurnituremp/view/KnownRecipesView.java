@@ -13,6 +13,8 @@ import com.vaadin.data.HasValue;
 import com.vaadin.data.TreeData;
 import com.vaadin.data.ValueProvider;
 import com.vaadin.data.converter.StringToBigDecimalConverter;
+import com.vaadin.data.provider.Query;
+import com.vaadin.data.provider.QuerySortOrder;
 import com.vaadin.event.MouseEvents;
 import com.vaadin.event.selection.SelectionEvent;
 import com.vaadin.event.selection.SelectionListener;
@@ -75,10 +77,13 @@ import org.scraelos.esofurnituremp.security.SpringSecurityHelper;
 import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
+import org.vaadin.artur.spring.dataprovider.PageableDataProvider;
 import org.vaadin.liveimageeditor.LiveImageEditor;
 
 /**
@@ -242,19 +247,23 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             treeData.addItems(c, c.getChilds());
         }
         tree.setTreeData(treeData);
-        grid.setDataProvider((sortOrder, offset, limit) -> {
-            final List<KnownRecipe> page = repo.findAll(specification,
-                    new PageRequest(
-                            offset / limit,
-                            limit,
-                            sortOrder.isEmpty() || sortOrder.get(0).getDirection() == SortDirection.ASCENDING ? Sort.Direction.ASC : Sort.Direction.DESC,
-                            sortOrder.isEmpty() ? "id" : sortOrder.get(0).getSorted()
-                    )
-            ).getContent();
-            return page.subList(offset % limit, page.size()).stream();
-        },
-                () -> (int) repo.count(specification));
+        PageableDataProvider dataProvider = new PageableDataProvider() {
+            @Override
+            protected Page fetchFromBackEnd(Query query, Pageable pgbl) {
+                return repo.findAll(specification, pgbl);
+            }
 
+            @Override
+            protected List getDefaultSortOrders() {
+                return QuerySortOrder.asc("id").build();
+            }
+
+            @Override
+            protected int sizeInBackEnd(Query query) {
+                return (int) repo.count(specification);
+            }
+        };
+        grid.setDataProvider(dataProvider);
         grid.getEditor().setEnabled(true);
         grid.getEditor().addSaveListener(new EditorSaveListener<KnownRecipe>() {
             @Override

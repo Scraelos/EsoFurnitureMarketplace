@@ -9,6 +9,8 @@ import com.vaadin.data.Binder;
 import com.vaadin.data.ValidationResult;
 import com.vaadin.data.Validator;
 import com.vaadin.data.ValueContext;
+import com.vaadin.data.provider.Query;
+import com.vaadin.data.provider.QuerySortOrder;
 import com.vaadin.data.validator.EmailValidator;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
@@ -38,10 +40,12 @@ import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.vaadin.artur.spring.dataprovider.PageableDataProvider;
 
 /**
  *
@@ -107,20 +111,23 @@ public class UsersView extends CustomComponent implements View {
         tableAndForm.setSizeFull();
         grid = new Grid<>();
         grid.setSizeFull();
-        grid.setDataProvider(
-                (sortOrder, offset, limit) -> {
-                    final List<SysAccount> page = repo.findAll(
-                            new PageRequest(
-                                    offset / limit,
-                                    limit,
-                                    sortOrder.isEmpty() || sortOrder.get(0).getDirection() == SortDirection.ASCENDING ? Sort.Direction.ASC : Sort.Direction.DESC,
-                                    sortOrder.isEmpty() ? "id" : sortOrder.get(0).getSorted()
-                            )
-                    ).getContent();
-                    return page.subList(offset % limit, page.size()).stream();
-                },
-                () -> (int) repo.count()
-        );
+        PageableDataProvider dataProvider = new PageableDataProvider() {
+            @Override
+            protected org.springframework.data.domain.Page fetchFromBackEnd(Query query, Pageable pgbl) {
+                return repo.findAll(pgbl);
+            }
+
+            @Override
+            protected List getDefaultSortOrders() {
+                return QuerySortOrder.asc("id").build();
+            }
+
+            @Override
+            protected int sizeInBackEnd(Query query) {
+                return (int) repo.count();
+            }
+        };
+        grid.setDataProvider(dataProvider);
         grid.addItemClickListener(event -> selectUser(event.getItem()));
         grid.addColumn(SysAccount::getUsername).setCaption("User");
         grid.addColumn(SysAccount::getEsoId).setCaption("ESO Id");

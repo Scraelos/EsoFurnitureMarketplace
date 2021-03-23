@@ -5,7 +5,6 @@ import com.vaadin.server.ErrorEvent;
 import com.vaadin.server.ErrorHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.scraelos.esofurnituremp.view.AccessDeniedView;
 import org.scraelos.esofurnituremp.view.security.LoginView;
 
 import org.springframework.security.access.AccessDeniedException;

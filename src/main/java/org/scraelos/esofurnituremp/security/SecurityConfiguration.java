@@ -28,7 +28,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 @Configuration
 @EnableGlobalMethodSecurity(securedEnabled = true, proxyTargetClass = true)
 @Order(200)
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity()
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     private static Logger LOG = LoggerFactory.getLogger(SecurityConfiguration.class);

@@ -15,8 +15,6 @@ import com.github.peholmst.i18n4vaadin.util.I18NProvider;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.navigator.Navigator;
-import com.vaadin.navigator.View;
-import com.vaadin.navigator.ViewDisplay;
 import com.vaadin.server.ErrorHandler;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
@@ -45,7 +43,6 @@ import org.springframework.web.context.ContextLoaderListener;
  * @author scraelos
  */
 @Component
-//@Push(value = PushMode.AUTOMATIC,transport = Transport.WEBSOCKET_XHR)
 @Theme("demo")
 @UIScope
 @SpringUI

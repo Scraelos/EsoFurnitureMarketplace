@@ -26,7 +26,7 @@ public class ItemScreenshotFull extends DAO {
     @Basic(optional = false)
     private Long id;
     private byte[] screenshot;
-    @OneToOne(cascade = CascadeType.ALL,mappedBy = "full")
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "full")
     private ItemScreenshot thumb;
 
     @Override

@@ -6,17 +6,19 @@
 package org.scraelos.esofurnituremp.service;
 
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.stereotype.Service;
 
 /**
  *
  * @author guest
  */
-public class InsertExecutor extends ThreadPoolTaskExecutor{
+@Service
+public class InsertExecutor extends ThreadPoolTaskExecutor {
 
     public InsertExecutor() {
         this.setCorePoolSize(12);
         this.setMaxPoolSize(50);
         this.setWaitForTasksToCompleteOnShutdown(true);
     }
-    
+
 }

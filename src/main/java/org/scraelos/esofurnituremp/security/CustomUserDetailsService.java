@@ -5,14 +5,10 @@
  */
 package org.scraelos.esofurnituremp.security;
 
-import java.util.ArrayList;
 import org.scraelos.esofurnituremp.model.SysAccount;
-import org.scraelos.esofurnituremp.model.SysAccountRole;
 import org.scraelos.esofurnituremp.service.DBService;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

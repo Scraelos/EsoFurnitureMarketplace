@@ -36,17 +36,18 @@ import org.scraelos.esofurnituremp.model.Recipe;
 import org.scraelos.esofurnituremp.model.RecipeIngredient;
 import org.scraelos.esofurnituremp.model.SysAccount;
 import org.scraelos.esofurnituremp.model.SysAccountRole;
-import org.scraelos.esofurnituremp.model.SystemProperty;
 import org.scraelos.esofurnituremp.model.TopListItem;
 import org.scraelos.esofurnituremp.model.lib.DAO;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  *
  * @author scraelos
  */
+@Service
 public class DBService {
 
     @PersistenceContext

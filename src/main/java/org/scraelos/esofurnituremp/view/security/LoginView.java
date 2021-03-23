@@ -35,6 +35,7 @@ import org.scraelos.esofurnituremp.model.ESO_SERVER;
 import org.scraelos.esofurnituremp.model.SysAccount;
 import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -55,27 +56,30 @@ public class LoginView extends CustomComponent implements View,
 
     public static final String NAME = "login";
 
+    private final String recaptchaId;
+    private final String recaptchaKey;
+
     private Binder<SysAccount> loginBinder;
     private Binder<SysAccount> registerBinder;
 
-    private final TextField user;
+    private TextField user;
 
-    private final PasswordField password;
+    private PasswordField password;
 
-    private final Button loginButton;
+    private Button loginButton;
 
-    private final TextField newUser;
-    private final TextField newUserId;
+    private TextField newUser;
+    private TextField newUserId;
 
-    private final PasswordField newPassword;
-    private final PasswordField newPasswordRepeat;
-    private final Button registerButton;
+    private PasswordField newPassword;
+    private PasswordField newPasswordRepeat;
+    private Button registerButton;
 
-    private final FormLayout loginFields;
-    private final FormLayout registerFields;
+    private FormLayout loginFields;
+    private FormLayout registerFields;
 
-    private final ComboBox activeServer;
-    private final Label activeServerlabel;
+    private ComboBox activeServer;
+    private Label activeServerlabel;
     private ReCaptcha captcha;
 
     private Bundle i18n;
@@ -90,7 +94,9 @@ public class LoginView extends CustomComponent implements View,
 
     private static final Logger LOG = Logger.getLogger(LoginView.class.getName());
 
-    public LoginView() {
+    public LoginView(@Value("${recaptcha.id}") String recaptchaId, @Value("${recaptcha.key}") String recaptchaKey) {
+        this.recaptchaId = recaptchaId;
+        this.recaptchaKey = recaptchaKey;
         setSizeFull();
         i18n = new Bundle();
         loginBinder = new Binder<>(SysAccount.class);
@@ -135,11 +141,11 @@ public class LoginView extends CustomComponent implements View,
         newPasswordRepeat = new PasswordField(i18n.passwordRepeat());
         newPasswordRepeat.setWidth(100f, Unit.PERCENTAGE);
         captcha = new ReCaptcha(
-                "6LfQMRkUAAAAAHVI39ktj2xc1ZpTMYvLKKnjrZ_z",
+                recaptchaId,
                 new ReCaptchaOptions() {
             {
                 theme = "light";
-                sitekey = "6LfQMRkUAAAAAJG4zPW6yD4vJJLE1CjkCh53qGwH";
+                sitekey = recaptchaKey;
             }
         }
         );
