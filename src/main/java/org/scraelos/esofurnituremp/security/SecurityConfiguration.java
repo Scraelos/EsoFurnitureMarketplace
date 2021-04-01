@@ -43,7 +43,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
         authenticationProvider.setPasswordEncoder(new BCryptPasswordEncoder());
         auth.userDetailsService(userDetailService).and().authenticationProvider(authenticationProvider);
-        
 
     }
 

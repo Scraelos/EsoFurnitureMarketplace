@@ -13,7 +13,7 @@
         <relativePath></relativePath>
     </parent>
     
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
     <name>EsoFurnitureMarketplace</name>
 
     <properties>

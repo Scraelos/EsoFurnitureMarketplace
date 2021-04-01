@@ -19,6 +19,8 @@ COPY --chown=myuser:myuser src src
 #COPY --chown=myuser:myuser package.json pnpm-lock.yaml webpack.config.js ./
 #COPY --chown=myuser:myuser package.json webpack.config.js ./
 
+# We want war package because themes folder not included in jar
+RUN sed -i "s|<packaging>jar</packaging>|<packaging>war</packaging>|g" pom.xml
 # Build the production package, assuming that we validated the version before so no need for running tests again
 RUN mvn clean package -DskipTests
 
