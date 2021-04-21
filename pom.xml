@@ -19,7 +19,7 @@
     <properties>
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vaadin.version>8.12.3</vaadin.version>
+        <vaadin.version>8.12.4</vaadin.version>
         <vaadin.plugin.version>8.12.4</vaadin.plugin.version>
         <vaadin-spring.version>3.2.1</vaadin-spring.version>
         <org.vaadin.spring.version>0.0.7.RELEASE</org.vaadin.spring.version>
@@ -29,7 +29,7 @@
     <repositories>
         <repository>
             <id>vaadin-addons</id>
-            <url>http://maven.vaadin.com/vaadin-addons</url>
+            <url>https://maven.vaadin.com/vaadin-addons</url>
         </repository>
         <repository>
             <id>ari-java</id>
@@ -75,10 +75,6 @@
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-spring-boot</artifactId>
         </dependency>
-        <!--<dependency>
-            <groupId>com.vaadin</groupId>
-            <artifactId>vaadin-spring</artifactId>
-        </dependency>-->
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-spring-security</artifactId>
