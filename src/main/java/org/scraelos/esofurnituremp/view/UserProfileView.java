@@ -24,7 +24,7 @@ import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.PasswordField;
 import com.vaadin.ui.VerticalLayout;
-import java.util.Arrays;
+import java.util.Locale;
 import org.scraelos.esofurnituremp.Bundle;
 import org.scraelos.esofurnituremp.model.ESO_SERVER;
 import org.scraelos.esofurnituremp.model.SysAccount;
@@ -128,10 +128,19 @@ public class UserProfileView extends CustomComponent implements View, LocaleChan
         serverBox.setValue(user.getEsoServer());
         languageBox.setEmptySelectionAllowed(false);
         languageBox.setItems(USER_LANGUAGE.values());
-        languageBox.setValue(user.getUserLanguage());
+        languageBox.setValue(user.getUserLanguage() != null ? user.getUserLanguage() : getPageLanguage());
         useEnItemNamesBox.setValue(user.getUseEnItemNames());
         localize();
 
+    }
+
+    private USER_LANGUAGE getPageLanguage() {
+        String languageString = getLocale().getLanguage();
+        if (!languageString.equals("en") && !languageString.equals("de") && !languageString.equals("fr") && !languageString.equals("ru")) {
+            languageString = "en";
+        }
+        Locale lc = new Locale(languageString);
+        return USER_LANGUAGE.getLanguageByLocale(lc);
     }
 
     public void localize() {
