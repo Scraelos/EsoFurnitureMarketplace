@@ -224,7 +224,6 @@ public class EsoFurnitureMarketplaceUI extends UI implements I18NProvider {
         Locale lc = new Locale(language);
         if (SpringSecurityHelper.getUser() != null && SpringSecurityHelper.getUser().getUserLanguage() != null) {
             lc = SpringSecurityHelper.getUser().getUserLanguage().getLocale();
-            setLocale(lc);
         }
         setLocale(lc);
         setContent(springViewDisplay);
