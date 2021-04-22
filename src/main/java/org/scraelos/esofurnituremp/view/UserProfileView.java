@@ -129,7 +129,7 @@ public class UserProfileView extends CustomComponent implements View, LocaleChan
         languageBox.setEmptySelectionAllowed(false);
         languageBox.setItems(USER_LANGUAGE.values());
         languageBox.setValue(user.getUserLanguage() != null ? user.getUserLanguage() : getPageLanguage());
-        useEnItemNamesBox.setValue(user.getUseEnItemNames());
+        useEnItemNamesBox.setValue(user.getUseEnItemNames() != null ? user.getUseEnItemNames() : Boolean.FALSE);
         localize();
 
     }
