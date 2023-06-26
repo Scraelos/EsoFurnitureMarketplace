@@ -174,6 +174,12 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
 
         filters.addComponent(server);
         itemQuality = new ComboBox(null, Arrays.asList(ITEM_QUALITY.values()));
+        itemQuality.setStyleGenerator((ITEM_QUALITY item) -> {
+            if (item != null) {
+                return item.name().toLowerCase();
+            }
+            return null;
+        });
         itemQuality.setEmptySelectionAllowed(true);
 
         filters.addComponent(itemQuality);

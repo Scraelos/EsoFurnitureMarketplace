@@ -106,7 +106,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     private HorizontalLayout actions;
     private HorizontalLayout filters;
     private HorizontalLayout textFilter;
-    private ComboBox itemQuality;
+    private ComboBox<ITEM_QUALITY> itemQuality;
     private com.vaadin.ui.ComboBox<FURNITURE_THEME> theme;
     private TextField searchField;
     private CheckBox searchFieldIgnoresOtherFilters;
@@ -165,6 +165,12 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             public void valueChange(HasValue.ValueChangeEvent event) {
                 loadItems();
             }
+        });
+        itemQuality.setStyleGenerator((ITEM_QUALITY item) -> {
+            if (item != null) {
+                return item.name().toLowerCase();
+            }
+            return null;
         });
         filters.addComponent(itemQuality);
         theme = new com.vaadin.ui.ComboBox(null, Arrays.asList(FURNITURE_THEME.values()));
@@ -823,7 +829,7 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
 
     private class MassPricesSetupWindow extends Window {
 
-        private ComboBox itemQualityBox;
+        private ComboBox<ITEM_QUALITY> itemQualityBox;
         private CheckBox isPriceNull;
         private CheckBox isPriceWithMatsNull;
         private TextField priceField;
@@ -841,7 +847,12 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
             itemQualityBox = new ComboBox(i18n.itemQualityCaption(), Arrays.asList(ITEM_QUALITY.values()));
             itemQualityBox.setEmptySelectionAllowed(false);
             itemQualityBox.setCaption(i18n.itemQualityCaption());
-
+            itemQualityBox.setStyleGenerator((ITEM_QUALITY item) -> {
+                if (item != null) {
+                    return item.name().toLowerCase();
+                }
+                return null;
+            });
             hl.addComponent(itemQualityBox);
             isPriceNull = new CheckBox(i18n.massPriceSetupNullCraftPrice(), true);
             hl.addComponent(isPriceNull);
