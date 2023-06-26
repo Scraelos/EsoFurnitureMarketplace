@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
@@ -31,6 +32,7 @@ import org.scraelos.esofurnituremp.model.ItemScreenshot;
 import org.scraelos.esofurnituremp.model.ItemScreenshotFull;
 import org.scraelos.esofurnituremp.model.ItemSubCategory;
 import org.scraelos.esofurnituremp.model.KnownRecipe;
+import org.scraelos.esofurnituremp.model.ONLINE_STATUS;
 import org.scraelos.esofurnituremp.model.RECIPE_TYPE;
 import org.scraelos.esofurnituremp.model.Recipe;
 import org.scraelos.esofurnituremp.model.RecipeIngredient;
@@ -91,6 +93,7 @@ public class DBService {
             account.setPassword(hashedPassword);
             account.setEsoId(esoId);
             account.setEsoServer(server);
+            account.setOnlineStatus(ONLINE_STATUS.Offline);
             Set<SysAccountRole> roles = new HashSet<>();
             roles.add(new SysAccountRole(1L));
             account.setRoles(roles);
@@ -527,6 +530,7 @@ public class DBService {
         q.select(root);
         q.where(builder.and(
                 builder.equal(root.get("recipe"), recipe),
+                builder.notEqual(root.get("account").get("onlineStatus"), ONLINE_STATUS.Invisible),
                 builder.equal(root.get("esoServer"), server)
         )
         );
@@ -540,6 +544,19 @@ public class DBService {
                 newList.add(r);
             }
         }
+        newList = newList.stream().sorted((i1, i2) -> {
+            return i1.getAccount().getEsoId().toLowerCase().compareTo(i2.getAccount().getEsoId().toLowerCase());
+        }).sorted((i1, i2) -> {
+            ONLINE_STATUS s1 = i1.getAccount().getOnlineStatus() != null ? i1.getAccount().getOnlineStatus() : ONLINE_STATUS.Offline;
+            ONLINE_STATUS s2 = i2.getAccount().getOnlineStatus() != null ? i2.getAccount().getOnlineStatus() : ONLINE_STATUS.Offline;
+            if (s1 == s2) {
+                return 0;
+            } else if (s1 == ONLINE_STATUS.Online && s2 == ONLINE_STATUS.Offline) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }).collect(Collectors.toList());
         return newList;
     }
 
@@ -684,6 +701,24 @@ public class DBService {
                 r.setCraftPrice(priceWithMats);
                 em.merge(r);
             }
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ONLINE_STATUS getStatus(SysAccount account) {
+        if (account != null) {
+            account = em.find(SysAccount.class, account.getId());
+            return account.getOnlineStatus();
+        }
+        return ONLINE_STATUS.Offline;
+    }
+
+    @Transactional
+    public void setStatus(SysAccount account, ONLINE_STATUS status) {
+        if (account != null) {
+            account = em.find(SysAccount.class, account.getId());
+            account.setOnlineStatus(status);
+            em.merge(account);
         }
     }
 }

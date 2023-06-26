@@ -13,7 +13,6 @@ import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.ExternalResource;
 import com.vaadin.spring.annotation.SpringView;
-import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.Label;
@@ -27,7 +26,6 @@ import com.vaadin.ui.renderers.TextRenderer;
 import elemental.json.JsonValue;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
@@ -62,7 +60,6 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
 
     public static final String NAME = "importknownplans";
     private static Pattern MEGASERVER_PATTERN = Pattern.compile("(EU|NA) Megaserver");
-    private Header header;
 
     private Upload upload;
     private Grid<KnownRecipe> grid;
@@ -75,7 +72,6 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
     private static final Logger LOG = Logger.getLogger(ImportKnownRecipesView.class.getName());
 
     public ImportKnownRecipesView() {
-        header = new Header();
         this.setSizeFull();
         UploadHandler handler = new UploadHandler();
         upload = new Upload(null, handler);
@@ -125,19 +121,14 @@ public class ImportKnownRecipesView extends CustomComponent implements View, Loc
         contentLayout.setExpandRatio(noRecipes, 1f);
         contentLayout.setMargin(false);
         contentLayout.setSizeFull();
-        VerticalLayout vl = new VerticalLayout(header, contentLayout);
         noRecipes.setVisible(false);
         grid.setVisible(false);
-        vl.setSizeFull();
-        vl.setMargin(false);
-        vl.setExpandRatio(contentLayout, 1f);
-        setCompositionRoot(vl);
+        setCompositionRoot(contentLayout);
     }
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         getUI().getPage().setTitle(i18n.importDataFromCraftStoreButtonCaption() + " | " + i18n.siteTitle());
-        header.build();
         localize();
     }
 

@@ -22,7 +22,6 @@ import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.StreamResource;
-import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
@@ -78,9 +77,7 @@ import org.scraelos.esofurnituremp.service.DBService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
 import org.vaadin.artur.spring.dataprovider.PageableDataProvider;
@@ -91,13 +88,12 @@ import org.vaadin.liveimageeditor.LiveImageEditor;
  * @author scraelos
  */
 @Component
-@Scope("prototype")
+//@Scope("prototype")
 @SpringView(name = KnownRecipesView.NAME)
 @Secured({"ROLE_USER"})
 public class KnownRecipesView extends CustomComponent implements View, LocaleChangedListener {
 
     public static final String NAME = "knownplans";
-    private Header header;
     @Autowired
     private DBService dBService;
     @Autowired
@@ -126,14 +122,11 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     static final int PAGESIZE = 20;
 
     public KnownRecipesView() {
-        header = new Header();
         this.setSizeFull();
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
         vl.setMargin(false);
         vl.setSpacing(false);
-        header = new Header();
-        vl.addComponent(header);
         actions = new HorizontalLayout();
         importButton = new Button("", new Button.ClickListener() {
 
@@ -236,7 +229,6 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         getUI().getPage().setTitle(i18n.knownRecipesMenuItemCaption() + " | " + i18n.siteTitle());
-        header.build();
         screenshotClickListener = new ScreenshotClickListener();
         deleteImageClickListener = new DeleteImageClickListener();
         specification = new KnownRecipeSpecification(SpringSecurityHelper.getUser());

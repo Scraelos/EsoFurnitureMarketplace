@@ -185,11 +185,13 @@ public class LoginView extends CustomComponent implements View,
                 SecurityContextHolder.getContext().setAuthentication(authenticate);
                 LOG.log(Level.INFO, "{0} {1}", new Object[]{authenticate.getPrincipal(), authenticate.isAuthenticated()});
                 if (authenticate.getPrincipal() instanceof SysAccount && ((SysAccount) authenticate.getPrincipal()).getUserLanguage() != null) {
-                    Locale lc = ((SysAccount) authenticate.getPrincipal()).getUserLanguage().getLocale();
-                    getUI().setLocale(lc);
                     getUI().getSession().setAttribute("useEnglishNames", ((SysAccount) authenticate.getPrincipal()).getUseEnItemNames());
                 }
                 getUI().getNavigator().navigateTo(forwardTo);
+                if (authenticate.getPrincipal() instanceof SysAccount && ((SysAccount) authenticate.getPrincipal()).getUserLanguage() != null) {
+                    Locale lc = ((SysAccount) authenticate.getPrincipal()).getUserLanguage().getLocale();
+                    getUI().setLocale(lc);
+                }
             } catch (AuthenticationException ex) {
                 password.setValue("");
                 Notification.show(i18n.authErrorCaption(), i18n.authErrorDescription(), Notification.Type.ERROR_MESSAGE);

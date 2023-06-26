@@ -54,7 +54,6 @@ public class ImportView extends CustomComponent implements View {
     private static final Logger LOG = Logger.getLogger(ImportView.class.getName());
 
     public static final String NAME = "import";
-    private Header header;
 
     @Autowired
     private DBService dBService;
@@ -65,7 +64,6 @@ public class ImportView extends CustomComponent implements View {
     private Bundle i18n = new Bundle();
 
     public ImportView() {
-        header = new Header();
         DatamineUploadHandler datamineUploadHandler = new DatamineUploadHandler();
         Upload dataminexlsxUpload = new Upload(i18n.uploadDatamineXlsx(), datamineUploadHandler);
         dataminexlsxUpload.addSucceededListener(datamineUploadHandler);
@@ -81,13 +79,12 @@ public class ImportView extends CustomComponent implements View {
         FurnitureDumpUploadHandler furnitureDumpUploadHandler = new FurnitureDumpUploadHandler();
         Upload uploadNewDatamine = new Upload("Update new datamine", furnitureDumpUploadHandler);
         uploadNewDatamine.addSucceededListener(furnitureDumpUploadHandler);
-        VerticalLayout vl = new VerticalLayout(header, dataminexlsxUpload, esoRawStringRecipeUpload, esoRawStringUpload, uploadNewDatamine, esoRawCatStringUpload);
+        VerticalLayout vl = new VerticalLayout(dataminexlsxUpload, esoRawStringRecipeUpload, esoRawStringUpload, uploadNewDatamine, esoRawCatStringUpload);
         setCompositionRoot(vl);
     }
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
-        header.build();
     }
 
     private class EsoRawStringRecipeUploadHandler implements Upload.Receiver, Upload.SucceededListener {

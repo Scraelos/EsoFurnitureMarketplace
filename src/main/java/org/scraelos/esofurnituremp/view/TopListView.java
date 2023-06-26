@@ -40,7 +40,6 @@ import org.springframework.stereotype.Component;
 @SpringView(name = TopListView.NAME)
 public class TopListView extends CustomComponent implements View, LocaleChangedListener {
 
-    private Header header;
     @Autowired
     private DBService service;
     public static final String NAME = "top";
@@ -48,17 +47,15 @@ public class TopListView extends CustomComponent implements View, LocaleChangedL
     private Bundle i18n = new Bundle();
     private List<TopListItem> topList = new ArrayList<>();
     private String esoid;
-    private BoldCellStyleGenerator styleGenerator=new BoldCellStyleGenerator();
+    private BoldCellStyleGenerator styleGenerator = new BoldCellStyleGenerator();
 
     private final Grid<TopListItem> grid = new Grid<>(TopListItem.class);
 
     public TopListView() {
-        header = new Header();
         this.setSizeFull();
         VerticalLayout vl = new VerticalLayout();
         vl.setMargin(false);
         vl.setSizeFull();
-        vl.addComponent(header);
         server = new ComboBox(null, Arrays.asList(ESO_SERVER.values()));
         server.setEmptySelectionAllowed(false);
         server.addValueChangeListener(new HasValue.ValueChangeListener() {
@@ -83,7 +80,6 @@ public class TopListView extends CustomComponent implements View, LocaleChangedL
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         getUI().getPage().setTitle(i18n.topList() + " | " + i18n.siteTitle());
-        header.build();
         if (SpringSecurityHelper.getUser() != null) {
             server.setValue(SpringSecurityHelper.getUser().getEsoServer());
         } else {
@@ -124,17 +120,17 @@ public class TopListView extends CustomComponent implements View, LocaleChangedL
     public void localeChanged(LocaleChangedEvent lce) {
         localize(lce.getNewLocale());
     }
-    
+
     private class BoldCellStyleGenerator implements StyleGenerator<TopListItem> {
 
         @Override
         public String apply(TopListItem item) {
-            if(item.getEsoId().equals("@"+esoid)) {
+            if (item.getEsoId().equals("@" + esoid)) {
                 return "v-label-bold";
             }
             return null;
         }
-    
-}
+
+    }
 
 }

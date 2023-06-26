@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
@@ -20,6 +21,7 @@ import org.scraelos.esofurnituremp.model.FURNITURE_THEME;
 import org.scraelos.esofurnituremp.model.FurnitureCategory;
 import org.scraelos.esofurnituremp.model.FurnitureItem;
 import org.scraelos.esofurnituremp.model.ITEM_QUALITY;
+import org.scraelos.esofurnituremp.model.ONLINE_STATUS;
 import org.scraelos.esofurnituremp.model.Recipe;
 import org.scraelos.esofurnituremp.model.SysAccount;
 import org.springframework.data.jpa.domain.Specification;
@@ -122,7 +124,12 @@ public class FurnitureItemSpecification implements Specification<FurnitureItem> 
                 predicates.add(cb.equal(knownJoin.get("esoServer"), esoServer));
                 predicates.add(cb.equal(knownJoin.get("account").get("esoId"), crafterId));
             } else if (hasCrafters != null && hasCrafters) {
-                predicates.add(cb.equal(root.join("recipe").join("knownRecipes").get("esoServer"), esoServer));
+                Join<Object, Object> knownJoin = root.join("recipe").join("knownRecipes");
+                predicates.add(cb.and(
+                        cb.equal(knownJoin.get("esoServer"), esoServer),
+                        cb.notEqual(knownJoin.get("account").get("onlineStatus"), ONLINE_STATUS.Invisible)
+                )
+                );
             }
             if (itemQuality != null) {
                 predicates.add(cb.equal(root.get("itemQuality"), itemQuality));

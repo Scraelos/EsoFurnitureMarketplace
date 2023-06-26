@@ -76,7 +76,6 @@ public class UsersView extends CustomComponent implements View {
     private CheckBox enabled;
     private Button saveButton;
     private SysAccount currentUser;
-    private Header header;
 
     @Autowired
     private DBService service;
@@ -91,8 +90,6 @@ public class UsersView extends CustomComponent implements View {
         vl.setSizeFull();
         vl.setSpacing(false);
         vl.setMargin(false);
-        header = new Header();
-        vl.addComponent(header);
         actions = new HorizontalLayout();
         refreshButton = new Button("Refresh");
         refreshButton.addClickListener(event -> grid.getDataProvider().refreshAll());
@@ -218,7 +215,7 @@ public class UsersView extends CustomComponent implements View {
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
-        header.build();
+        //header.build();
         roles.setItems(sysAccountRoleRepo.findAll());
     }
 

@@ -58,7 +58,6 @@ public class UserProfileView extends CustomComponent implements View, LocaleChan
     private PasswordField passwordRepeatField;
     private Button changePassword;
     private Button cleanUsersRecipes;
-    private Header header = new Header();
 
     private Bundle i18n;
 
@@ -91,7 +90,6 @@ public class UserProfileView extends CustomComponent implements View, LocaleChan
         FormLayout userSettingsForm = new FormLayout(serverBox, languageBox, useEnItemNamesBox, saveSettings, oldPasswordField, passwordField, passwordRepeatField, changePassword, cleanUsersRecipes);
         userSettingsForm.setSpacing(true);
         userSettingsForm.setMargin(true);
-        vl.addComponent(header);
         vl.addComponent(userSettingsForm);
         vl.setComponentAlignment(userSettingsForm, Alignment.TOP_LEFT);
         vl.setExpandRatio(userSettingsForm, 1f);
@@ -121,7 +119,6 @@ public class UserProfileView extends CustomComponent implements View, LocaleChan
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         i18n = new Bundle();
-        header.build();
         user = SpringSecurityHelper.getUser();
         serverBox.setItems(ESO_SERVER.values());
         serverBox.setEmptySelectionAllowed(false);

@@ -42,6 +42,9 @@ public class SysAccount extends DAO implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(255)")
     private ESO_SERVER esoServer;
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(10)")
+    private ONLINE_STATUS onlineStatus;
     private Boolean enabled;
     @ManyToMany
     private Set<SysAccountRole> roles;
@@ -167,6 +170,14 @@ public class SysAccount extends DAO implements UserDetails {
 
     public void setUseEnItemNames(Boolean useEnItemNames) {
         this.useEnItemNames = useEnItemNames;
+    }
+
+    public ONLINE_STATUS getOnlineStatus() {
+        return onlineStatus;
+    }
+
+    public void setOnlineStatus(ONLINE_STATUS onlineStatus) {
+        this.onlineStatus = onlineStatus;
     }
 
 }

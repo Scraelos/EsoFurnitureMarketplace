@@ -106,8 +106,6 @@ import org.vaadin.liveimageeditor.LiveImageEditor;
 public class FurnitureItemsView extends CustomComponent implements View, LocaleChangedListener {
 
     public static final String NAME = "furniture";
-
-    private Header header;
     @Autowired
     private DBService dBService;
     private Bundle i18n = new Bundle();
@@ -163,9 +161,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         VerticalLayout vl = new VerticalLayout();
         vl.setMargin(false);
         vl.setSizeFull();
-        header = new Header();
         specification = new FurnitureItemSpecification();
-        vl.addComponent(header);
         filters = new HorizontalLayout();
         server = new ComboBox(null, Arrays.asList(ESO_SERVER.values()));
         server.setEmptySelectionAllowed(false);
@@ -362,6 +358,18 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
             public String apply(KnownRecipe source) {
                 return "@" + source.getAccount().getEsoId();
             }
+        }).setStyleGenerator(new StyleGenerator<KnownRecipe>() {
+            @Override
+            public String apply(KnownRecipe item) {
+                switch (item.getAccount().getOnlineStatus()) {
+                    case Online:
+                        return "fine";
+                    case Offline:
+                        return "offline-color";
+                    default:
+                        return "";
+                }
+            }
         }).setId("esoId").setMinimumWidth(300).setExpandRatio(2);
         craftersGrid.addColumn(KnownRecipe::getCraftPrice).setRenderer(new TextRenderer("") {
             @Override
@@ -441,7 +449,6 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         getUI().getPage().setTitle(i18n.furnitureCatalogMenuItemCaption() + " | " + i18n.siteTitle());
         setInitialScrollPosition(event);
-        header.build();
 
         screenshotClickListener = new ScreenshotClickListener();
         deleteImageClickListener = new DeleteImageClickListener();
