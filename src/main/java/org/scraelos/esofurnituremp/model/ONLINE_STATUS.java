@@ -11,8 +11,8 @@ package org.scraelos.esofurnituremp.model;
  */
 public enum ONLINE_STATUS {
 
-    Online("Online", "Online", "Online", "Онлайн"),
-    Offline("Offline", "Offline", "Offline", "Оффлайн"),
+    Online("Online", "Online", "Online", "В сети"),
+    Offline("Offline", "Offline", "Offline", "Не в сети"),
     Invisible("Invisible", "Invisible", "Invisible", "Невидимка");
 
     private ONLINE_STATUS(String nameEn_, String nameDe_, String nameFr_, String nameRu_) {

@@ -351,7 +351,7 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
         });
         materialsTab = itemTabs.addTab(materialsGrid);
 
-        craftersGrid = new Grid<>(KnownRecipe.class);
+        craftersGrid = new Grid<>();
         craftersGrid.setSizeFull();
         craftersGrid.addColumn(new ValueProvider<KnownRecipe, String>() {
             @Override
@@ -371,22 +371,26 @@ public class FurnitureItemsView extends CustomComponent implements View, LocaleC
                 }
             }
         }).setId("esoId").setMinimumWidth(300).setExpandRatio(2);
-        craftersGrid.addColumn(KnownRecipe::getCraftPrice).setRenderer(new TextRenderer("") {
+        craftersGrid.addColumn(KnownRecipe::getCraftPrice).setId("craftPrice").setRenderer(new TextRenderer("") {
             @Override
             public JsonValue encode(Object value) {
                 if (value != null) {
-                    return super.encode(NumberFormat.getInstance(getLocale()).format(((BigDecimal) value).doubleValue()));
+                    NumberFormat nf = NumberFormat.getInstance(getLocale());
+                    nf.setMaximumFractionDigits(0);
+                    return super.encode(nf.format(((BigDecimal) value)));
                 } else {
                     return super.encode(i18n.nullPrice());
                 }
             }
 
         });
-        craftersGrid.addColumn(KnownRecipe::getCraftPriceWithMats).setRenderer(new TextRenderer("") {
+        craftersGrid.addColumn(KnownRecipe::getCraftPriceWithMats).setId("craftPriceWithMats").setRenderer(new TextRenderer("") {
             @Override
             public JsonValue encode(Object value) {
                 if (value != null) {
-                    return super.encode(NumberFormat.getInstance(getLocale()).format(((BigDecimal) value).doubleValue()));
+                    NumberFormat nf = NumberFormat.getInstance(getLocale());
+                    nf.setMaximumFractionDigits(0);
+                    return super.encode(nf.format(((BigDecimal) value)));
                 } else {
                     return super.encode(i18n.nullPrice());
                 }

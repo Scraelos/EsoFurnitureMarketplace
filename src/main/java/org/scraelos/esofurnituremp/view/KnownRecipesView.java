@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -267,10 +268,32 @@ public class KnownRecipesView extends CustomComponent implements View, LocaleCha
         });
         TextField craftPrice = new TextField();
         Binder.Binding craftPriceBind = grid.getEditor().getBinder().forField(craftPrice).withNullRepresentation("").withConverter(new StringToBigDecimalConverter("")).bind("craftPrice");
-        grid.getColumn("craftPrice").setEditorBinding(craftPriceBind).setEditable(true);
+        grid.getColumn("craftPrice").setRenderer(new TextRenderer("") {
+            @Override
+            public JsonValue encode(Object value) {
+                if (value != null) {
+                    NumberFormat nf = NumberFormat.getInstance(getLocale());
+                    nf.setMaximumFractionDigits(0);
+                    return super.encode(nf.format(((BigDecimal) value)));
+                } else {
+                    return super.encode(i18n.nullPrice());
+                }
+            }
+        }).setEditorBinding(craftPriceBind).setEditable(true);
         TextField craftPriceWithMats = new TextField();
         Binder.Binding craftPriceWithMatsBind = grid.getEditor().getBinder().forField(craftPriceWithMats).withNullRepresentation("").withConverter(new StringToBigDecimalConverter("")).bind("craftPriceWithMats");
-        grid.getColumn("craftPriceWithMats").setEditorBinding(craftPriceWithMatsBind).setEditable(true);
+        grid.getColumn("craftPriceWithMats").setRenderer(new TextRenderer("") {
+            @Override
+            public JsonValue encode(Object value) {
+                if (value != null) {
+                    NumberFormat nf = NumberFormat.getInstance(getLocale());
+                    nf.setMaximumFractionDigits(0);
+                    return super.encode(nf.format(((BigDecimal) value)));
+                } else {
+                    return super.encode(i18n.nullPrice());
+                }
+            }
+        }).setEditorBinding(craftPriceWithMatsBind).setEditable(true);
         grid.getColumn("craftPriceWithMats").setEditable(true);
         grid.addComponentColumn(new ItemLinkCoumnGenerator()).setId("links");
         grid.addComponentColumn(new ScreenShotsColumnGenerator()).setId("screenshots").setExpandRatio(1);
